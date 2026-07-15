@@ -1,0 +1,42 @@
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr
+frontend/.local
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
+
+# Python / Django
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/db.sqlite3
+backend/.env
+
+# Django static/media
+backend/staticfiles/
+backend/media/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+!.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
