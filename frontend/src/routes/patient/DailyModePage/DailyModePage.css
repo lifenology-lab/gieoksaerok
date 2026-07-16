@@ -1,0 +1,62 @@
+// 임시 스타일 (카메라 확인용)
+
+.daily-mode-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #111;
+}
+
+.daily-mode-page__camera-area {
+  width: 100%;
+  height: 100%;
+  background: #111;
+}
+
+.daily-mode-page__camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.daily-mode-page__top-actions {
+  position: absolute;
+  top: 24px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+.daily-mode-page__bottom-actions {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 24px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.daily-mode-page__status {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 120px;
+  z-index: 10;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.64);
+  color: white;
+}
+
+.camera-permission-notice {
+  height: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: white;
+}
