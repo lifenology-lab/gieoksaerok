@@ -12,6 +12,7 @@ import {
   MealRecognitionCard,
   MealRecognitionOverlay,
 } from "@/features/meal-recognition/components";
+import { detectMealScene } from "@/features/meal-recognition/api/mealRecognitionApi";
 
 import "./DailyModePage.css";
 
@@ -26,26 +27,27 @@ export default function DailyModePage() {
     startMealRecognition,
   } = useRecognitionState();
 
-  const handleMealRecognition = () => {
+  const handleMealRecognition = async () => {
     startMealRecognition();
+    setMealRecognitionResult(null);
 
-    setMealRecognitionResult({
-      type: "recent_meal_found",
-      title: "최근 식사 기록이 있어요",
-      message: "2시간 전 식사 기록이 확인되었어요.",
-      suggestion: "지금은 따뜻한 차를 마시며 쉬어볼까요?",
-      primaryActionLabel: "식사 기록 보기",
-      secondaryActionLabel: "안내 닫기",
-    });
+    const response = await detectMealScene();
+
+    if (!response.isMealScene) {
+      setMealRecognitionResult(null);
+      return;
+    }
+
+    setMealRecognitionResult(response.card);
+  };
+
+  const handleCloseMealRecognition = () => {
+    setMealRecognitionResult(null);
   };
 
   const handleViewMealRecord = () => {
     // TODO: 식사 기록 화면 구현
     console.log("식사 기록 보기");
-  };
-
-  const handleCloseMealRecognition = () => {
-    setMealRecognitionResult(null);
   };
 
   const handleGoConfusion = () => {
@@ -63,7 +65,7 @@ export default function DailyModePage() {
       <RecognitionToggleGroup
         activeRecognitionType={activeRecognitionType}
         onPersonRecognition={startPersonRecognition}
-        onMealRecognition={startMealRecognition}
+        onMealRecognition={handleMealRecognition}
       />
 
       <RecognitionStatusToast message={statusMessage} />
