@@ -11,23 +11,11 @@ function App() {
     <BrowserRouter>
       <div>
         <Routes>
-          <Route path="/" element={<RoleSelectPage></RoleSelectPage>}></Route>
-          <Route
-            path="/patient"
-            element={<PatientHomePage></PatientHomePage>}
-          ></Route>
-          <Route
-            path="/patient/daily"
-            element={<DailyModePage></DailyModePage>}
-          ></Route>
-          <Route
-            path="/patient/confusion"
-            element={<ConfusionSelectPage></ConfusionSelectPage>}
-          ></Route>
-          <Route
-            path="/caregiver"
-            element={<CaregiverHomePage></CaregiverHomePage>}
-          ></Route>
+          <Route path="/" element={<RoleSelectPage />} />
+          <Route path="/patient" element={<PatientHomePage />} />
+          <Route path="/patient/daily" element={<DailyModePage />} />
+          <Route path="/patient/confusion" element={<ConfusionSelectPage />} />
+          <Route path="/caregiver" element={<CaregiverHomePage />} />
         </Routes>
       </div>
     </BrowserRouter>
