@@ -26,7 +26,9 @@ export async function detectMealScene() {
     };
   }
 
-  const recentMealRecord = findRecentMealRecord(mockMealRecordsWithRecentMeal);
+  const recentMealRecord = findRecentMealRecord(
+    mockMealRecordsWithoutRecentMeal,
+  );
 
   if (recentMealRecord) {
     return {
