@@ -3,10 +3,10 @@ import {
   mockMealRecordsWithRecentMeal,
   mockMealRecordsWithoutRecentMeal,
 } from "../data/mockMealRecords";
+import { classifyMealScene } from "../model/mobilenetMealClassifier";
 import { findRecentMealRecord } from "../utils/mealRecordUtils";
 
 const MOCK_DELAY_MS = 1000;
-const MOCK_IS_MEAL_SCENE = true; // 식사 상황 여부
 
 const wait = (ms) => {
   return new Promise((resolve) => {
@@ -14,22 +14,32 @@ const wait = (ms) => {
   });
 };
 
-export async function detectMealScene() {
+// 현재 테스트에 사용할 mock 식사 기록 데이터
+// mockMealRecordsEmpty, mockMealRecordsWithRecentMeal, mockMealRecordsWithoutRecentMeal 중 선택
+const MOCK_MEAL_RECORDS = mockMealRecordsWithRecentMeal;
+
+export async function detectMealScene(videoElement) {
   await wait(MOCK_DELAY_MS);
 
-  if (!MOCK_IS_MEAL_SCENE) {
+  // 식사 상황인지 추론
+  const mealSceneResult = await classifyMealScene(videoElement);
+
+  // 식사 상황이 아닌 경우
+  if (!mealSceneResult.isMealScene) {
     return {
       isMealScene: false,
       hasRecentMealRecord: false,
       recentMealRecord: null,
+      predictions: mealSceneResult.predictions,
+      mealRelatedPrediction: mealSceneResult.mealRelatedPrediction,
       card: null,
     };
   }
 
-  const recentMealRecord = findRecentMealRecord(
-    mockMealRecordsWithoutRecentMeal,
-  );
+  // 최근 식사 기록 가져오기
+  const recentMealRecord = findRecentMealRecord(MOCK_MEAL_RECORDS);
 
+  // 최근 식사 기록이 있는 경우
   if (recentMealRecord) {
     return {
       isMealScene: true,
@@ -46,6 +56,7 @@ export async function detectMealScene() {
     };
   }
 
+  // 최근 식사 기록이 없는 경우
   return {
     isMealScene: true,
     hasRecentMealRecord: false,
