@@ -15,6 +15,50 @@ import {
 import { detectMealScene } from "@/features/meal-recognition/api/mealRecognitionApi";
 
 import "./DailyModePage.css";
+const TEST_IMAGE_GROUPS = [
+  {
+    id: "meal",
+    title: "식사 상황 이미지",
+    images: [
+      {
+        id: "meal-1",
+        label: "식사 이미지 1",
+        src: "/meal-test-images/meal-1.jpg",
+      },
+      {
+        id: "meal-2",
+        label: "식사 이미지 2",
+        src: "/meal-test-images/meal-2.jpg",
+      },
+      {
+        id: "my-meal-1",
+        label: "직접 촬영 식사 이미지",
+        src: "/meal-test-images/my-meal-1.jpg",
+      },
+    ],
+  },
+  {
+    id: "non-meal",
+    title: "비식사 상황 이미지",
+    images: [
+      {
+        id: "non-meal-1",
+        label: "비식사 이미지 1",
+        src: "/meal-test-images/non-meal-1.jpg",
+      },
+      {
+        id: "non-meal-2",
+        label: "비식사 이미지 2",
+        src: "/meal-test-images/non-meal-2.jpg",
+      },
+      {
+        id: "my-non-meal-1",
+        label: "직접 촬영 비식사 이미지",
+        src: "/meal-test-images/my-non-meal-1.jpg",
+      },
+    ],
+  },
+];
 
 export default function DailyModePage() {
   const nav = useNavigate();
@@ -22,6 +66,9 @@ export default function DailyModePage() {
   // CameraPreview 내부의 video 요소를 저장
   // 식사 인식 버튼 클릭 시 현재 카메라 화면을 MobileNet에 전달하기 위해 사용
   const cameraVideoElementRef = useRef(null);
+
+  // 테스트용 이미지
+  const testImageElementRef = useRef(null);
 
   const [mealRecognitionResult, setMealRecognitionResult] = useState(null);
 
@@ -31,6 +78,33 @@ export default function DailyModePage() {
     startPersonRecognition,
     startMealRecognition,
   } = useRecognitionState();
+
+  // 테스트용 식사 인식 이미지 분류 함수
+  const handleTestImageMealRecognition = (imageSrc) => {
+    startMealRecognition();
+    setMealRecognitionResult(null);
+
+    const imageElement = testImageElementRef.current;
+
+    if (!imageElement) {
+      console.log("테스트 이미지 요소가 준비되지 않았어요.");
+      return;
+    }
+
+    imageElement.onload = async () => {
+      const response = await detectMealScene(imageElement);
+
+      if (!response.isMealScene) {
+        console.log("식사 상황으로 인식되지 않았어요.", response.predictions);
+        setMealRecognitionResult(null);
+        return;
+      }
+
+      setMealRecognitionResult(response.card);
+    };
+
+    imageElement.src = imageSrc;
+  };
 
   // CameraPreview에서 준비된 video 요소를 받아 ref에 저장
   const handleVideoElementReady = (videoElement) => {
@@ -125,6 +199,28 @@ export default function DailyModePage() {
         onPersonRecognition={startPersonRecognition}
         onMealRecognition={handleMealRecognition}
       />
+
+      <section className="daily-mode-page__test-panel">
+        <p>개발용 이미지 테스트</p>
+
+        {TEST_IMAGE_GROUPS.map((group) => (
+          <div key={group.id} className="daily-mode-page__test-group">
+            <p>{group.title}</p>
+
+            {group.images.map((image) => (
+              <button
+                key={image.id}
+                type="button"
+                onClick={() => handleTestImageMealRecognition(image.src)}
+              >
+                {image.label}
+              </button>
+            ))}
+          </div>
+        ))}
+      </section>
+
+      <img ref={testImageElementRef} alt="" style={{ display: "none" }} />
 
       <RecognitionStatusToast message={statusMessage} />
 

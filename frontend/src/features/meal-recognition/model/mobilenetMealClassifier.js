@@ -15,8 +15,6 @@ const MEAL_RELATED_KEYWORDS = [
   "spoon",
   "fork",
   "knife",
-  "dining",
-  "restaurant",
   "tray",
   "banana",
   "orange",
@@ -24,9 +22,15 @@ const MEAL_RELATED_KEYWORDS = [
   "hotdog",
   "sandwich",
   "ice cream",
+  "corn",
+  "dough",
+  "meat loaf",
+  "bagel",
+  "loaf",
+  "crab",
 ];
 
-const MEAL_CONFIDENCE_THRESHOLD = 0.2;
+const MEAL_TOTAL_CONFIDENCE_THRESHOLD = 0.25;
 
 let mobilenetModel = null;
 
@@ -65,17 +69,26 @@ export async function classifyMealScene(srcElement) {
 
   console.log("MobileNet predictions:", predictions);
 
-  // 식사 관련 라벨을 포함하고 confidence threshold를 넘는 예측
-  const mealRelatedPrediction = predictions.find((prediction) => {
-    return (
-      prediction.probability >= MEAL_CONFIDENCE_THRESHOLD &&
-      isMealRelatedPrediction(prediction)
-    );
+  // 식사 관련 라벨을 포함하고 관련 라벨의 probability의 누적합이
+  // confidence threshold를 넘는 예측
+  const mealRelatedPredictions = predictions.filter((prediction) => {
+    return isMealRelatedPrediction(prediction);
   });
 
+  const mealRelatedScore = mealRelatedPredictions.reduce(
+    (total, prediction) => {
+      return total + prediction.probability;
+    },
+    0,
+  );
+
+  const isMealScene = mealRelatedScore >= MEAL_TOTAL_CONFIDENCE_THRESHOLD;
+
   return {
-    isMealScene: Boolean(mealRelatedPrediction),
+    isMealScene,
     predictions,
-    mealRelatedPrediction: mealRelatedPrediction || null,
+    mealRelatedPredictions,
+    mealRelatedScore,
+    mealRelatedPrediction: mealRelatedPredictions[0] || null,
   };
 }
