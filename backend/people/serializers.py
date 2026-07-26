@@ -2,7 +2,7 @@ import math
 
 from rest_framework import serializers
 
-from .models import Person
+from .models import Conversation, Memory, Person
 
 
 class PersonSerializer(serializers.ModelSerializer):
@@ -38,3 +38,49 @@ class PersonSerializer(serializers.ModelSerializer):
             )
 
         return normalized_value
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Conversation
+        fields = [
+            'id',
+            'person',
+            'transcript',
+            'status',
+            'recorded_at',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class MemorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Memory
+        fields = [
+            'id',
+            'person',
+            'conversation',
+            'recap',
+            'memory_at',
+            'verified_at',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        person = attrs.get('person') or getattr(self.instance, 'person', None)
+        conversation = attrs.get('conversation') or getattr(
+            self.instance,
+            'conversation',
+            None,
+        )
+
+        if person and conversation and conversation.person_id != person.id:
+            raise serializers.ValidationError(
+                'memory의 person과 conversation의 person이 같아야 합니다.',
+            )
+
+        return attrs
