@@ -3,7 +3,7 @@ import {
   mockMealRecordsWithRecentMeal,
   mockMealRecordsWithoutRecentMeal,
 } from "../data/mockMealRecords";
-import { classifyMealScene } from "../model/mobilenetMealClassifier";
+import { classifyMealScene } from "../model/teachableMachineMealClassifier";
 import { findRecentMealRecord } from "../utils/mealRecordUtils";
 
 const MOCK_DELAY_MS = 1000;
@@ -16,7 +16,7 @@ const wait = (ms) => {
 
 // 현재 테스트에 사용할 mock 식사 기록 데이터
 // mockMealRecordsEmpty, mockMealRecordsWithRecentMeal, mockMealRecordsWithoutRecentMeal 중 선택
-const MOCK_MEAL_RECORDS = mockMealRecordsWithRecentMeal;
+const MOCK_MEAL_RECORDS = mockMealRecordsWithoutRecentMeal;
 
 export async function detectMealScene(videoElement) {
   await wait(MOCK_DELAY_MS);
