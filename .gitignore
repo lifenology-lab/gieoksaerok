@@ -43,3 +43,14 @@ lerna-debug.log*
 
 # Test Images
 frontend/public/meal-test-images/
+
+# ML
+ml/dataset/
+ml/raw/
+ml/models/
+
+# ML converter
+ml-convert-env
+
+# Teachable Machine
+tm/
