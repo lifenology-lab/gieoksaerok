@@ -10,11 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-import os
 from pathlib import Path
-import environ
 
-from dotenv import load_dotenv
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -135,9 +133,14 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
 ]
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-OPENAI_TRANSCRIPTION_MODEL = os.getenv(
+OPENAI_API_KEY = env('OPENAI_API_KEY', default=None)
+OPENAI_TRANSCRIPTION_MODEL = env(
     'OPENAI_TRANSCRIPTION_MODEL',
-    'gpt-4o-mini-transcribe',
+    default='gpt-4o-mini-transcribe',
 )
-OPENAI_TRANSCRIPTION_LANGUAGE = os.getenv('OPENAI_TRANSCRIPTION_LANGUAGE', 'ko')
+OPENAI_TRANSCRIPTION_LANGUAGE = env('OPENAI_TRANSCRIPTION_LANGUAGE', default='ko')
+OPENAI_MEMORY_SUMMARY_MODEL = env('OPENAI_MEMORY_SUMMARY_MODEL', default='gpt-4o')
+OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS = env.int(
+    'OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS',
+    default=700,
+)

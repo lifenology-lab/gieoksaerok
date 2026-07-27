@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -8,12 +9,24 @@ from rest_framework.views import APIView
 
 from .models import Conversation, Memory, Person
 from .serializers import ConversationSerializer, MemorySerializer, PersonSerializer
-from .services import OpenAITranscriptionError, transcribe_audio_file
+from .services import (
+    OpenAIMemorySummaryError,
+    OpenAITranscriptionError,
+    build_transcription_prompt,
+    generate_memory_recap,
+    transcribe_audio_file,
+)
 
 
 class PersonListCreateView(APIView):
     def get(self, request):
-        people = Person.objects.all()
+        people = Person.objects.prefetch_related(
+            Prefetch(
+                'memories',
+                queryset=Memory.objects.order_by('-memory_at', '-created_at'),
+                to_attr='prefetched_latest_memories',
+            ),
+        )
         serializer = PersonSerializer(people, many=True)
         return Response(serializer.data)
 
@@ -57,7 +70,16 @@ class ConversationTranscriptionCreateView(APIView):
             )
 
         person = get_object_or_404(Person, pk=person_id)
-        prompt = request.data.get('prompt') or None
+        latest_memory = (
+            Memory.objects.filter(person=person)
+            .order_by('-memory_at', '-created_at')
+            .first()
+        )
+        prompt = build_transcription_prompt(
+            person,
+            latest_memory=latest_memory,
+            extra_prompt=request.data.get('prompt') or None,
+        )
         recorded_at = timezone.now()
 
         if request.data.get('recorded_at'):
@@ -85,9 +107,36 @@ class ConversationTranscriptionCreateView(APIView):
             status=Conversation.STATUS_RECORDED,
             recorded_at=recorded_at,
         )
-        serializer = ConversationSerializer(conversation)
+        memory = None
+        memory_error = None
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            recap = generate_memory_recap(
+                person=person,
+                transcript=transcript,
+                previous_memory=latest_memory,
+            )
+            memory = Memory.objects.create(
+                person=person,
+                conversation=conversation,
+                recap=recap,
+                memory_at=recorded_at,
+            )
+            conversation.status = Conversation.STATUS_SUMMARIZED
+            conversation.save(update_fields=['status', 'updated_at'])
+        except OpenAIMemorySummaryError as exc:
+            memory_error = str(exc)
+            conversation.status = Conversation.STATUS_FAILED
+            conversation.save(update_fields=['status', 'updated_at'])
+
+        serializer = ConversationSerializer(conversation)
+        data = serializer.data
+        data['memory'] = MemorySerializer(memory).data if memory else None
+
+        if memory_error:
+            data['memory_error'] = memory_error
+
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class MemoryListCreateView(APIView):

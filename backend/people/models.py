@@ -78,6 +78,12 @@ class Memory(TimeStampedModel):
     class Meta:
         db_table = 'memories'
         ordering = ['-memory_at', '-created_at']
+        indexes = [
+            models.Index(
+                fields=['person', '-memory_at'],
+                name='memory_person_recent_idx',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.person.name} memory at {self.memory_at:%Y-%m-%d %H:%M}'
