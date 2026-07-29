@@ -14,6 +14,8 @@ import {
 } from "@/features/meal-recognition/components";
 import { detectMealScene } from "@/features/meal-recognition/api/mealRecognitionApi";
 
+import { mockMealRecordsEmpty } from "../../../features/meal-recognition/data/mockMealRecords";
+
 import "./DailyModePage.css";
 const TEST_IMAGE_GROUPS = [
   {
@@ -71,6 +73,7 @@ export default function DailyModePage() {
   const testImageElementRef = useRef(null);
 
   const [mealRecognitionResult, setMealRecognitionResult] = useState(null);
+  const [mealRecords, setMealRecords] = useState(mockMealRecordsEmpty);
 
   const {
     activeRecognitionType,
@@ -92,7 +95,7 @@ export default function DailyModePage() {
     }
 
     imageElement.onload = async () => {
-      const response = await detectMealScene(imageElement);
+      const response = await detectMealScene(imageElement, mealRecords);
 
       if (!response.isMealScene) {
         console.log("식사 상황으로 인식되지 않았어요.", response.predictions);
@@ -121,10 +124,13 @@ export default function DailyModePage() {
     }
 
     // 현재 카메라 화면을 MobileNet 기반 식사 인식 API에 전달
-    const response = await detectMealScene(cameraVideoElementRef.current);
+    const response = await detectMealScene(
+      cameraVideoElementRef.current,
+      mealRecords,
+    );
 
-    // 식사 상황이 아닌 경우 별도 안내 없이 종료
-    if (!response.isMealScene) {
+    // 식사 안내 카드를 띄우지 않아도 되는 경우 카드를 표시하지 않음
+    if (!response.card) {
       setMealRecognitionResult(null);
       return;
     }
@@ -153,14 +159,17 @@ export default function DailyModePage() {
     // 최근 식사 기록 없이 식사가 인식된 경우
     if (mealRecognitionResult.type === "meal_detected_without_record") {
       const newMealRecord = {
+        id: crypto.randomUUID(),
         mealType: "unknown",
         mealLabel: "식사",
         eatenAt: new Date().toISOString(),
-        createdBy: "patient",
-        detectionSource: "mobilenet_rule", // TODO: fine-tuning 모델 연결 후 source 정리
+        source: "patient_confriemd",
+        detectionSource: "teachable_machine",
         menu: null,
         memo: "환자가 기록한 식사",
       };
+
+      setMealRecords((prevMealRecords) => [newMealRecord, ...prevMealRecords]);
 
       console.log("환자 식사 기록 생성:", newMealRecord);
 
