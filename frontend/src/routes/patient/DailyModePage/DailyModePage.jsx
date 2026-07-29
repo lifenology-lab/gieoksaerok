@@ -67,7 +67,17 @@ const TEST_IMAGE_GROUPS = [
   },
 ];
 
-const MEAL_RECOGNITION_INTERVAL_MS = 3000;
+const MEAL_RECOGNITION_INTERVAL_MS = 5000;
+
+const MOCK_PATIENT_ID = "mock-patient-1"; // 임시 아이디
+
+const MEAL_CONTEXT_USER_ACTIONS = {
+  NONE: "none",
+  VIEW_RECORD: "view_record",
+  CREATE_RECORD: "create_record",
+  DISMISS: "dismiss",
+  CONFIRM: "confirm",
+};
 
 export default function DailyModePage() {
   const nav = useNavigate();
@@ -95,10 +105,6 @@ export default function DailyModePage() {
   } = useRecognitionState();
 
   const isMealRecognitionActive = activeRecognitionType === "meal";
-  console.log("렌더링 확인:", {
-    activeRecognitionType,
-    isMealRecognitionActive,
-  });
 
   useEffect(() => {
     mealRecordsRef.current = mealRecords;
@@ -130,6 +136,57 @@ export default function DailyModePage() {
       window.clearInterval(intervalId);
     };
   }, [isMealRecognitionActive]);
+
+  // 식사 맥락 이벤트 payload를 만드는 함수
+  const buildMealContextEventPayload = ({
+    response = null,
+    contextResult = null,
+    userAction = MEAL_CONTEXT_USER_ACTIONS.NONE,
+  }) => {
+    const recentMealRecord =
+      response?.recentMealRecord || contextResult?.mealRecord || null;
+
+    const contextResultType =
+      response?.type || contextResult?.type || "unknown";
+
+    const didRunModel = Boolean(response);
+
+    return {
+      patient_id: MOCK_PATIENT_ID,
+      recent_meal_record_id: recentMealRecord?.id || null,
+      detected_at: new Date().toISOString(),
+
+      // 모델 추론을 실행한 경우에만 true/false 값을 저장
+      // 최근 식사 기록 때문에 추론을 건너뛴 경우에는 null
+      is_meal_scene: didRunModel ? response.isMealScene : null,
+
+      // 모델 추론을 실행한 경우에만 확률 값을 저장
+      // 추론을 건너뛴 경우에는 null
+      meal_scene_probability: didRunModel
+        ? (response.mealSceneProbability ?? null)
+        : null,
+
+      context_result: contextResultType,
+      user_action: userAction,
+    };
+  };
+
+  // 식사 맥락 관련 유저의 행동 payload를 만드는 함수
+  const buildMealContextActionPayload = ({
+    contextResult,
+    recentMealRecordId = null,
+    userAction,
+  }) => {
+    return {
+      patient_id: MOCK_PATIENT_ID,
+      recent_meal_record_id: recentMealRecordId,
+      detected_at: new Date().toISOString(),
+      is_meal_scene: null,
+      meal_scene_probability: null,
+      context_result: contextResult,
+      user_action: userAction,
+    };
+  };
 
   // 테스트용 식사 인식 이미지 분류 함수
   const handleTestImageMealRecognition = (imageSrc) => {
@@ -195,17 +252,26 @@ export default function DailyModePage() {
       return;
     }
 
-    // 식사 기록 기반 식사 맥락 가져오기
     const mealContextResult = getMealContextResult(mealRecordsRef.current);
 
-    // 최근 1시간 이내 식사 기록이 있는 경우 식사 장면 추론을 하지 않음
+    console.log("식사 기록 기반 맥락 판단:", mealContextResult);
+
+    // 최근 1시간 이내 식사 기록이 있는 경우 모델 추론을 하지 않음
     if (
       mealContextResult.type ===
       MEAL_CONTEXT_RESULT_TYPES.MEAL_NOTICE_SUPPRESSED
     ) {
+      const payload = buildMealContextEventPayload({
+        response: null,
+        contextResult: mealContextResult,
+        userAction: MEAL_CONTEXT_USER_ACTIONS.NONE,
+      });
+
+      console.log("MealContextEvent payload:", payload);
       console.log(
-        `최근 식사 기록이 ${mealContextResult.elapsedMinutes}분 전에 있어 식사 인식을 건너 뜁니다.`,
+        `최근 식사 기록이 ${mealContextResult.elapsedMinutes}분 전에 있어 식사 인식을 건너뜁니다.`,
       );
+
       return;
     }
 
@@ -224,6 +290,14 @@ export default function DailyModePage() {
 
       console.log("식사 인식 결과:", response);
 
+      const payload = buildMealContextEventPayload({
+        response,
+        contextResult: null,
+        userAction: MEAL_CONTEXT_USER_ACTIONS.NONE,
+      });
+
+      console.log("MealContextEvent payload:", payload);
+
       // 보여줄 카드가 없는 경우 종료
       if (!response.card) {
         setMealRecognitionResult(null);
@@ -240,6 +314,20 @@ export default function DailyModePage() {
   };
 
   const handleCloseMealRecognition = () => {
+    if (mealRecognitionResult) {
+      const userAction =
+        mealRecognitionResult.type === "meal_record_completed"
+          ? MEAL_CONTEXT_USER_ACTIONS.CONFIRM
+          : MEAL_CONTEXT_USER_ACTIONS.DISMISS;
+
+      const actionPayload = buildMealContextActionPayload({
+        contextResult: mealRecognitionResult.type,
+        userAction,
+      });
+
+      console.log("MealContextEvent action payload:", actionPayload);
+    }
+
     setMealRecognitionResult(null);
   };
 
@@ -251,23 +339,49 @@ export default function DailyModePage() {
 
     // 최근 식사 기록이 있는데 식사가 인식된 경우
     if (mealRecognitionResult.type === "recent_meal_found") {
-      // TODO: DB 연결 후 DB 기록 보여주기
+      const actionPayload = buildMealContextActionPayload({
+        contextResult: mealRecognitionResult.type,
+        userAction: MEAL_CONTEXT_USER_ACTIONS.VIEW_RECORD,
+      });
+
+      console.log("MealContextEvent action payload:", actionPayload);
       console.log("식사 기록 보기");
       return;
     }
 
     // 최근 식사 기록 없이 식사가 인식된 경우
     if (mealRecognitionResult.type === "meal_detected_without_record") {
+      const now = new Date().toISOString();
+
       const newMealRecord = {
         id: crypto.randomUUID(),
         mealType: "unknown",
         mealLabel: "식사",
-        eatenAt: new Date().toISOString(),
+        eatenAt: now,
         source: "patient_confirmed",
         detectionSource: "teachable_machine",
         menu: null,
         memo: "환자가 기록한 식사",
       };
+
+      const actionPayload = buildMealContextActionPayload({
+        contextResult: mealRecognitionResult.type,
+        userAction: MEAL_CONTEXT_USER_ACTIONS.CREATE_RECORD,
+      });
+
+      console.log("MealContextEvent action payload:", actionPayload);
+
+      // BE용 객체
+      const mealRecordPayload = {
+        patient_id: MOCK_PATIENT_ID,
+        meal_type: "unknown",
+        eaten_at: now,
+        source: "patient_confirmed",
+        menu: null,
+        memo: "환자가 기록한 식사",
+      };
+
+      console.log("MealRecord payload:", mealRecordPayload);
 
       setMealRecords((prevMealRecords) => [newMealRecord, ...prevMealRecords]);
 
@@ -287,6 +401,13 @@ export default function DailyModePage() {
 
     // 식사 기록이 완료된 경우
     if (mealRecognitionResult.type === "meal_record_completed") {
+      const actionPayload = buildMealContextActionPayload({
+        contextResult: mealRecognitionResult.type,
+        userAction: MEAL_CONTEXT_USER_ACTIONS.CONFIRM,
+      });
+
+      console.log("MealContextEvent action payload:", actionPayload);
+
       setMealRecognitionResult(null);
     }
   };
