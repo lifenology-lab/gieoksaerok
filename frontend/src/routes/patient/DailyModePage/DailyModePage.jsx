@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { CameraPreview } from "@/features/camera/components";
@@ -14,7 +14,12 @@ import {
 } from "@/features/meal-recognition/components";
 import { detectMealScene } from "@/features/meal-recognition/api/mealRecognitionApi";
 
-import { mockMealRecordsEmpty } from "../../../features/meal-recognition/data/mockMealRecords";
+import { mockMealRecordsEmpty } from "@/features/meal-recognition/data/mockMealRecords";
+
+import {
+  getMealContextResult,
+  MEAL_CONTEXT_RESULT_TYPES,
+} from "@/features/meal-recognition/utils/mealRecordUtils";
 
 import "./DailyModePage.css";
 const TEST_IMAGE_GROUPS = [
@@ -62,6 +67,8 @@ const TEST_IMAGE_GROUPS = [
   },
 ];
 
+const MEAL_RECOGNITION_INTERVAL_MS = 3000;
+
 export default function DailyModePage() {
   const nav = useNavigate();
 
@@ -75,12 +82,54 @@ export default function DailyModePage() {
   const [mealRecognitionResult, setMealRecognitionResult] = useState(null);
   const [mealRecords, setMealRecords] = useState(mockMealRecordsEmpty);
 
+  const mealRecordsRef = useRef(mealRecords);
+  const mealRecognitionResultRef = useRef(mealRecognitionResult);
+  const isMealRecognitionRunningRef = useRef(false);
+
   const {
     activeRecognitionType,
     statusMessage,
     startPersonRecognition,
     startMealRecognition,
+    clearRecognition,
   } = useRecognitionState();
+
+  const isMealRecognitionActive = activeRecognitionType === "meal";
+  console.log("렌더링 확인:", {
+    activeRecognitionType,
+    isMealRecognitionActive,
+  });
+
+  useEffect(() => {
+    mealRecordsRef.current = mealRecords;
+  }, [mealRecords]);
+
+  useEffect(() => {
+    mealRecognitionResultRef.current = mealRecognitionResult;
+  }, [mealRecognitionResult]);
+
+  // 식사 인식이 활성화된 경우 즉시 1회 분석, 이후 정해진 간격마다 분석
+  // 식사 인식이 비활성화된 경우 interval을 종료하고 식사 인식 중단
+  useEffect(() => {
+    console.log("interval useEffect 진입:", isMealRecognitionActive);
+    if (!isMealRecognitionActive) {
+      return;
+    }
+
+    console.log("주기적 식사 인식을 시작합니다.");
+
+    runMealRecognitionCheck();
+
+    const intervalId = window.setInterval(() => {
+      console.log("식사 인식 interval tick");
+      runMealRecognitionCheck();
+    }, MEAL_RECOGNITION_INTERVAL_MS);
+
+    return () => {
+      console.log("주기적 식사 인식을 중단합니다.");
+      window.clearInterval(intervalId);
+    };
+  }, [isMealRecognitionActive]);
 
   // 테스트용 식사 인식 이미지 분류 함수
   const handleTestImageMealRecognition = (imageSrc) => {
@@ -114,29 +163,80 @@ export default function DailyModePage() {
     cameraVideoElementRef.current = videoElement;
   };
 
-  const handleMealRecognition = async () => {
+  // 식사 인식 활성화/비활성화 토글
+  const handleMealRecognitionToggle = () => {
+    if (isMealRecognitionActive) {
+      clearRecognition();
+      setMealRecognitionResult(null);
+      console.log("식사 인식 비활성화");
+      return;
+    }
+
     startMealRecognition();
     setMealRecognitionResult(null);
+    console.log("식사 인식 활성화");
+  };
+
+  // 식사 인식 수행, 결과에 따라 반복 식사 안내 / 식사 기록 카드 보여주기
+  const runMealRecognitionCheck = async () => {
+    console.log("식사 인식 확인 시작");
+
+    if (isMealRecognitionRunningRef.current) {
+      console.log(
+        "식사 인식이 이미 진행 중이에요. 추가 식사 확인은 진행하지 않을게요.",
+      );
+      return;
+    }
+
+    if (mealRecognitionResultRef.current) {
+      console.log(
+        "식사 안내 카드가 표시 중이에요. 추가 식사 확인은 진행하지 않을게요.",
+      );
+      return;
+    }
+
+    // 식사 기록 기반 식사 맥락 가져오기
+    const mealContextResult = getMealContextResult(mealRecordsRef.current);
+
+    // 최근 1시간 이내 식사 기록이 있는 경우 식사 장면 추론을 하지 않음
+    if (
+      mealContextResult.type ===
+      MEAL_CONTEXT_RESULT_TYPES.MEAL_NOTICE_SUPPRESSED
+    ) {
+      console.log(
+        `최근 식사 기록이 ${mealContextResult.elapsedMinutes}분 전에 있어 식사 인식을 건너 뜁니다.`,
+      );
+      return;
+    }
 
     if (!cameraVideoElementRef.current) {
-      console.log("카메라 요소가 아직 준비되지 않았어요.");
+      console.log("카메라 video 요소가 아직 준비되지 않았어요.");
       return;
     }
 
-    // 현재 카메라 화면을 MobileNet 기반 식사 인식 API에 전달
-    const response = await detectMealScene(
-      cameraVideoElementRef.current,
-      mealRecords,
-    );
+    isMealRecognitionRunningRef.current = true;
 
-    // 식사 안내 카드를 띄우지 않아도 되는 경우 카드를 표시하지 않음
-    if (!response.card) {
-      setMealRecognitionResult(null);
-      return;
+    try {
+      const response = await detectMealScene(
+        cameraVideoElementRef.current,
+        mealRecordsRef.current,
+      );
+
+      console.log("식사 인식 결과:", response);
+
+      // 보여줄 카드가 없는 경우 종료
+      if (!response.card) {
+        setMealRecognitionResult(null);
+        return;
+      }
+
+      // 식사 인식 결과에 따른 안내 (반복 식사 / 식사 기록)
+      setMealRecognitionResult(response.card);
+    } catch (error) {
+      console.error("식사 인식 중 문제가 발생했어요:", error);
+    } finally {
+      isMealRecognitionRunningRef.current = false;
     }
-
-    // 식사 상황인 경우 최근 식사 기록 여부에 따라 카드 표시
-    setMealRecognitionResult(response.card);
   };
 
   const handleCloseMealRecognition = () => {
@@ -163,7 +263,7 @@ export default function DailyModePage() {
         mealType: "unknown",
         mealLabel: "식사",
         eatenAt: new Date().toISOString(),
-        source: "patient_confriemd",
+        source: "patient_confirmed",
         detectionSource: "teachable_machine",
         menu: null,
         memo: "환자가 기록한 식사",
@@ -206,7 +306,7 @@ export default function DailyModePage() {
       <RecognitionToggleGroup
         activeRecognitionType={activeRecognitionType}
         onPersonRecognition={startPersonRecognition}
-        onMealRecognition={handleMealRecognition}
+        onMealRecognition={handleMealRecognitionToggle}
       />
 
       <section className="daily-mode-page__test-panel">
