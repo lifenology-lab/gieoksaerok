@@ -31,6 +31,8 @@ const CONFUSION_OPTIONS = [
   },
 ];
 
+const MOCK_PATIENT_ID = "mock-patient-1";
+
 const createInitialConfusionCounts = () => {
   return CONFUSION_OPTIONS.reduce((counts, option) => {
     counts[option.id] = 0;
@@ -52,11 +54,18 @@ export default function ConfusionSelectPage() {
         [confusionType]: prevCounts[confusionType] + 1,
       };
 
-      console.log("혼동 영역 선택:", confusionType);
       console.log("현재 혼동 횟수:", nextCounts);
 
       return nextCounts;
     });
+
+    const payload = {
+      patient_id: MOCK_PATIENT_ID,
+      confusion_type: confusionType,
+      occurred_at: new Date().toISOString(),
+    };
+
+    console.log("ConfusionEvent payload:", payload);
   };
 
   const handleBack = () => {
