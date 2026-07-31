@@ -4,6 +4,7 @@ from .views import (
     ConversationListCreateView,
     ConversationTranscriptionCreateView,
     MemoryListCreateView,
+    PatientVoiceProfileView,
     PersonListCreateView,
 )
 
@@ -20,5 +21,10 @@ urlpatterns = [
         name='conversation-transcription-create',
     ),
     path('memories/', MemoryListCreateView.as_view(), name='memory-list-create'),
+    path(
+        'patient-voice/',
+        PatientVoiceProfileView.as_view(),
+        name='patient-voice-profile',
+    ),
     path('people/', PersonListCreateView.as_view(), name='person-list-create'),
 ]

@@ -16,6 +16,7 @@ class Person(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=80)
     relationship = models.CharField(max_length=80)
+    core_memory = models.JSONField(default=dict, blank=True)
     face_descriptor = models.JSONField()
 
     class Meta:
@@ -44,6 +45,7 @@ class Conversation(TimeStampedModel):
         related_name='conversations',
     )
     transcript = models.TextField()
+    speaker_segments = models.JSONField(default=list, blank=True)
     status = models.CharField(
         max_length=32,
         choices=STATUS_CHOICES,
@@ -57,6 +59,24 @@ class Conversation(TimeStampedModel):
 
     def __str__(self):
         return f'{self.person.name} conversation at {self.recorded_at:%Y-%m-%d %H:%M}'
+
+
+class PatientVoiceProfile(TimeStampedModel):
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    speaker_name = models.CharField(max_length=80, default='환자')
+    audio_data = models.BinaryField()
+    audio_content_type = models.CharField(max_length=100, default='audio/webm')
+    audio_filename = models.CharField(max_length=160, blank=True, default='')
+
+    class Meta:
+        db_table = 'patient_voice_profiles'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.speaker_name} voice profile'
 
 
 class Memory(TimeStampedModel):

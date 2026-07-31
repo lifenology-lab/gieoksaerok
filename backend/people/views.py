@@ -7,15 +7,36 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Conversation, Memory, Person
+from .models import Conversation, Memory, PatientVoiceProfile, Person
 from .serializers import ConversationSerializer, MemorySerializer, PersonSerializer
 from .services import (
     OpenAIMemorySummaryError,
     OpenAITranscriptionError,
+    RECENT_MEMORY_LIMIT,
     build_transcription_prompt,
     generate_memory_recap,
     transcribe_audio_file,
 )
+
+
+MAX_PATIENT_VOICE_SAMPLE_BYTES = 10 * 1024 * 1024
+
+
+def patient_voice_profile_response(profile):
+    if not profile:
+        return {
+            'is_registered': False,
+            'speaker_name': '환자',
+            'updated_at': None,
+        }
+
+    return {
+        'is_registered': True,
+        'speaker_name': profile.speaker_name,
+        'audio_content_type': profile.audio_content_type,
+        'audio_filename': profile.audio_filename,
+        'updated_at': profile.updated_at,
+    }
 
 
 class PersonListCreateView(APIView):
@@ -70,14 +91,13 @@ class ConversationTranscriptionCreateView(APIView):
             )
 
         person = get_object_or_404(Person, pk=person_id)
-        latest_memory = (
+        recent_memories = list(
             Memory.objects.filter(person=person)
-            .order_by('-memory_at', '-created_at')
-            .first()
+            .order_by('-memory_at', '-created_at')[:RECENT_MEMORY_LIMIT],
         )
         prompt = build_transcription_prompt(
             person,
-            latest_memory=latest_memory,
+            recent_memories=recent_memories,
             extra_prompt=request.data.get('prompt') or None,
         )
         recorded_at = timezone.now()
@@ -94,16 +114,30 @@ class ConversationTranscriptionCreateView(APIView):
             recorded_at = parsed_recorded_at
 
         try:
-            transcript = transcribe_audio_file(audio_file, prompt=prompt)
+            patient_voice_profile = PatientVoiceProfile.objects.first()
+            transcription = transcribe_audio_file(
+                audio_file,
+                prompt=prompt,
+                person=person,
+                patient_voice_profile=patient_voice_profile,
+            )
         except OpenAITranscriptionError as exc:
             return Response(
                 {'detail': str(exc)},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
+        if isinstance(transcription, str):
+            transcript = transcription
+            speaker_segments = []
+        else:
+            transcript = transcription.transcript
+            speaker_segments = transcription.speaker_segments
+
         conversation = Conversation.objects.create(
             person=person,
             transcript=transcript,
+            speaker_segments=speaker_segments,
             status=Conversation.STATUS_RECORDED,
             recorded_at=recorded_at,
         )
@@ -114,7 +148,7 @@ class ConversationTranscriptionCreateView(APIView):
             recap = generate_memory_recap(
                 person=person,
                 transcript=transcript,
-                previous_memory=latest_memory,
+                recent_memories=recent_memories,
             )
             memory = Memory.objects.create(
                 person=person,
@@ -150,3 +184,52 @@ class MemoryListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PatientVoiceProfileView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        profile = PatientVoiceProfile.objects.first()
+        return Response(patient_voice_profile_response(profile))
+
+    def post(self, request):
+        audio_file = request.FILES.get('audio')
+
+        if not audio_file:
+            return Response(
+                {'detail': 'audio 파일이 필요합니다.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if audio_file.size > MAX_PATIENT_VOICE_SAMPLE_BYTES:
+            return Response(
+                {'detail': '환자 목소리 샘플은 10MB 이하로 등록해주세요.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        audio_data = b''.join(audio_file.chunks())
+
+        if not audio_data:
+            return Response(
+                {'detail': '녹음된 오디오가 비어 있습니다.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile, created = PatientVoiceProfile.objects.update_or_create(
+            id=1,
+            defaults={
+                'speaker_name': request.data.get('speaker_name') or '환자',
+                'audio_data': audio_data,
+                'audio_content_type': audio_file.content_type or 'audio/webm',
+                'audio_filename': audio_file.name or '',
+            },
+        )
+        return Response(
+            patient_voice_profile_response(profile),
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    def delete(self, request):
+        PatientVoiceProfile.objects.all().delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

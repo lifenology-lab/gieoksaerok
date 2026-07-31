@@ -1,9 +1,12 @@
 import CameraPermissionNotice from "./CameraPermissionNotice";
-import useCamera from "../hooks/useCamera";
 
-export default function CameraPreview() {
-  const { videoRef, isCameraReady, cameraError, startCamera } = useCamera();
-
+export default function CameraPreview({
+  videoRef,
+  isCameraReady,
+  cameraError,
+  startCamera,
+  children,
+}) {
   if (cameraError) {
     return (
       <section className="daily-mode-page__camera-area">
@@ -23,6 +26,8 @@ export default function CameraPreview() {
         muted
         className="daily-mode-page__camera-video"
       />
+
+      {children}
     </section>
   );
 }
