@@ -2,9 +2,10 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .request_serializers import SignUpRequestSerializer
-from .serializers import UserSerializer
+from .serializers import UserSerializer, SignInSerializer
 
 User = get_user_model()
 
@@ -44,3 +45,6 @@ class SignUpView(APIView):
         response_serializer = UserSerializer(user)
 
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+class SignInView(TokenObtainPairView):
+    serializer_class = SignInSerializer
