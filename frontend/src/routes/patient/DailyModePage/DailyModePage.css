@@ -240,6 +240,11 @@
   font-weight: 700;
 }
 
+.daily-mode-page__face-memory-question {
+  color: #b9f7d0;
+  font-weight: 700;
+}
+
 .daily-mode-page__dialog-backdrop {
   position: absolute;
   inset: 0;

@@ -6,7 +6,14 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import Conversation, Memory, PatientVoiceProfile, Person
+from .models import (
+    Conversation,
+    LongTermMemory,
+    Memory,
+    PatientVoiceProfile,
+    Person,
+    PersonSummary,
+)
 from .services import (
     OpenAIMemorySummaryError,
     TranscriptionResult,
@@ -107,12 +114,16 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             face_descriptor=face_descriptor(),
         )
 
+    @mock.patch('people.views.generate_person_display_summary')
+    @mock.patch('people.views.extract_long_term_memories')
     @mock.patch('people.views.generate_memory_recap')
     @mock.patch('people.views.transcribe_audio_file')
     def test_transcription_creates_conversation_and_memory(
         self,
         mock_transcribe_audio_file,
         mock_generate_memory_recap,
+        mock_extract_long_term_memories,
+        mock_generate_person_display_summary,
     ):
         mock_transcribe_audio_file.return_value = '오늘 병원 예약에 대해 이야기했다.'
         mock_generate_memory_recap.return_value = {
@@ -120,6 +131,24 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             'summary': '아들 지훈과 병원 예약 시간을 확인했습니다.',
             'upcoming_promise': '내일 오전 병원에 가기',
             'key_points': ['내일 오전 병원에 가기로 함'],
+        }
+        mock_extract_long_term_memories.return_value = [
+            {
+                'category': 'career',
+                'title': '삼성전자 근무',
+                'description': '아들 지훈이 삼성전자에 다닙니다.',
+                'event_date': None,
+                'confidence': 0.91,
+                'source_text': '삼성전자에 다녀요.',
+            },
+        ]
+        mock_generate_person_display_summary.return_value = {
+            'display_name': '아들 지훈',
+            'title': '병원 예약',
+            'body': '아들 지훈과 병원 예약 시간을 확인했습니다.',
+            'upcoming_promise': '내일 오전 병원에 가기',
+            'long_term_hint': '삼성전자에 다닙니다.',
+            'suggested_question': '병원 예약 시간을 다시 물어보세요.',
         }
         previous_conversation = Conversation.objects.create(
             person=self.person,
@@ -161,6 +190,16 @@ class ConversationTranscriptionCreateViewTests(TestCase):
         self.assertEqual(conversation.transcript, mock_transcribe_audio_file.return_value)
         self.assertEqual(memory.recap['title'], '병원 예약')
         self.assertEqual(response.json()['memory']['recap']['title'], '병원 예약')
+        self.assertEqual(LongTermMemory.objects.count(), 1)
+        self.assertEqual(
+            response.json()['long_term_memories'][0]['title'],
+            '삼성전자 근무',
+        )
+        self.assertEqual(PersonSummary.objects.count(), 1)
+        self.assertEqual(
+            response.json()['summary']['card']['title'],
+            '병원 예약',
+        )
 
         prompt = mock_transcribe_audio_file.call_args.kwargs['prompt']
         self.assertIn(self.person.name, prompt)
@@ -176,13 +215,29 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             'recent_memories'
         ]
         self.assertEqual(recent_memories, [previous_memory])
+        self.assertEqual(
+            mock_generate_person_display_summary.call_args.kwargs['person'],
+            self.person,
+        )
+        self.assertEqual(
+            len(
+                mock_generate_person_display_summary.call_args.kwargs[
+                    'recent_memories'
+                ],
+            ),
+            2,
+        )
 
+    @mock.patch('people.views.generate_person_display_summary')
+    @mock.patch('people.views.extract_long_term_memories')
     @mock.patch('people.views.generate_memory_recap')
     @mock.patch('people.views.transcribe_audio_file')
     def test_transcription_saves_speaker_segments(
         self,
         mock_transcribe_audio_file,
         mock_generate_memory_recap,
+        mock_extract_long_term_memories,
+        mock_generate_person_display_summary,
     ):
         voice_profile = PatientVoiceProfile.objects.create(
             audio_data=b'patient-voice',
@@ -218,6 +273,15 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             'upcoming_promise': '내일 오전 병원에 같이 가기',
             'key_points': ['내일 오전 병원 동행'],
         }
+        mock_extract_long_term_memories.return_value = []
+        mock_generate_person_display_summary.return_value = {
+            'display_name': '아들 지훈',
+            'title': '병원 약속',
+            'body': '아들 지훈과 병원 약속을 확인했습니다.',
+            'upcoming_promise': '내일 오전 병원에 같이 가기',
+            'long_term_hint': None,
+            'suggested_question': None,
+        }
         audio = SimpleUploadedFile(
             'conversation.webm',
             b'audio-bytes',
@@ -249,6 +313,7 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             mock_transcribe_audio_file.call_args.kwargs['patient_voice_profile'],
             voice_profile,
         )
+        self.assertEqual(PersonSummary.objects.count(), 1)
 
     @mock.patch('people.views.generate_memory_recap')
     @mock.patch('people.views.transcribe_audio_file')
@@ -353,6 +418,21 @@ class PersonListCreateViewTests(TestCase):
             },
             memory_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
         )
+        PersonSummary.objects.create(
+            person=person,
+            conversation=newer_conversation,
+            card={
+                'display_name': '손녀 민서',
+                'title': '최근 기억',
+                'body': '손녀 민서와 최근 이야기를 나눴습니다.',
+                'upcoming_promise': '오늘 저녁 식사',
+                'long_term_hint': '부산에 살고 바이올린을 배웁니다.',
+                'suggested_question': '바이올린 연습을 물어보세요.',
+            },
+            source_memory_ids=[],
+            source_long_term_memory_ids=[],
+            generated_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
+        )
 
         response = self.client.get(reverse('person-list-create'))
 
@@ -364,6 +444,10 @@ class PersonListCreateViewTests(TestCase):
         self.assertEqual(
             response.json()[0]['core_memory']['summary'],
             '부산에 살고 바이올린을 배움',
+        )
+        self.assertEqual(
+            response.json()[0]['latest_summary']['card']['title'],
+            '최근 기억',
         )
 
 

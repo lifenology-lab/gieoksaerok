@@ -23,6 +23,52 @@ class ConversationMemoryRecap(BaseModel):
     )
 
 
+class LongTermMemoryCandidate(BaseModel):
+    category: str = Field(
+        description=(
+            '장기 기억 카테고리. family, birth, marriage, education, career, '
+            'health, death, relationship, other 중 하나'
+        ),
+    )
+    title: str = Field(description='화면/관리자에서 볼 10~20자 안팎의 제목')
+    description: str = Field(description='장기적으로 기억해야 할 사실 1문장')
+    event_date: str | None = Field(
+        default=None,
+        description='명확한 사건 날짜. YYYY-MM-DD 형식으로 알 수 없으면 null',
+    )
+    confidence: float = Field(
+        default=0,
+        ge=0,
+        le=1,
+        description='장기 기억으로 저장할 만한 확신도 0~1',
+    )
+    source_text: str = Field(description='판단 근거가 된 STT 원문 일부')
+
+
+class LongTermMemoryExtraction(BaseModel):
+    items: list[LongTermMemoryCandidate] = Field(
+        description='방금 대화에서 새로 추출한 장기 기억 후보 목록',
+    )
+
+
+class PersonDisplaySummaryCard(BaseModel):
+    display_name: str = Field(description='예: 딸 지민')
+    title: str = Field(description='얼굴 옆에 표시할 10자 안팎의 제목')
+    body: str = Field(description='환자가 바로 이해할 1~2문장 한국어 본문')
+    upcoming_promise: str | None = Field(
+        default=None,
+        description='가장 중요한 다가오는 약속. 없으면 null',
+    )
+    long_term_hint: str | None = Field(
+        default=None,
+        description='관계를 떠올리는 데 도움 되는 장기 기억 한 문장. 없으면 null',
+    )
+    suggested_question: str | None = Field(
+        default=None,
+        description='다음 대화에 자연스럽게 물어볼 짧은 질문. 없으면 null',
+    )
+
+
 class OpenAITranscriptionError(Exception):
     pass
 
@@ -32,6 +78,7 @@ class OpenAIMemorySummaryError(Exception):
 
 
 RECENT_MEMORY_LIMIT = 3
+DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT = 10
 PATIENT_SPEAKER_NAME = '환자'
 
 
@@ -140,6 +187,20 @@ def _memory_for_prompt(memory):
     return {
         'memory_at': memory_at.isoformat() if memory_at else None,
         'recap': _recap_for_prompt(memory.recap),
+    }
+
+
+def _long_term_memory_for_prompt(memory):
+    return {
+        'id': str(memory.id),
+        'category': memory.category,
+        'title': memory.title,
+        'description': memory.description,
+        'event_date': memory.event_date.isoformat() if memory.event_date else None,
+        'status': memory.status,
+        'confidence': memory.confidence,
+        'source_text': memory.source_text,
+        'created_at': memory.created_at.isoformat() if memory.created_at else None,
     }
 
 
@@ -413,6 +474,128 @@ def generate_memory_recap(
     except Exception as exc:
         raise OpenAIMemorySummaryError(
             'OpenAI 대화 요약 요청에 실패했습니다.',
+        ) from exc
+
+    parsed = _extract_parsed_memory(response)
+
+    if hasattr(parsed, 'model_dump'):
+        return parsed.model_dump()
+
+    return dict(parsed)
+
+
+def extract_long_term_memories(person, transcript):
+    client = _get_openai_client(OpenAIMemorySummaryError)
+    instructions = (
+        'You are an expert memory curator for a dementia support app. Extract '
+        'only durable, long-term facts from a noisy Korean STT transcript. '
+        'Long-term facts include marriage, birth, school admission, graduation, '
+        'employment, job change, serious illness or health condition, death, '
+        'major family change, and other facts that should still matter months '
+        'later. Do not extract ordinary meals, casual small talk, short-term '
+        'appointments, or vague plans unless they reveal a durable life event. '
+        'Use only facts explicitly stated in current_transcript. Do not guess. '
+        'Write title and description in warm, simple Korean. If the transcript '
+        'contains no durable facts, return an empty items array. Output strictly '
+        'using the provided JSON schema.'
+    )
+    input_payload = {
+        'person': {
+            'id': str(person.id),
+            'name': person.name,
+            'relationship': person.relationship,
+            'core_memory': person.core_memory,
+        },
+        'allowed_categories': [
+            'family',
+            'birth',
+            'marriage',
+            'education',
+            'career',
+            'health',
+            'death',
+            'relationship',
+            'other',
+        ],
+        'current_transcript': transcript,
+    }
+
+    try:
+        response = client.responses.parse(
+            model=settings.OPENAI_MEMORY_SUMMARY_MODEL,
+            instructions=instructions,
+            input=(
+                '아래 JSON을 바탕으로 새 장기 기억 후보만 추출하세요.\n'
+                f'{json.dumps(input_payload, ensure_ascii=False)}'
+            ),
+            text_format=LongTermMemoryExtraction,
+            max_output_tokens=settings.OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS,
+            temperature=0.1,
+        )
+    except Exception as exc:
+        raise OpenAIMemorySummaryError(
+            'OpenAI 장기 기억 추출 요청에 실패했습니다.',
+        ) from exc
+
+    parsed = _extract_parsed_memory(response)
+
+    if hasattr(parsed, 'model_dump'):
+        return parsed.model_dump().get('items', [])
+
+    return dict(parsed).get('items', [])
+
+
+def generate_person_display_summary(
+    person,
+    recent_memories,
+    long_term_memories,
+):
+    client = _get_openai_client(OpenAIMemorySummaryError)
+    recent_memory_context = [
+        _memory_for_prompt(memory)
+        for memory in list(recent_memories)[:DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT]
+    ]
+    long_term_memory_context = [
+        _long_term_memory_for_prompt(memory)
+        for memory in list(long_term_memories)
+    ]
+    instructions = (
+        'You are an expert AI assistant creating a small face-adjacent memory '
+        'card for a patient with Alzheimer disease or dementia. Use the '
+        'person profile, recent conversation memories, and long-term memories '
+        'to create one clear, reassuring Korean card. Prefer the most recent '
+        'upcoming promise if one exists. Include a long_term_hint only when a '
+        'stable fact helps the patient recognize the person. Never use vague '
+        'pronouns like "그분" or "상대방"; explicitly write the relationship '
+        'and name together. Use only provided facts and do not guess. Output '
+        'strictly using the provided JSON schema.'
+    )
+    input_payload = {
+        'person': {
+            'id': str(person.id),
+            'name': person.name,
+            'relationship': person.relationship,
+            'core_memory': person.core_memory,
+        },
+        'recent_memories': recent_memory_context,
+        'long_term_memories': long_term_memory_context,
+    }
+
+    try:
+        response = client.responses.parse(
+            model=settings.OPENAI_MEMORY_SUMMARY_MODEL,
+            instructions=instructions,
+            input=(
+                '아래 JSON을 바탕으로 얼굴 옆에 보여줄 표시용 memory card를 생성하세요.\n'
+                f'{json.dumps(input_payload, ensure_ascii=False)}'
+            ),
+            text_format=PersonDisplaySummaryCard,
+            max_output_tokens=settings.OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS,
+            temperature=0.2,
+        )
+    except Exception as exc:
+        raise OpenAIMemorySummaryError(
+            'OpenAI 표시용 요약 생성 요청에 실패했습니다.',
         ) from exc
 
     parsed = _extract_parsed_memory(response)

@@ -107,3 +107,124 @@ class Memory(TimeStampedModel):
 
     def __str__(self):
         return f'{self.person.name} memory at {self.memory_at:%Y-%m-%d %H:%M}'
+
+
+class LongTermMemory(TimeStampedModel):
+    CATEGORY_FAMILY = 'family'
+    CATEGORY_BIRTH = 'birth'
+    CATEGORY_MARRIAGE = 'marriage'
+    CATEGORY_EDUCATION = 'education'
+    CATEGORY_CAREER = 'career'
+    CATEGORY_HEALTH = 'health'
+    CATEGORY_DEATH = 'death'
+    CATEGORY_RELATIONSHIP = 'relationship'
+    CATEGORY_OTHER = 'other'
+
+    CATEGORY_CHOICES = [
+        (CATEGORY_FAMILY, 'Family'),
+        (CATEGORY_BIRTH, 'Birth'),
+        (CATEGORY_MARRIAGE, 'Marriage'),
+        (CATEGORY_EDUCATION, 'Education'),
+        (CATEGORY_CAREER, 'Career'),
+        (CATEGORY_HEALTH, 'Health'),
+        (CATEGORY_DEATH, 'Death'),
+        (CATEGORY_RELATIONSHIP, 'Relationship'),
+        (CATEGORY_OTHER, 'Other'),
+    ]
+
+    STATUS_SUGGESTED = 'suggested'
+    STATUS_CONFIRMED = 'confirmed'
+    STATUS_ARCHIVED = 'archived'
+
+    STATUS_CHOICES = [
+        (STATUS_SUGGESTED, 'Suggested'),
+        (STATUS_CONFIRMED, 'Confirmed'),
+        (STATUS_ARCHIVED, 'Archived'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name='long_term_memories',
+    )
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='long_term_memories',
+    )
+    category = models.CharField(max_length=40, choices=CATEGORY_CHOICES)
+    title = models.CharField(max_length=80)
+    description = models.TextField()
+    event_date = models.DateField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_SUGGESTED,
+    )
+    confidence = models.FloatField(default=0)
+    source_text = models.TextField(blank=True, default='')
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'long_term_memories'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(
+                fields=['person', 'status', '-created_at'],
+                name='ltm_person_status_recent_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.person.name} long-term memory: {self.title}'
+
+
+class PersonSummary(TimeStampedModel):
+    STATUS_ACTIVE = 'active'
+    STATUS_STALE = 'stale'
+    STATUS_FAILED = 'failed'
+
+    STATUS_CHOICES = [
+        (STATUS_ACTIVE, 'Active'),
+        (STATUS_STALE, 'Stale'),
+        (STATUS_FAILED, 'Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name='summaries',
+    )
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_summaries',
+    )
+    card = models.JSONField()
+    source_memory_ids = models.JSONField(default=list, blank=True)
+    source_long_term_memory_ids = models.JSONField(default=list, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_ACTIVE,
+    )
+    generated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'summaries'
+        ordering = ['-generated_at', '-created_at']
+        indexes = [
+            models.Index(
+                fields=['person', 'status', '-generated_at'],
+                name='summary_person_status_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.person.name} summary at {self.generated_at:%Y-%m-%d %H:%M}'

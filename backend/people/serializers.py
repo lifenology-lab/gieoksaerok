@@ -2,7 +2,7 @@ import math
 
 from rest_framework import serializers
 
-from .models import Conversation, Memory, Person
+from .models import Conversation, LongTermMemory, Memory, Person, PersonSummary
 
 
 class MemorySerializer(serializers.ModelSerializer):
@@ -36,8 +36,48 @@ class MemorySerializer(serializers.ModelSerializer):
         return attrs
 
 
+class LongTermMemorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LongTermMemory
+        fields = [
+            'id',
+            'person',
+            'conversation',
+            'category',
+            'title',
+            'description',
+            'event_date',
+            'status',
+            'confidence',
+            'source_text',
+            'verified_at',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class PersonSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PersonSummary
+        fields = [
+            'id',
+            'person',
+            'conversation',
+            'card',
+            'source_memory_ids',
+            'source_long_term_memory_ids',
+            'status',
+            'generated_at',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
 class PersonSerializer(serializers.ModelSerializer):
     latest_memory = serializers.SerializerMethodField()
+    latest_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Person
@@ -48,10 +88,17 @@ class PersonSerializer(serializers.ModelSerializer):
             'core_memory',
             'face_descriptor',
             'latest_memory',
+            'latest_summary',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'latest_memory', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id',
+            'latest_memory',
+            'latest_summary',
+            'created_at',
+            'updated_at',
+        ]
 
     def get_latest_memory(self, obj):
         prefetched_memories = getattr(obj, 'prefetched_latest_memories', None)
@@ -65,6 +112,23 @@ class PersonSerializer(serializers.ModelSerializer):
             return None
 
         return MemorySerializer(memory).data
+
+    def get_latest_summary(self, obj):
+        prefetched_summaries = getattr(obj, 'prefetched_latest_summaries', None)
+
+        if prefetched_summaries is not None:
+            summary = prefetched_summaries[0] if prefetched_summaries else None
+        else:
+            summary = (
+                obj.summaries.filter(status=PersonSummary.STATUS_ACTIVE)
+                .order_by('-generated_at', '-created_at')
+                .first()
+            )
+
+        if not summary:
+            return None
+
+        return PersonSummarySerializer(summary).data
 
     def validate_face_descriptor(self, value):
         if not isinstance(value, list):

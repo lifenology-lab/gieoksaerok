@@ -4,6 +4,10 @@ function getMemoryRecap(face) {
   return face.person.latest_memory?.recap || null;
 }
 
+function getDisplayCard(face) {
+  return face.person.latest_summary?.card || null;
+}
+
 function getDisplayName(person) {
   return `${person.relationship} ${person.name}`;
 }
@@ -22,8 +26,15 @@ export default function FaceLabelsOverlay({ faces }) {
         const labelSideClass = hasRoomOnRight
           ? "daily-mode-page__face-box--label-right"
           : "daily-mode-page__face-box--label-left";
+        const displayCard = getDisplayCard(face);
         const memoryRecap = getMemoryRecap(face);
-        const memoryTitle = memoryRecap?.title || memoryRecap?.headline;
+        const cardTitle =
+          displayCard?.title || memoryRecap?.title || memoryRecap?.headline;
+        const cardBody = displayCard?.body || memoryRecap?.summary;
+        const upcomingPromise =
+          displayCard?.upcoming_promise || memoryRecap?.upcoming_promise;
+        const longTermHint = displayCard?.long_term_hint;
+        const suggestedQuestion = displayCard?.suggested_question;
 
         return (
           <div
@@ -39,13 +50,19 @@ export default function FaceLabelsOverlay({ faces }) {
             <div className="daily-mode-page__face-label">
               <strong>{getDisplayName(face.person)}</strong>
 
-              {memoryRecap && (
+              {(displayCard || memoryRecap) && (
                 <div className="daily-mode-page__face-memory">
-                  {memoryTitle && <b>📌 {memoryTitle}</b>}
-                  {memoryRecap.summary && <p>{`"${memoryRecap.summary}"`}</p>}
-                  {memoryRecap.upcoming_promise && (
+                  {cardTitle && <b>📌 {cardTitle}</b>}
+                  {cardBody && <p>{`"${cardBody}"`}</p>}
+                  {longTermHint && <p>{longTermHint}</p>}
+                  {upcomingPromise && (
                     <p className="daily-mode-page__face-memory-promise">
-                      ⏰ [약속] {memoryRecap.upcoming_promise}
+                      ⏰ [약속] {upcomingPromise}
+                    </p>
+                  )}
+                  {suggestedQuestion && (
+                    <p className="daily-mode-page__face-memory-question">
+                      💬 {suggestedQuestion}
                     </p>
                   )}
                 </div>

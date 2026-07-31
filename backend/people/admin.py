@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Conversation, Memory, PatientVoiceProfile, Person
+from .models import (
+    Conversation,
+    LongTermMemory,
+    Memory,
+    PatientVoiceProfile,
+    Person,
+    PersonSummary,
+)
 
 
 @admin.register(Person)
@@ -21,6 +28,20 @@ class ConversationAdmin(admin.ModelAdmin):
 class MemoryAdmin(admin.ModelAdmin):
     list_display = ('person', 'conversation', 'memory_at', 'verified_at')
     list_filter = ('memory_at', 'verified_at')
+    search_fields = ('person__name', 'person__relationship')
+
+
+@admin.register(LongTermMemory)
+class LongTermMemoryAdmin(admin.ModelAdmin):
+    list_display = ('person', 'category', 'title', 'status', 'confidence', 'updated_at')
+    list_filter = ('category', 'status', 'verified_at')
+    search_fields = ('person__name', 'person__relationship', 'title', 'description')
+
+
+@admin.register(PersonSummary)
+class PersonSummaryAdmin(admin.ModelAdmin):
+    list_display = ('person', 'status', 'generated_at', 'updated_at')
+    list_filter = ('status', 'generated_at')
     search_fields = ('person__name', 'person__relationship')
 
 

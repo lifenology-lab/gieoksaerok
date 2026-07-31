@@ -1,25 +1,111 @@
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Conversation, Memory, PatientVoiceProfile, Person
-from .serializers import ConversationSerializer, MemorySerializer, PersonSerializer
+from .models import (
+    Conversation,
+    LongTermMemory,
+    Memory,
+    PatientVoiceProfile,
+    Person,
+    PersonSummary,
+)
+from .serializers import (
+    ConversationSerializer,
+    LongTermMemorySerializer,
+    MemorySerializer,
+    PersonSerializer,
+    PersonSummarySerializer,
+)
 from .services import (
+    DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT,
     OpenAIMemorySummaryError,
     OpenAITranscriptionError,
     RECENT_MEMORY_LIMIT,
     build_transcription_prompt,
+    extract_long_term_memories,
+    generate_person_display_summary,
     generate_memory_recap,
     transcribe_audio_file,
 )
 
 
 MAX_PATIENT_VOICE_SAMPLE_BYTES = 10 * 1024 * 1024
+LONG_TERM_MEMORY_DISPLAY_LIMIT = 20
+
+
+def normalize_long_term_memory_category(category):
+    allowed_categories = {
+        choice[0]
+        for choice in LongTermMemory.CATEGORY_CHOICES
+    }
+
+    if category in allowed_categories:
+        return category
+
+    return LongTermMemory.CATEGORY_OTHER
+
+
+def clamp_confidence(value):
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return 0
+
+    return min(max(confidence, 0), 1)
+
+
+def create_long_term_memory_records(person, conversation, candidates):
+    records = []
+
+    for candidate in candidates:
+        title = (candidate.get('title') or '').strip()
+        description = (candidate.get('description') or '').strip()
+
+        if not title or not description:
+            continue
+
+        event_date_value = candidate.get('event_date')
+        event_date = parse_date(event_date_value) if event_date_value else None
+        category = normalize_long_term_memory_category(candidate.get('category'))
+        confidence = clamp_confidence(candidate.get('confidence'))
+        source_text = (candidate.get('source_text') or '').strip()
+        record, created = LongTermMemory.objects.get_or_create(
+            person=person,
+            category=category,
+            title=title[:80],
+            description=description,
+            defaults={
+                'conversation': conversation,
+                'event_date': event_date,
+                'confidence': confidence,
+                'source_text': source_text,
+            },
+        )
+
+        if not created and confidence > record.confidence:
+            record.conversation = conversation
+            record.event_date = event_date or record.event_date
+            record.confidence = confidence
+            record.source_text = source_text or record.source_text
+            record.save(
+                update_fields=[
+                    'conversation',
+                    'event_date',
+                    'confidence',
+                    'source_text',
+                    'updated_at',
+                ],
+            )
+
+        records.append(record)
+
+    return records
 
 
 def patient_voice_profile_response(profile):
@@ -46,6 +132,13 @@ class PersonListCreateView(APIView):
                 'memories',
                 queryset=Memory.objects.order_by('-memory_at', '-created_at'),
                 to_attr='prefetched_latest_memories',
+            ),
+            Prefetch(
+                'summaries',
+                queryset=PersonSummary.objects.filter(
+                    status=PersonSummary.STATUS_ACTIVE,
+                ).order_by('-generated_at', '-created_at'),
+                to_attr='prefetched_latest_summaries',
             ),
         )
         serializer = PersonSerializer(people, many=True)
@@ -143,6 +236,10 @@ class ConversationTranscriptionCreateView(APIView):
         )
         memory = None
         memory_error = None
+        long_term_memory_records = []
+        long_term_memory_error = None
+        person_summary = None
+        summary_error = None
 
         try:
             recap = generate_memory_recap(
@@ -158,6 +255,57 @@ class ConversationTranscriptionCreateView(APIView):
             )
             conversation.status = Conversation.STATUS_SUMMARIZED
             conversation.save(update_fields=['status', 'updated_at'])
+
+            try:
+                long_term_memory_candidates = extract_long_term_memories(
+                    person=person,
+                    transcript=transcript,
+                )
+                long_term_memory_records = create_long_term_memory_records(
+                    person=person,
+                    conversation=conversation,
+                    candidates=long_term_memory_candidates,
+                )
+            except OpenAIMemorySummaryError as exc:
+                long_term_memory_error = str(exc)
+
+            try:
+                display_memories = list(
+                    Memory.objects.filter(person=person)
+                    .order_by('-memory_at', '-created_at')[
+                        :DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT
+                    ],
+                )
+                display_long_term_memories = list(
+                    LongTermMemory.objects.filter(person=person)
+                    .exclude(status=LongTermMemory.STATUS_ARCHIVED)
+                    .order_by('-created_at')[:LONG_TERM_MEMORY_DISPLAY_LIMIT],
+                )
+                card = generate_person_display_summary(
+                    person=person,
+                    recent_memories=display_memories,
+                    long_term_memories=display_long_term_memories,
+                )
+                PersonSummary.objects.filter(
+                    person=person,
+                    status=PersonSummary.STATUS_ACTIVE,
+                ).update(status=PersonSummary.STATUS_STALE)
+                person_summary = PersonSummary.objects.create(
+                    person=person,
+                    conversation=conversation,
+                    card=card,
+                    source_memory_ids=[
+                        str(display_memory.id)
+                        for display_memory in display_memories
+                    ],
+                    source_long_term_memory_ids=[
+                        str(long_term_memory.id)
+                        for long_term_memory in display_long_term_memories
+                    ],
+                    generated_at=recorded_at,
+                )
+            except OpenAIMemorySummaryError as exc:
+                summary_error = str(exc)
         except OpenAIMemorySummaryError as exc:
             memory_error = str(exc)
             conversation.status = Conversation.STATUS_FAILED
@@ -166,9 +314,24 @@ class ConversationTranscriptionCreateView(APIView):
         serializer = ConversationSerializer(conversation)
         data = serializer.data
         data['memory'] = MemorySerializer(memory).data if memory else None
+        data['long_term_memories'] = LongTermMemorySerializer(
+            long_term_memory_records,
+            many=True,
+        ).data
+        data['summary'] = (
+            PersonSummarySerializer(person_summary).data
+            if person_summary
+            else None
+        )
 
         if memory_error:
             data['memory_error'] = memory_error
+
+        if long_term_memory_error:
+            data['long_term_memory_error'] = long_term_memory_error
+
+        if summary_error:
+            data['summary_error'] = summary_error
 
         return Response(data, status=status.HTTP_201_CREATED)
 
