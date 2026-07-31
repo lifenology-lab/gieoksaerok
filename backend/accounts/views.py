@@ -4,8 +4,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-from .request_serializers import SignUpRequestSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
+from .request_serializers import SignUpRequestSerializer, TokenRefreshRequestSerializer
 from .serializers import UserSerializer, SignInSerializer
 
 User = get_user_model()
@@ -57,3 +58,23 @@ class MeView(APIView):
         serializer = UserSerializer(request.user)
 
         return Response(serializer.data)
+
+class SignOutView(APIView):
+    permission_classess = [IsAuthenticated]
+
+    def post(self, request):
+        request_serializer = TokenRefreshRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+
+        refresh_token = request_serializer.validated_data["refresh"]
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except TokenError:
+            return Response(
+                {"detail": "유효하지 않은 refresh token입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
