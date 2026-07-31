@@ -180,6 +180,7 @@
   color: white;
   text-align: left;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+  pointer-events: auto;
 }
 
 .daily-mode-page__face-box--label-right .daily-mode-page__face-label {
@@ -212,8 +213,8 @@
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
-  max-height: 136px;
-  overflow: hidden;
+  max-height: min(260px, calc(100svh - 96px));
+  overflow: auto;
 }
 
 .daily-mode-page__face-memory b,
@@ -243,6 +244,20 @@
 .daily-mode-page__face-memory-question {
   color: #b9f7d0;
   font-weight: 700;
+}
+
+.daily-mode-page__face-memory-button {
+  width: 100%;
+  min-height: 36px;
+  margin-top: 10px;
+  border: 0;
+  border-radius: 8px;
+  color: #101014;
+  background: #b9f7d0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .daily-mode-page__dialog-backdrop {

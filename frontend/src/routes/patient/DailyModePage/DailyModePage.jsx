@@ -56,6 +56,16 @@ export default function DailyModePage() {
     nav("/patient");
   };
 
+  const handleOpenMemoryAlbum = (person) => {
+    if (!person?.id) {
+      return;
+    }
+
+    nav(`/patient/memory-album/${person.id}`, {
+      state: { person },
+    });
+  };
+
   const recognitionStatusMessage =
     activeRecognitionType === "person"
       ? personRecognitionStatusMessage
@@ -64,7 +74,10 @@ export default function DailyModePage() {
   return (
     <main className="daily-mode-page">
       <CameraPreview {...camera}>
-        <FaceLabelsOverlay faces={recognizedFaces} />
+        <FaceLabelsOverlay
+          faces={recognizedFaces}
+          onOpenMemoryAlbum={handleOpenMemoryAlbum}
+        />
       </CameraPreview>
 
       <RecognitionToggleGroup

@@ -12,13 +12,13 @@ function getDisplayName(person) {
   return `${person.relationship} ${person.name}`;
 }
 
-export default function FaceLabelsOverlay({ faces }) {
+export default function FaceLabelsOverlay({ faces, onOpenMemoryAlbum }) {
   if (!faces.length) {
     return null;
   }
 
   return (
-    <div className="daily-mode-page__face-overlay" aria-hidden="true">
+    <div className="daily-mode-page__face-overlay">
       {faces.map((face) => {
         const hasRoomOnRight =
           face.box.left + face.box.width + FACE_LABEL_WIDTH <
@@ -35,6 +35,7 @@ export default function FaceLabelsOverlay({ faces }) {
           displayCard?.upcoming_promise || memoryRecap?.upcoming_promise;
         const longTermHint = displayCard?.long_term_hint;
         const suggestedQuestion = displayCard?.suggested_question;
+        const hasMemoryDetails = displayCard || memoryRecap;
 
         return (
           <div
@@ -50,21 +51,32 @@ export default function FaceLabelsOverlay({ faces }) {
             <div className="daily-mode-page__face-label">
               <strong>{getDisplayName(face.person)}</strong>
 
-              {(displayCard || memoryRecap) && (
+              {onOpenMemoryAlbum && (
                 <div className="daily-mode-page__face-memory">
-                  {cardTitle && <b>📌 {cardTitle}</b>}
-                  {cardBody && <p>{`"${cardBody}"`}</p>}
-                  {longTermHint && <p>{longTermHint}</p>}
-                  {upcomingPromise && (
-                    <p className="daily-mode-page__face-memory-promise">
-                      ⏰ [약속] {upcomingPromise}
-                    </p>
+                  {hasMemoryDetails && (
+                    <>
+                      {cardTitle && <b>📌 {cardTitle}</b>}
+                      {cardBody && <p>{`"${cardBody}"`}</p>}
+                      {longTermHint && <p>{longTermHint}</p>}
+                      {upcomingPromise && (
+                        <p className="daily-mode-page__face-memory-promise">
+                          ⏰ [약속] {upcomingPromise}
+                        </p>
+                      )}
+                      {suggestedQuestion && (
+                        <p className="daily-mode-page__face-memory-question">
+                          💬 {suggestedQuestion}
+                        </p>
+                      )}
+                    </>
                   )}
-                  {suggestedQuestion && (
-                    <p className="daily-mode-page__face-memory-question">
-                      💬 {suggestedQuestion}
-                    </p>
-                  )}
+                  <button
+                    className="daily-mode-page__face-memory-button"
+                    type="button"
+                    onClick={() => onOpenMemoryAlbum?.(face.person)}
+                  >
+                    추억 카드
+                  </button>
                 </div>
               )}
             </div>
