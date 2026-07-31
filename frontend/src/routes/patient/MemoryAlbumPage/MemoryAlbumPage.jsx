@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import {
+  DAILY_MODE_RECOGNITION_TYPES,
+  DAILY_MODE_RETURN_RECOGNITION_KEY,
+} from "../../../features/daily-mode/constants/returnRecognition";
+import {
   createMemoryAlbumItem,
   deleteMemoryAlbumItem,
   fetchMemoryAlbumItems,
@@ -293,6 +297,14 @@ export default function MemoryAlbumPage() {
     }
   };
 
+  const handleReturnToPersonRecognition = () => {
+    window.sessionStorage.setItem(
+      DAILY_MODE_RETURN_RECOGNITION_KEY,
+      DAILY_MODE_RECOGNITION_TYPES.PERSON,
+    );
+    nav("/patient/daily");
+  };
+
   return (
     <main className="memory-album-page">
       <header className="memory-album-page__header">
@@ -456,7 +468,7 @@ export default function MemoryAlbumPage() {
       <button
         className="memory-album-page__return-button"
         type="button"
-        onClick={() => nav("/patient/daily")}
+        onClick={handleReturnToPersonRecognition}
       >
         얼굴 인식 화면으로 돌아가기
       </button>

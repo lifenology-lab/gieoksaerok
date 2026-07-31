@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import CameraPreview from "../../../features/camera/components/CameraPreview.jsx";
@@ -11,6 +12,10 @@ import usePersonRecognition from "../../../features/face-recognition/hooks/usePe
 import RecognitionToggleGroup from "../../../features/daily-mode/components/RecognitionToggleGroup";
 import DailyModeBottomActions from "../../../features/daily-mode/components/DailyModeBottomActions";
 import RecognitionStatusToast from "../../../features/daily-mode/components/RecognitionStatusToast.jsx";
+import {
+  DAILY_MODE_RECOGNITION_TYPES,
+  DAILY_MODE_RETURN_RECOGNITION_KEY,
+} from "../../../features/daily-mode/constants/returnRecognition.js";
 import useRecognitionState from "../../../features/daily-mode/hooks/useRecognitionState.js";
 
 import "./DailyModePage.css";
@@ -48,6 +53,19 @@ export default function DailyModePage() {
     onConversationSaved: refreshPeople,
   });
 
+  useEffect(() => {
+    const returnRecognitionType = window.sessionStorage.getItem(
+      DAILY_MODE_RETURN_RECOGNITION_KEY,
+    );
+
+    if (returnRecognitionType !== DAILY_MODE_RECOGNITION_TYPES.PERSON) {
+      return;
+    }
+
+    window.sessionStorage.removeItem(DAILY_MODE_RETURN_RECOGNITION_KEY);
+    startPersonRecognition();
+  }, [startPersonRecognition]);
+
   const handleGoConfusion = () => {
     nav("/patient/confusion");
   };
@@ -60,6 +78,11 @@ export default function DailyModePage() {
     if (!person?.id) {
       return;
     }
+
+    window.sessionStorage.setItem(
+      DAILY_MODE_RETURN_RECOGNITION_KEY,
+      DAILY_MODE_RECOGNITION_TYPES.PERSON,
+    );
 
     nav(`/patient/memory-album/${person.id}`, {
       state: { person },

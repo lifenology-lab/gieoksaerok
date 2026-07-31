@@ -10,6 +10,7 @@ const RECORDER_MIME_TYPES = [
   "audio/webm",
   "audio/mp4",
 ];
+const MIN_PATIENT_VOICE_RECORDING_MS = 2000;
 const MAX_PATIENT_VOICE_RECORDING_MS = 10000;
 
 function getSupportedAudioMimeType() {
@@ -39,6 +40,7 @@ export default function usePatientVoiceRecorder() {
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
+  const recordingStartedAtRef = useRef(0);
   const recordingTimeoutRef = useRef(null);
   const stopRecordingRef = useRef(null);
 
@@ -54,6 +56,7 @@ export default function usePatientVoiceRecorder() {
     }
 
     mediaRecorderRef.current = null;
+    recordingStartedAtRef.current = 0;
     chunksRef.current = [];
   }, []);
 
@@ -111,6 +114,7 @@ export default function usePatientVoiceRecorder() {
       streamRef.current = stream;
       chunksRef.current = [];
       mediaRecorderRef.current = mediaRecorder;
+      recordingStartedAtRef.current = 0;
 
       mediaRecorder.addEventListener("dataavailable", (event) => {
         if (event.data.size > 0) {
@@ -124,6 +128,7 @@ export default function usePatientVoiceRecorder() {
         cleanupRecording();
       });
 
+      recordingStartedAtRef.current = Date.now();
       mediaRecorder.start();
       recordingTimeoutRef.current = window.setTimeout(() => {
         stopRecordingRef.current?.();
@@ -170,10 +175,16 @@ export default function usePatientVoiceRecorder() {
         mediaRecorder.stop();
       });
 
+      const recordingDurationMs = Date.now() - recordingStartedAtRef.current;
+
       cleanupRecording();
 
       if (!audioBlob.size) {
         throw new Error("녹음된 오디오가 비어 있어요.");
+      }
+
+      if (recordingDurationMs < MIN_PATIENT_VOICE_RECORDING_MS) {
+        throw new Error("환자 목소리는 2초 이상 녹음해주세요.");
       }
 
       const nextProfile = await savePatientVoiceSample({ audioBlob });
