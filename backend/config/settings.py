@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'accounts',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -145,4 +146,11 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'ACCESS_TOKEN': 'access_token',
     'REFRESH_TOKEN': 'refresh_token',
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Gieoksaerok API",
+    "DESCRIPTION": "기억새록 MVP API 문서",
+    "VERSION": "v1",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
