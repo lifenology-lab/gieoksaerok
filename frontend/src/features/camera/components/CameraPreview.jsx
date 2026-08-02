@@ -1,6 +1,14 @@
 import { useEffect } from "react";
 
 import CameraPermissionNotice from "./CameraPermissionNotice";
+
+export default function CameraPreview({
+  videoRef,
+  isCameraReady,
+  cameraError,
+  startCamera,
+  children,
+}) {
 import useCamera from "../hooks/useCamera";
 
 export default function CameraPreview({ onVideoElementReady }) {
@@ -39,6 +47,8 @@ export default function CameraPreview({ onVideoElementReady }) {
         muted
         className="daily-mode-page__camera-video"
       />
+
+      {children}
     </section>
   );
 }

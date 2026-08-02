@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 
+import environ
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,11 +22,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-siv)o-=%yeno5)b=m2nycmlcc!^wnbylt_v8lxw-e-)ce3+45b'
+env = environ.Env(
+    DEBUG=(bool, False)
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+environ.Env.read_env(
+    env_file=BASE_DIR / '.env'
+)
+
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env('DEBUG')
+
 
 ALLOWED_HOSTS = []
 
@@ -32,14 +40,15 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    'corsheaders',
+    'people',
     'accounts',
     'records',
     'rest_framework_simplejwt',
@@ -50,6 +59,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -123,6 +133,34 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+
+OPENAI_API_KEY = env('OPENAI_API_KEY', default=None)
+OPENAI_TRANSCRIPTION_MODEL = env(
+    'OPENAI_TRANSCRIPTION_MODEL',
+    default='gpt-4o-mini-transcribe',
+)
+OPENAI_TRANSCRIPTION_DIARIZATION_ENABLED = env.bool(
+    'OPENAI_TRANSCRIPTION_DIARIZATION_ENABLED',
+    default=True,
+)
+OPENAI_TRANSCRIPTION_DIARIZATION_MODEL = env(
+    'OPENAI_TRANSCRIPTION_DIARIZATION_MODEL',
+    default='gpt-4o-transcribe-diarize',
+)
+OPENAI_TRANSCRIPTION_LANGUAGE = env('OPENAI_TRANSCRIPTION_LANGUAGE', default='ko')
+OPENAI_MEMORY_SUMMARY_MODEL = env('OPENAI_MEMORY_SUMMARY_MODEL', default='gpt-4o')
+OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS = env.int(
+    'OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS',
+    default=700,
+)
+PROMISE_DEFAULT_TIMEZONE = env('PROMISE_DEFAULT_TIMEZONE', default='Asia/Seoul')
 
 AUTH_USER_MODEL = 'accounts.User'
 

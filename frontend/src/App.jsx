@@ -4,6 +4,7 @@ import PatientHomePage from "./routes/patient/PatientHomePage/PatientHomePage";
 import CaregiverHomePage from "./routes/caregiver/CaregiverHomePage/CaregiverHomePage";
 import DailyModePage from "./routes/patient/DailyModePage/DailyModePage";
 import ConfusionSelectPage from "./routes/patient/ConfusionSelectPage/ConfusionSelectPage";
+import MemoryAlbumPage from "./routes/patient/MemoryAlbumPage/MemoryAlbumPage";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 function App() {
@@ -11,11 +12,27 @@ function App() {
     <BrowserRouter>
       <div>
         <Routes>
-          <Route path="/" element={<RoleSelectPage />} />
-          <Route path="/patient" element={<PatientHomePage />} />
-          <Route path="/patient/daily" element={<DailyModePage />} />
-          <Route path="/patient/confusion" element={<ConfusionSelectPage />} />
-          <Route path="/caregiver" element={<CaregiverHomePage />} />
+          <Route path="/" element={<RoleSelectPage></RoleSelectPage>}></Route>
+          <Route
+            path="/patient"
+            element={<PatientHomePage></PatientHomePage>}
+          ></Route>
+          <Route
+            path="/patient/daily"
+            element={<DailyModePage></DailyModePage>}
+          ></Route>
+          <Route
+            path="/patient/confusion"
+            element={<ConfusionSelectPage></ConfusionSelectPage>}
+          ></Route>
+          <Route
+            path="/patient/memory-album/:personId"
+            element={<MemoryAlbumPage></MemoryAlbumPage>}
+          ></Route>
+          <Route
+            path="/caregiver"
+            element={<CaregiverHomePage></CaregiverHomePage>}
+          ></Route>
         </Routes>
       </div>
     </BrowserRouter>
