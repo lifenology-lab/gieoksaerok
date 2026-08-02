@@ -11,8 +11,6 @@
   },
   "dependencies": {
     "@vladmandic/face-api": "1.7.15",
-    "@tensorflow-models/mobilenet": "^2.1.1",
-    "@tensorflow/tfjs": "^4.22.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1"

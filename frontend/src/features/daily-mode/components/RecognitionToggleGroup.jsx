@@ -10,7 +10,7 @@ export default function RecognitionToggleGroup({
         {activeRecognitionType === "person" ? "인물 인식 활성화" : "인물 인식"}
       </button>
       <button type="button" onClick={onMealRecognition}>
-        {activeRecognitionType === "meal" ? "식사 인식 끄기" : "식사 인식 켜기"}
+        {activeRecognitionType === "meal" ? "식사 인식 활성화" : "식사 인식"}
       </button>
     </section>
   );
