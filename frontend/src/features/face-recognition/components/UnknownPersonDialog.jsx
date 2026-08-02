@@ -9,13 +9,13 @@ export default function UnknownPersonDialog({
 }) {
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("");
-  const [coreMemory, setCoreMemory] = useState("");
+  const [initialMemory, setInitialMemory] = useState("");
 
   useEffect(() => {
     if (open) {
       setName("");
       setRelationship("");
-      setCoreMemory("");
+      setInitialMemory("");
     }
   }, [open]);
 
@@ -33,7 +33,7 @@ export default function UnknownPersonDialog({
     onSubmit({
       name: name.trim(),
       relationship: relationship.trim(),
-      coreMemory: coreMemory.trim(),
+      initialMemory: initialMemory.trim(),
     });
   };
 
@@ -64,8 +64,8 @@ export default function UnknownPersonDialog({
         <label>
           핵심 기억
           <textarea
-            value={coreMemory}
-            onChange={(event) => setCoreMemory(event.target.value)}
+            value={initialMemory}
+            onChange={(event) => setInitialMemory(event.target.value)}
             placeholder="예: 삼성전자에 다니며 최근 딸을 낳았음"
             rows={3}
           />

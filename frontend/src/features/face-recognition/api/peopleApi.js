@@ -43,23 +43,18 @@ export function fetchPeople() {
   return request("/api/people/");
 }
 
-function buildCoreMemory(value) {
-  const summary = value?.trim();
-
-  if (!summary) {
-    return {};
-  }
-
-  return { summary };
-}
-
-export function createPerson({ name, relationship, coreMemory, faceDescriptor }) {
+export function createPerson({
+  name,
+  relationship,
+  initialMemory,
+  faceDescriptor,
+}) {
   return request("/api/people/", {
     method: "POST",
     body: JSON.stringify({
       name,
       relationship,
-      core_memory: buildCoreMemory(coreMemory),
+      initial_memory: initialMemory?.trim() || "",
       face_descriptor: Array.from(faceDescriptor),
     }),
   });

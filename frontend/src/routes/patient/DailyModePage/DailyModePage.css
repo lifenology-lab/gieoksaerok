@@ -236,7 +236,12 @@
   line-height: 1.35;
 }
 
+.daily-mode-page__face-memory-body {
+  white-space: pre-line;
+}
+
 .daily-mode-page__face-memory-promise {
+  margin-top: 12px;
   color: #ffe3a3;
   font-weight: 700;
 }

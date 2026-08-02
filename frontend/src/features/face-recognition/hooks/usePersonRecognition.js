@@ -172,7 +172,7 @@ export default function usePersonRecognition({
   }, []);
 
   const saveUnknownPerson = useCallback(
-    async ({ name, relationship, coreMemory }) => {
+    async ({ name, relationship, initialMemory }) => {
       if (!pendingUnknownFaceRef.current) {
         return;
       }
@@ -184,7 +184,7 @@ export default function usePersonRecognition({
         const createdPerson = await createPerson({
           name,
           relationship,
-          coreMemory,
+          initialMemory,
           faceDescriptor: pendingUnknownFaceRef.current.descriptor,
         });
 
