@@ -3,6 +3,8 @@ from django.urls import path
 from .views import (
     ConversationListCreateView,
     ConversationTranscriptionCreateView,
+    MemoryAlbumItemDetailView,
+    MemoryAlbumItemListCreateView,
     MemoryListCreateView,
     PatientVoiceProfileView,
     PersonListCreateView,
@@ -21,6 +23,16 @@ urlpatterns = [
         name='conversation-transcription-create',
     ),
     path('memories/', MemoryListCreateView.as_view(), name='memory-list-create'),
+    path(
+        'people/<uuid:person_id>/memory-album/',
+        MemoryAlbumItemListCreateView.as_view(),
+        name='memory-album-item-list-create',
+    ),
+    path(
+        'people/<uuid:person_id>/memory-album/<uuid:item_id>/',
+        MemoryAlbumItemDetailView.as_view(),
+        name='memory-album-item-detail',
+    ),
     path(
         'patient-voice/',
         PatientVoiceProfileView.as_view(),

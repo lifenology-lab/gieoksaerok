@@ -7,6 +7,40 @@ from tempfile import NamedTemporaryFile
 from django.conf import settings
 from pydantic import BaseModel, Field
 
+from .promise_utils import format_promise_display
+
+
+class ConversationPromiseCandidate(BaseModel):
+    title: str = Field(
+        description='약속을 10~20자 안팎으로 표현한 제목 (예: 저녁 식사)',
+    )
+    description: str = Field(
+        description='약속 내용을 환자가 이해하기 쉬운 한국어 한 문장으로 설명',
+    )
+    scheduled_at: str | None = Field(
+        default=None,
+        description='정확한 날짜와 시간이 있으면 ISO-8601 datetime. 없으면 null',
+    )
+    scheduled_date: str | None = Field(
+        default=None,
+        description='날짜만 확실하면 YYYY-MM-DD. 날짜도 불명확하면 null',
+    )
+    time_label: str | None = Field(
+        default=None,
+        description='저녁 7시, 오전, 점심처럼 화면 표시용 한국어 시간 표현',
+    )
+    timezone: str | None = Field(
+        default=None,
+        description='약속 날짜를 해석한 IANA timezone. 기본값은 Asia/Seoul',
+    )
+    raw_text: str = Field(description='약속 판단 근거가 된 STT 원문 일부')
+    confidence: float = Field(
+        default=0,
+        ge=0,
+        le=1,
+        description='약속 추출 확신도 0~1',
+    )
+
 
 class ConversationMemoryRecap(BaseModel):
     title: str = Field(
@@ -17,6 +51,10 @@ class ConversationMemoryRecap(BaseModel):
     )
     upcoming_promise: str | None = Field(
         description='약속이나 예정된 일정 (없으면 null)',
+    )
+    promise: ConversationPromiseCandidate | None = Field(
+        default=None,
+        description='DB promises 테이블에 저장할 구조화된 약속. 없으면 null',
     )
     key_points: list[str] = Field(
         description='다음 대화에 도움이 되는 중요한 사실 목록',
@@ -40,7 +78,7 @@ class LongTermMemoryCandidate(BaseModel):
         default=0,
         ge=0,
         le=1,
-        description='장기 기억으로 저장할 만한 확신도 0~1',
+        description='장기 기억으로 저장할 만한 확신도 0~1. 0.8 이상만 후보로 반환',
     )
     source_text: str = Field(description='판단 근거가 된 STT 원문 일부')
 
@@ -51,10 +89,35 @@ class LongTermMemoryExtraction(BaseModel):
     )
 
 
+class LongTermMemoryMergeDecision(BaseModel):
+    should_update: bool = Field(
+        description='기존 레코드를 새 정보로 갱신하거나 병합해야 하면 true',
+    )
+    title: str = Field(description='최종 장기 기억 제목')
+    description: str = Field(description='최종 장기 기억 설명')
+    event_date: str | None = Field(
+        default=None,
+        description='최종 사건 날짜. 알 수 없으면 null',
+    )
+    confidence: float = Field(
+        default=0,
+        ge=0,
+        le=1,
+        description='최종 장기 기억 확신도 0~1',
+    )
+    source_text: str = Field(description='최종 판단 근거 텍스트')
+    reason: str = Field(description='기존/새 후보/병합 중 어떤 판단인지 짧게 설명')
+
+
 class PersonDisplaySummaryCard(BaseModel):
     display_name: str = Field(description='예: 딸 지민')
     title: str = Field(description='얼굴 옆에 표시할 10자 안팎의 제목')
-    body: str = Field(description='환자가 바로 이해할 1~2문장 한국어 본문')
+    body: str = Field(
+        description=(
+            '최근 대화 3개 중 환자에게 가장 중요하게 보여줄 대화를 요약한 '
+            '1~2문장 한국어 본문'
+        ),
+    )
     upcoming_promise: str | None = Field(
         default=None,
         description='가장 중요한 다가오는 약속. 없으면 null',
@@ -78,7 +141,7 @@ class OpenAIMemorySummaryError(Exception):
 
 
 RECENT_MEMORY_LIMIT = 3
-DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT = 10
+DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT = 3
 PATIENT_SPEAKER_NAME = '환자'
 
 
@@ -150,16 +213,6 @@ def _patient_voice_reference_data_url(patient_voice_profile):
     return f'data:{content_type};base64,{encoded_audio}'
 
 
-def _format_core_memory(core_memory):
-    if not core_memory:
-        return '없음'
-
-    if isinstance(core_memory, str):
-        return core_memory
-
-    return _compact_json(core_memory, max_length=1600)
-
-
 def _recap_for_prompt(recap):
     if not isinstance(recap, dict):
         return recap
@@ -169,6 +222,7 @@ def _recap_for_prompt(recap):
         'headline',
         'summary',
         'upcoming_promise',
+        'promise',
         'key_points',
         'follow_up_suggestions',
     ]
@@ -204,6 +258,58 @@ def _long_term_memory_for_prompt(memory):
     }
 
 
+def _long_term_memories_for_prompt(long_term_memories):
+    if not long_term_memories:
+        return []
+
+    return [
+        _long_term_memory_for_prompt(memory)
+        for memory in list(long_term_memories)
+    ]
+
+
+def _promise_value(promise, key, default=None):
+    if isinstance(promise, dict):
+        return promise.get(key, default)
+
+    return getattr(promise, key, default)
+
+
+def _isoformat_value(value):
+    if hasattr(value, 'isoformat'):
+        return value.isoformat()
+
+    return value
+
+
+def _promise_for_prompt(promise):
+    display_text = _promise_value(promise, 'display_text')
+
+    if not display_text and not isinstance(promise, dict):
+        display_text = format_promise_display(promise)
+
+    return {
+        'id': str(_promise_value(promise, 'id')),
+        'title': _promise_value(promise, 'title'),
+        'description': _promise_value(promise, 'description'),
+        'scheduled_at': _isoformat_value(_promise_value(promise, 'scheduled_at')),
+        'scheduled_date': _isoformat_value(
+            _promise_value(promise, 'scheduled_date'),
+        ),
+        'time_label': _promise_value(promise, 'time_label'),
+        'timezone': _promise_value(promise, 'timezone'),
+        'display_text': display_text,
+        'confidence': _promise_value(promise, 'confidence'),
+    }
+
+
+def _promises_for_prompt(promises):
+    if not promises:
+        return []
+
+    return [_promise_for_prompt(promise) for promise in list(promises)]
+
+
 def _recent_memories_for_prompt(recent_memories):
     if not recent_memories:
         return []
@@ -225,17 +331,22 @@ def build_transcription_prompt(
     latest_memory=None,
     extra_prompt=None,
     recent_memories=None,
+    long_term_memories=None,
 ):
     if recent_memories is None and latest_memory:
         recent_memories = [latest_memory]
 
     recent_memory_context = _recent_memories_for_prompt(recent_memories)
+    long_term_memory_context = _long_term_memories_for_prompt(long_term_memories)
     parts = [
         '다음 오디오는 한국어 일상 대화입니다.',
         f'[배경 정보] 이름: {person.name} (관계: {person.relationship})',
-        f'핵심 정보(장기 기억): {_format_core_memory(person.core_memory)}',
         '사람 이름, 가족 호칭, 약속, 장소, 날짜, 건강 관련 표현을 가능한 한 정확하게 전사하세요.',
     ]
+
+    if long_term_memory_context:
+        parts.append('[장기 기억]')
+        parts.append(_compact_json(long_term_memory_context, max_length=1800))
 
     if recent_memory_context:
         parts.append('[최근 만남 요약]')
@@ -331,25 +442,26 @@ def transcribe_audio_file(
 
         if should_diarize:
             params['chunking_strategy'] = 'auto'
-            params['extra_body'] = {
-                'known_speaker_names': [PATIENT_SPEAKER_NAME],
-                'known_speaker_references': [
-                    _patient_voice_reference_data_url(patient_voice_profile),
-                ],
-            }
+            params['known_speaker_names'] = [PATIENT_SPEAKER_NAME]
+            params['known_speaker_references'] = [
+                _patient_voice_reference_data_url(patient_voice_profile),
+            ]
 
         if settings.OPENAI_TRANSCRIPTION_LANGUAGE:
             params['language'] = settings.OPENAI_TRANSCRIPTION_LANGUAGE
 
-        if prompt:
+        if prompt and not should_diarize:
             params['prompt'] = prompt
 
         try:
             transcription = client.audio.transcriptions.create(**params)
         except Exception as exc:
-            raise OpenAITranscriptionError(
-                'OpenAI 음성 텍스트 변환 요청에 실패했습니다.',
-            ) from exc
+            message = 'OpenAI 음성 텍스트 변환 요청에 실패했습니다.'
+
+            if settings.DEBUG and str(exc):
+                message = f'{message} {exc}'
+
+            raise OpenAITranscriptionError(message) from exc
 
     if isinstance(transcription, str):
         return TranscriptionResult(
@@ -407,6 +519,9 @@ def generate_memory_recap(
     transcript,
     previous_memory=None,
     recent_memories=None,
+    long_term_memories=None,
+    recorded_at=None,
+    promise_timezone=None,
 ):
     client = _get_openai_client(OpenAIMemorySummaryError)
 
@@ -419,6 +534,15 @@ def generate_memory_recap(
         for index, memory_context in enumerate(recent_memory_context, start=1)
     ]
     recent_memory_text = '\n'.join(recent_memory_lines) or '이전 만남 요약 없음'
+    long_term_memory_text = _compact_json(
+        _long_term_memories_for_prompt(long_term_memories),
+        max_length=2400,
+    )
+    promise_timezone = (
+        promise_timezone
+        or getattr(settings, 'PROMISE_DEFAULT_TIMEZONE', 'Asia/Seoul')
+    )
+    recorded_at_text = recorded_at.isoformat() if recorded_at else '알 수 없음'
 
     instructions = (
         'You are an expert AI medical assistant specializing in cognitive support '
@@ -436,17 +560,26 @@ def generate_memory_recap(
         'relationship and name together, for example "딸 지민". Keep summary '
         'under 2 sentences and no more than 20 Korean words total. Avoid complex '
         'clause structures and passive voice. Extract any specific future time, '
-        'place, promise, or scheduled plan into upcoming_promise. If no clear '
-        'future promise exists, return null. '
+        'place, promise, or scheduled plan into upcoming_promise and promise. '
+        'Promise Extraction Rules: Use recorded_at and promise_timezone to '
+        'convert relative Korean dates such as 오늘, 내일, 이번 주말, 다음 주 into '
+        'absolute dates. Fill promise.scheduled_at with an ISO-8601 datetime '
+        'when an exact date and time are clear. Fill promise.scheduled_date '
+        'when only the date is clear. Fill promise.time_label with a short '
+        'Korean time phrase such as "저녁 7시" or "오전". Return promise=null '
+        'and upcoming_promise=null when there is no concrete future promise or '
+        'the date cannot be inferred. Do not save vague plans, past events, or '
+        'one-off appointments that already passed. '
         'Output Format: You must respond strictly using the provided JSON schema. '
         'Use title for a 10-character Korean topic label, summary for the memory '
-        'card body, upcoming_promise for the future action, and key_points for '
-        'up to 4 useful facts for the next conversation. Use core_memory as '
-        'long-term background information, and use recent_memories as short-term '
+        'card body, upcoming_promise for a display string, promise for the DB '
+        'record, and key_points for up to 4 useful facts for the next '
+        'conversation. Use long_term_memories '
+        'as durable background information, and use recent_memories as short-term '
         'context so older but important details are not lost. The JSON you return '
         'must be the new memory card for current_transcript, not a full rewrite '
         'of every old memory. Prefer facts from current_transcript when there is '
-        'any conflict. Use only facts found in current_transcript, core_memory, '
+        'any conflict. Use only facts found in current_transcript, long_term_memories, '
         'or recent_memories and do not guess.'
     )
 
@@ -458,7 +591,9 @@ def generate_memory_recap(
                 '[배경 정보]\n'
                 f'이름: {person.name}\n'
                 f'관계: {person.relationship}\n'
-                f'핵심 정보(장기 기억): {_format_core_memory(person.core_memory)}\n\n'
+                f'대화 기록 시각(recorded_at): {recorded_at_text}\n'
+                f'약속 기준 timezone: {promise_timezone}\n'
+                f'장기 기억: {long_term_memory_text}\n\n'
                 f'[최근 {RECENT_MEMORY_LIMIT}번의 만남 요약]\n'
                 f'{recent_memory_text}\n\n'
                 '[현재 방금 끝난 대화 STT 원문]\n'
@@ -484,27 +619,33 @@ def generate_memory_recap(
     return dict(parsed)
 
 
-def extract_long_term_memories(person, transcript):
+def extract_long_term_memories(person, transcript, recent_memories=None):
     client = _get_openai_client(OpenAIMemorySummaryError)
+    recent_memory_context = _recent_memories_for_prompt(recent_memories)
     instructions = (
         'You are an expert memory curator for a dementia support app. Extract '
-        'only durable, long-term facts from a noisy Korean STT transcript. '
-        'Long-term facts include marriage, birth, school admission, graduation, '
-        'employment, job change, serious illness or health condition, death, '
-        'major family change, and other facts that should still matter months '
-        'later. Do not extract ordinary meals, casual small talk, short-term '
-        'appointments, or vague plans unless they reveal a durable life event. '
+        'only must-remember, durable long-term facts from a noisy Korean STT '
+        'transcript. Save only facts that strongly help the patient understand '
+        'the relationship or recognize this person in future meetings. '
+        'Save: core relationship events such as family relationship changes, '
+        'marriage, birth, or death; life-stage changes such as school admission, '
+        'graduation, employment, job change, or retirement; long-term illness, '
+        'surgery, or major health changes; residence changes, moving in together, '
+        'separation, or other major living-context changes; stable identifying '
+        'facts that strongly help recognition. '
+        'Do not save: simple hobbies, ordinary meals, visits, outings, temporary '
+        'moods or recent status updates, one-off appointments, vague plans, or '
+        'anything sufficiently handled by recent_memories. '
         'Use only facts explicitly stated in current_transcript. Do not guess. '
-        'Write title and description in warm, simple Korean. If the transcript '
-        'contains no durable facts, return an empty items array. Output strictly '
-        'using the provided JSON schema.'
+        'Return candidates only when confidence is at least 0.8; otherwise '
+        'return an empty items array. Write title and description in warm, '
+        'simple Korean. Output strictly using the provided JSON schema.'
     )
     input_payload = {
         'person': {
             'id': str(person.id),
             'name': person.name,
             'relationship': person.relationship,
-            'core_memory': person.core_memory,
         },
         'allowed_categories': [
             'family',
@@ -518,6 +659,7 @@ def extract_long_term_memories(person, transcript):
             'other',
         ],
         'current_transcript': transcript,
+        'recent_memories': recent_memory_context,
     }
 
     try:
@@ -545,10 +687,126 @@ def extract_long_term_memories(person, transcript):
     return dict(parsed).get('items', [])
 
 
+def extract_initial_long_term_memories(person, initial_memory):
+    if not initial_memory or not initial_memory.strip():
+        return []
+
+    client = _get_openai_client(OpenAIMemorySummaryError)
+    instructions = (
+        'You are an expert memory curator for a dementia support app. Convert '
+        'a short Korean profile note written during person registration into '
+        'durable long-term memory records. Long-term facts include family '
+        'relationship details, birth, marriage, education, career, health, '
+        'death, important life changes, and stable facts that help the patient '
+        'recognize the person months later. Split distinct facts into separate '
+        'items when useful. Do not invent information. Write title and '
+        'description in warm, simple Korean. If the note contains no durable '
+        'facts, return an empty items array. Output strictly using the provided '
+        'JSON schema.'
+    )
+    input_payload = {
+        'person': {
+            'id': str(person.id),
+            'name': person.name,
+            'relationship': person.relationship,
+        },
+        'allowed_categories': [
+            'family',
+            'birth',
+            'marriage',
+            'education',
+            'career',
+            'health',
+            'death',
+            'relationship',
+            'other',
+        ],
+        'initial_memory_note': initial_memory.strip(),
+    }
+
+    try:
+        response = client.responses.parse(
+            model=settings.OPENAI_MEMORY_SUMMARY_MODEL,
+            instructions=instructions,
+            input=(
+                '아래 JSON을 바탕으로 인물 등록 시 입력된 핵심 기억을 '
+                '장기 기억 후보로 변환하세요.\n'
+                f'{json.dumps(input_payload, ensure_ascii=False)}'
+            ),
+            text_format=LongTermMemoryExtraction,
+            max_output_tokens=settings.OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS,
+            temperature=0.1,
+        )
+    except Exception as exc:
+        raise OpenAIMemorySummaryError(
+            'OpenAI 초기 장기 기억 변환 요청에 실패했습니다.',
+        ) from exc
+
+    parsed = _extract_parsed_memory(response)
+
+    if hasattr(parsed, 'model_dump'):
+        return parsed.model_dump().get('items', [])
+
+    return dict(parsed).get('items', [])
+
+
+def merge_long_term_memory_candidate(person, existing_memory, candidate):
+    client = _get_openai_client(OpenAIMemorySummaryError)
+    instructions = (
+        'You are an expert memory curator for a dementia support app. A person '
+        'can have only one long-term memory record per category. Compare the '
+        'existing record and the new candidate. Keep the existing record if the '
+        'candidate is weaker, redundant, temporary, or less useful for future '
+        'recognition. Update to the candidate if it is clearly more accurate, '
+        'more important, or replaces outdated information. Merge them into one '
+        'record if both contain durable, compatible facts in the same category. '
+        'Do not invent information. Preserve warm, simple Korean. Return '
+        'should_update=false when the existing record should remain unchanged. '
+        'Return should_update=true with the final merged record when the DB '
+        'record should be updated. Output strictly using the provided JSON schema.'
+    )
+    input_payload = {
+        'person': {
+            'id': str(person.id),
+            'name': person.name,
+            'relationship': person.relationship,
+        },
+        'category': existing_memory.category,
+        'existing_memory': _long_term_memory_for_prompt(existing_memory),
+        'new_candidate': candidate,
+    }
+
+    try:
+        response = client.responses.parse(
+            model=settings.OPENAI_MEMORY_SUMMARY_MODEL,
+            instructions=instructions,
+            input=(
+                '아래 JSON을 바탕으로 같은 category의 장기 기억을 하나의 '
+                '최종 레코드로 유지/교체/병합할지 판단하세요.\n'
+                f'{json.dumps(input_payload, ensure_ascii=False)}'
+            ),
+            text_format=LongTermMemoryMergeDecision,
+            max_output_tokens=settings.OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS,
+            temperature=0.1,
+        )
+    except Exception as exc:
+        raise OpenAIMemorySummaryError(
+            'OpenAI 장기 기억 병합 요청에 실패했습니다.',
+        ) from exc
+
+    parsed = _extract_parsed_memory(response)
+
+    if hasattr(parsed, 'model_dump'):
+        return parsed.model_dump()
+
+    return dict(parsed)
+
+
 def generate_person_display_summary(
     person,
     recent_memories,
     long_term_memories,
+    active_promises=None,
 ):
     client = _get_openai_client(OpenAIMemorySummaryError)
     recent_memory_context = [
@@ -559,13 +817,22 @@ def generate_person_display_summary(
         _long_term_memory_for_prompt(memory)
         for memory in list(long_term_memories)
     ]
+    active_promise_context = _promises_for_prompt(active_promises)
     instructions = (
         'You are an expert AI assistant creating a small face-adjacent memory '
         'card for a patient with Alzheimer disease or dementia. Use the '
         'person profile, recent conversation memories, and long-term memories '
-        'to create one clear, reassuring Korean card. Prefer the most recent '
-        'upcoming promise if one exists. Include a long_term_hint only when a '
-        'stable fact helps the patient recognize the person. Never use vague '
+        'to create one clear, reassuring Korean card. The body field must '
+        'summarize the most important conversation from recent_memories, which '
+        'contains up to the 3 most recent conversation summaries. Do not use '
+        'long_term_memories as the main source for body; use them only for '
+        'recognition context and long_term_hint. Use active_promises as the '
+        'only source for upcoming_promise. If active_promises is non-empty, '
+        'set upcoming_promise to the most helpful active promise display_text. '
+        'If active_promises is empty, set upcoming_promise to null even if old '
+        'recent_memories contain stale promise text. Include a '
+        'long_term_hint only when a stable fact helps the patient recognize '
+        'the person. Never use vague '
         'pronouns like "그분" or "상대방"; explicitly write the relationship '
         'and name together. Use only provided facts and do not guess. Output '
         'strictly using the provided JSON schema.'
@@ -575,10 +842,10 @@ def generate_person_display_summary(
             'id': str(person.id),
             'name': person.name,
             'relationship': person.relationship,
-            'core_memory': person.core_memory,
         },
         'recent_memories': recent_memory_context,
         'long_term_memories': long_term_memory_context,
+        'active_promises': active_promise_context,
     }
 
     try:

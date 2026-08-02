@@ -16,7 +16,6 @@ class Person(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=80)
     relationship = models.CharField(max_length=80)
-    core_memory = models.JSONField(default=dict, blank=True)
     face_descriptor = models.JSONField()
 
     class Meta:
@@ -109,6 +108,97 @@ class Memory(TimeStampedModel):
         return f'{self.person.name} memory at {self.memory_at:%Y-%m-%d %H:%M}'
 
 
+class Promise(TimeStampedModel):
+    STATUS_ACTIVE = 'active'
+    STATUS_EXPIRED = 'expired'
+    STATUS_COMPLETED = 'completed'
+    STATUS_CANCELLED = 'cancelled'
+
+    STATUS_CHOICES = [
+        (STATUS_ACTIVE, 'Active'),
+        (STATUS_EXPIRED, 'Expired'),
+        (STATUS_COMPLETED, 'Completed'),
+        (STATUS_CANCELLED, 'Cancelled'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name='promises',
+    )
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='promises',
+    )
+    memory = models.ForeignKey(
+        Memory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='promises',
+    )
+    title = models.CharField(max_length=80)
+    description = models.TextField()
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    scheduled_date = models.DateField(null=True, blank=True)
+    time_label = models.CharField(max_length=80, blank=True, default='')
+    timezone = models.CharField(max_length=64, default='Asia/Seoul')
+    raw_text = models.TextField(blank=True, default='')
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_ACTIVE,
+    )
+    confidence = models.FloatField(default=0)
+
+    class Meta:
+        db_table = 'promises'
+        ordering = ['scheduled_at', 'scheduled_date', 'created_at']
+        indexes = [
+            models.Index(
+                fields=['person', 'status', 'scheduled_at'],
+                name='promise_person_status_at_idx',
+            ),
+            models.Index(
+                fields=['person', 'status', 'scheduled_date'],
+                name='promise_person_status_date_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.person.name} promise: {self.title}'
+
+
+class MemoryAlbumItem(TimeStampedModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.CASCADE,
+        related_name='memory_album_items',
+    )
+    photo = models.FileField(upload_to='memory_album_photos/')
+    description = models.CharField(max_length=160)
+    crop_x = models.FloatField(default=50)
+    crop_y = models.FloatField(default=50)
+
+    class Meta:
+        db_table = 'memory_album_items'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(
+                fields=['person', '-created_at'],
+                name='album_person_recent_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.person.name} album item: {self.description[:24]}'
+
+
 class LongTermMemory(TimeStampedModel):
     CATEGORY_FAMILY = 'family'
     CATEGORY_BIRTH = 'birth'
@@ -171,6 +261,12 @@ class LongTermMemory(TimeStampedModel):
     class Meta:
         db_table = 'long_term_memories'
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['person', 'category'],
+                name='unique_ltm_person_category',
+            ),
+        ]
         indexes = [
             models.Index(
                 fields=['person', 'status', '-created_at'],
@@ -209,6 +305,7 @@ class PersonSummary(TimeStampedModel):
     card = models.JSONField()
     source_memory_ids = models.JSONField(default=list, blank=True)
     source_long_term_memory_ids = models.JSONField(default=list, blank=True)
+    source_promise_ids = models.JSONField(default=list, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

@@ -4,9 +4,11 @@ from .models import (
     Conversation,
     LongTermMemory,
     Memory,
+    MemoryAlbumItem,
     PatientVoiceProfile,
     Person,
     PersonSummary,
+    Promise,
 )
 
 
@@ -14,7 +16,7 @@ from .models import (
 class PersonAdmin(admin.ModelAdmin):
     list_display = ('name', 'relationship', 'updated_at')
     search_fields = ('name', 'relationship')
-    fields = ('name', 'relationship', 'core_memory', 'face_descriptor')
+    fields = ('name', 'relationship', 'face_descriptor')
 
 
 @admin.register(Conversation)
@@ -31,6 +33,13 @@ class MemoryAdmin(admin.ModelAdmin):
     search_fields = ('person__name', 'person__relationship')
 
 
+@admin.register(MemoryAlbumItem)
+class MemoryAlbumItemAdmin(admin.ModelAdmin):
+    list_display = ('person', 'description', 'created_at')
+    search_fields = ('person__name', 'person__relationship', 'description')
+    readonly_fields = ('created_at', 'updated_at')
+
+
 @admin.register(LongTermMemory)
 class LongTermMemoryAdmin(admin.ModelAdmin):
     list_display = ('person', 'category', 'title', 'status', 'confidence', 'updated_at')
@@ -43,6 +52,13 @@ class PersonSummaryAdmin(admin.ModelAdmin):
     list_display = ('person', 'status', 'generated_at', 'updated_at')
     list_filter = ('status', 'generated_at')
     search_fields = ('person__name', 'person__relationship')
+
+
+@admin.register(Promise)
+class PromiseAdmin(admin.ModelAdmin):
+    list_display = ('person', 'title', 'status', 'scheduled_at', 'scheduled_date')
+    list_filter = ('status', 'scheduled_at', 'scheduled_date')
+    search_fields = ('person__name', 'person__relationship', 'title', 'description')
 
 
 @admin.register(PatientVoiceProfile)

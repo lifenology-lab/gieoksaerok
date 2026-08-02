@@ -2,7 +2,25 @@ import math
 
 from rest_framework import serializers
 
-from .models import Conversation, LongTermMemory, Memory, Person, PersonSummary
+from .models import (
+    Conversation,
+    LongTermMemory,
+    Memory,
+    MemoryAlbumItem,
+    Person,
+    PersonSummary,
+    Promise,
+)
+from .promise_utils import format_promise_display, promise_sort_key
+
+
+MAX_MEMORY_ALBUM_PHOTO_BYTES = 10 * 1024 * 1024
+ALLOWED_MEMORY_ALBUM_IMAGE_TYPES = {
+    'image/gif',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+}
 
 
 class MemorySerializer(serializers.ModelSerializer):
@@ -36,6 +54,73 @@ class MemorySerializer(serializers.ModelSerializer):
         return attrs
 
 
+class MemoryAlbumItemSerializer(serializers.ModelSerializer):
+    photo = serializers.FileField(write_only=True)
+    photo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MemoryAlbumItem
+        fields = [
+            'id',
+            'person',
+            'photo',
+            'photo_url',
+            'description',
+            'crop_x',
+            'crop_y',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'id',
+            'person',
+            'photo_url',
+            'created_at',
+            'updated_at',
+        ]
+
+    def get_photo_url(self, obj):
+        if not obj.photo:
+            return None
+
+        return obj.photo.url
+
+    def validate_photo(self, value):
+        content_type = getattr(value, 'content_type', '')
+
+        if content_type not in ALLOWED_MEMORY_ALBUM_IMAGE_TYPES:
+            raise serializers.ValidationError(
+                'jpg, png, webp, gif 형식의 사진만 등록할 수 있습니다.',
+            )
+
+        if value.size > MAX_MEMORY_ALBUM_PHOTO_BYTES:
+            raise serializers.ValidationError('사진은 10MB 이하로 등록해주세요.')
+
+        return value
+
+    def validate_description(self, value):
+        description = value.strip()
+
+        if not description:
+            raise serializers.ValidationError('짧은 설명을 입력해주세요.')
+
+        return description
+
+    def validate_crop_x(self, value):
+        return self.validate_crop_percent(value, 'crop_x')
+
+    def validate_crop_y(self, value):
+        return self.validate_crop_percent(value, 'crop_y')
+
+    def validate_crop_percent(self, value, field_name):
+        if value < 0 or value > 100:
+            raise serializers.ValidationError(
+                f'{field_name}는 0 이상 100 이하의 값이어야 합니다.',
+            )
+
+        return value
+
+
 class LongTermMemorySerializer(serializers.ModelSerializer):
     class Meta:
         model = LongTermMemory
@@ -67,6 +152,7 @@ class PersonSummarySerializer(serializers.ModelSerializer):
             'card',
             'source_memory_ids',
             'source_long_term_memory_ids',
+            'source_promise_ids',
             'status',
             'generated_at',
             'created_at',
@@ -75,9 +161,45 @@ class PersonSummarySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
+class PromiseSerializer(serializers.ModelSerializer):
+    display_text = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Promise
+        fields = [
+            'id',
+            'person',
+            'conversation',
+            'memory',
+            'title',
+            'description',
+            'scheduled_at',
+            'scheduled_date',
+            'time_label',
+            'timezone',
+            'raw_text',
+            'status',
+            'confidence',
+            'display_text',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'display_text', 'created_at', 'updated_at']
+
+    def get_display_text(self, obj):
+        return format_promise_display(obj)
+
+
 class PersonSerializer(serializers.ModelSerializer):
+    initial_memory = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+        write_only=True,
+    )
     latest_memory = serializers.SerializerMethodField()
     latest_summary = serializers.SerializerMethodField()
+    latest_promise = serializers.SerializerMethodField()
 
     class Meta:
         model = Person
@@ -85,10 +207,11 @@ class PersonSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'relationship',
-            'core_memory',
+            'initial_memory',
             'face_descriptor',
             'latest_memory',
             'latest_summary',
+            'latest_promise',
             'created_at',
             'updated_at',
         ]
@@ -96,9 +219,14 @@ class PersonSerializer(serializers.ModelSerializer):
             'id',
             'latest_memory',
             'latest_summary',
+            'latest_promise',
             'created_at',
             'updated_at',
         ]
+
+    def create(self, validated_data):
+        validated_data.pop('initial_memory', None)
+        return super().create(validated_data)
 
     def get_latest_memory(self, obj):
         prefetched_memories = getattr(obj, 'prefetched_latest_memories', None)
@@ -128,7 +256,37 @@ class PersonSerializer(serializers.ModelSerializer):
         if not summary:
             return None
 
-        return PersonSummarySerializer(summary).data
+        data = PersonSummarySerializer(summary).data
+        active_promise = self._get_latest_active_promise(obj)
+        card = dict(data.get('card') or {})
+        card['upcoming_promise'] = (
+            format_promise_display(active_promise)
+            if active_promise
+            else None
+        )
+        data['card'] = card
+        return data
+
+    def get_latest_promise(self, obj):
+        active_promise = self._get_latest_active_promise(obj)
+
+        if not active_promise:
+            return None
+
+        return PromiseSerializer(active_promise).data
+
+    def _get_latest_active_promise(self, obj):
+        prefetched_promises = getattr(obj, 'prefetched_active_promises', None)
+
+        if prefetched_promises is not None:
+            sorted_promises = sorted(prefetched_promises, key=promise_sort_key)
+            return sorted_promises[0] if sorted_promises else None
+
+        active_promises = list(
+            obj.promises.filter(status=Promise.STATUS_ACTIVE),
+        )
+        sorted_promises = sorted(active_promises, key=promise_sort_key)
+        return sorted_promises[0] if sorted_promises else None
 
     def validate_face_descriptor(self, value):
         if not isinstance(value, list):
