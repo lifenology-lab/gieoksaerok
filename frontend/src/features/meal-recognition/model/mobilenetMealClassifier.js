@@ -67,8 +67,6 @@ export async function classifyMealScene(srcElement) {
   // 테스트용, 확률 가장 높은 10개 labels
   const predictions = await model.classify(srcElement, 10);
 
-  console.log("MobileNet predictions:", predictions);
-
   // 식사 관련 라벨을 포함하고 관련 라벨의 probability의 누적합이
   // confidence threshold를 넘는 예측
   const mealRelatedPredictions = predictions.filter((prediction) => {

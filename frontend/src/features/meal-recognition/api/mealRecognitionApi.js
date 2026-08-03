@@ -1,22 +1,21 @@
+import { request } from "../../../shared/api/client";
 import { classifyMealScene } from "../model/teachableMachineMealClassifier";
 import {
   getMealContextResult,
+  mapMealRecordsFromApi,
   MEAL_CONTEXT_RESULT_TYPES,
 } from "../utils/mealRecordUtils";
 
-const MOCK_DELAY_MS = 500;
+// 최근 식사 기록을 받아 식사 인식 화면에서 사용하는 형태로 반환
+export async function fetchRecentMealRecords() {
+  const mealRecords = await request("/api/meal-records/recent/");
 
-const wait = (ms) => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-};
+  return mapMealRecordsFromApi(mealRecords);
+}
 
 // 식사 상황이 보이는 source (video)와 식사 기록들을 받아서
 // 식사 상황인지 추론하고 최근 식사 기록 유무에 따른 object를 리턴
 export async function detectMealScene(srcElement, mealRecords = []) {
-  await wait(MOCK_DELAY_MS);
-
   // 식사 상황인지 추론
   const mealSceneResult = await classifyMealScene(srcElement);
 
@@ -36,7 +35,6 @@ export async function detectMealScene(srcElement, mealRecords = []) {
 
   // 식사 맥락 가져오기
   const mealContextResult = getMealContextResult(mealRecords);
-  console.log("식사 맥락 결과:", mealContextResult);
 
   // 최근 1시간 이내 식사 기록이 있는 경우 같은 식사 맥락으로 판단
   if (

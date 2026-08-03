@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { createConfusionEvent } from "@/features/confusion/api/confusionEventsApi";
+
 import "./ConfusionSelectPage.css";
 
 const WEEKDAY_LABELS = [
@@ -11,6 +13,39 @@ const WEEKDAY_LABELS = [
   "목요일",
   "금요일",
   "토요일",
+];
+
+const CONFUSION_OPTIONS = [
+  {
+    id: "person",
+    label: "사람",
+    description: "앞에 있는 사람이 누구인지 헷갈려요.",
+    icon: <PersonIcon />,
+  },
+  {
+    id: "place",
+    label: "장소",
+    description: "지금 여기가 어디인지 헷갈려요.",
+    icon: <PlaceIcon />,
+  },
+  {
+    id: "time",
+    label: "시간",
+    description: "지금이 몇 시인지, 어떤 때인지 헷갈려요.",
+    icon: <TimeIcon />,
+  },
+  {
+    id: "task",
+    label: "해야 할 일",
+    description: "지금 무엇을 해야 하는지 모르겠어요.",
+    icon: <TaskIcon />,
+  },
+  {
+    id: "meal",
+    label: "식사",
+    description: "식사를 했는지, 해야 하는지 헷갈려요.",
+    icon: <MealIcon />,
+  },
 ];
 
 function formatDate(date) {
@@ -74,48 +109,12 @@ function MealIcon() {
   );
 }
 
-const CONFUSION_ICONS = {
-  person: <PersonIcon />,
-  place: <PlaceIcon />,
-  time: <TimeIcon />,
-  task: <TaskIcon />,
-  meal: <MealIcon />,
-};
-
-const CONFUSION_OPTIONS = [
-  {
-    id: "person",
-    label: "사람",
-    description: "앞에 있는 사람이 누구인지 헷갈려요.",
-  },
-  {
-    id: "place",
-    label: "장소",
-    description: "지금 여기가 어디인지 헷갈려요.",
-  },
-  {
-    id: "time",
-    label: "시간",
-    description: "지금이 몇 시인지, 어떤 때인지 헷갈려요.",
-  },
-  {
-    id: "task",
-    label: "해야 할 일",
-    description: "지금 무엇을 해야 하는지 모르겠어요.",
-  },
-  {
-    id: "meal",
-    label: "식사",
-    description: "식사를 했는지, 해야 하는지 헷갈려요.",
-  },
-];
-
-const MOCK_PATIENT_ID = "mock-patient-1";
-
 export default function ConfusionSelectPage() {
   const navigate = useNavigate();
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
   const [selectedConfusionType, setSelectedConfusionType] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -127,16 +126,26 @@ export default function ConfusionSelectPage() {
     };
   }, []);
 
-  const handleConfusionSelect = (confusionType) => {
+  const handleConfusionSelect = async (confusionType) => {
+    if (isSaving) {
+      return;
+    }
+
     setSelectedConfusionType(confusionType);
+    setMessage("");
 
-    const payload = {
-      patient_id: MOCK_PATIENT_ID,
-      confusion_type: confusionType,
-      occurred_at: new Date().toISOString(),
-    };
-
-    console.log("ConfusionEvent payload:", payload);
+    try {
+      setIsSaving(true);
+      await createConfusionEvent({
+        confusionType,
+        occurredAt: new Date().toISOString(),
+      });
+      setMessage("선택한 내용을 기록했어요.");
+    } catch (error) {
+      setMessage(error.message || "선택한 내용을 기록하지 못했어요.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleBack = () => {
@@ -175,11 +184,12 @@ export default function ConfusionSelectPage() {
             key={option.id}
             type="button"
             className="confusion-select-page__option"
+            disabled={isSaving}
             data-selected={selectedConfusionType === option.id}
             onClick={() => handleConfusionSelect(option.id)}
           >
             <span className="confusion-select-page__option-icon">
-              {CONFUSION_ICONS[option.id]}
+              {option.icon}
             </span>
             <span className="confusion-select-page__option-label">
               {option.label}
@@ -190,6 +200,8 @@ export default function ConfusionSelectPage() {
           </button>
         ))}
       </section>
+
+      {message && <p role="status">{message}</p>}
     </main>
   );
 }

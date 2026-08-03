@@ -1,9 +1,19 @@
 from django.urls import path
 
-from .views import ConfusionEventView, MealContextEventView, MealRecordView
+from .views import (
+    ConfusionEventView, 
+    MealContextEventView, 
+    MealRecordView,
+    RecentMealRecordView,
+)
 
 urlpatterns = [
     path("meal-records/", MealRecordView.as_view(), name="meal-records"),
+    path(
+        "meal-records/recent/", 
+        RecentMealRecordView.as_view(),
+        name="recent-meal-records",
+    ),
     path(
         "meal-context-events/",
         MealContextEventView.as_view(),
