@@ -28,6 +28,7 @@ class MemorySerializer(serializers.ModelSerializer):
         model = Memory
         fields = [
             'id',
+            'user',
             'person',
             'conversation',
             'recap',
@@ -36,7 +37,7 @@ class MemorySerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
     def validate(self, attrs):
         person = attrs.get('person') or getattr(self.instance, 'person', None)
@@ -51,6 +52,18 @@ class MemorySerializer(serializers.ModelSerializer):
                 'memory의 person과 conversation의 person이 같아야 합니다.',
             )
 
+        user = attrs.get('user') or getattr(self.instance, 'user', None)
+
+        if user and person and person.user_id != user.id:
+            raise serializers.ValidationError(
+                'memory의 user와 person의 user가 같아야 합니다.',
+            )
+
+        if user and conversation and conversation.user_id != user.id:
+            raise serializers.ValidationError(
+                'memory의 user와 conversation의 user가 같아야 합니다.',
+            )
+
         return attrs
 
 
@@ -62,6 +75,7 @@ class MemoryAlbumItemSerializer(serializers.ModelSerializer):
         model = MemoryAlbumItem
         fields = [
             'id',
+            'user',
             'person',
             'photo',
             'photo_url',
@@ -74,6 +88,7 @@ class MemoryAlbumItemSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id',
             'person',
+            'user',
             'photo_url',
             'created_at',
             'updated_at',
@@ -126,6 +141,7 @@ class LongTermMemorySerializer(serializers.ModelSerializer):
         model = LongTermMemory
         fields = [
             'id',
+            'user',
             'person',
             'conversation',
             'category',
@@ -139,7 +155,7 @@ class LongTermMemorySerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
 
 class PersonSummarySerializer(serializers.ModelSerializer):
@@ -147,6 +163,7 @@ class PersonSummarySerializer(serializers.ModelSerializer):
         model = PersonSummary
         fields = [
             'id',
+            'user',
             'person',
             'conversation',
             'card',
@@ -158,7 +175,7 @@ class PersonSummarySerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
 
 class PromiseSerializer(serializers.ModelSerializer):
@@ -168,6 +185,7 @@ class PromiseSerializer(serializers.ModelSerializer):
         model = Promise
         fields = [
             'id',
+            'user',
             'person',
             'conversation',
             'memory',
@@ -184,7 +202,13 @@ class PromiseSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'display_text', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id',
+            'user',
+            'display_text',
+            'created_at',
+            'updated_at',
+        ]
 
     def get_display_text(self, obj):
         return format_promise_display(obj)
@@ -205,6 +229,7 @@ class PersonSerializer(serializers.ModelSerializer):
         model = Person
         fields = [
             'id',
+            'user',
             'name',
             'relationship',
             'initial_memory',
@@ -217,6 +242,7 @@ class PersonSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id',
+            'user',
             'latest_memory',
             'latest_summary',
             'latest_promise',
@@ -315,6 +341,7 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = [
             'id',
+            'user',
             'person',
             'transcript',
             'speaker_segments',
@@ -323,4 +350,15 @@ class ConversationSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        user = attrs.get('user') or getattr(self.instance, 'user', None)
+        person = attrs.get('person') or getattr(self.instance, 'person', None)
+
+        if user and person and person.user_id != user.id:
+            raise serializers.ValidationError(
+                'conversation의 user와 person의 user가 같아야 합니다.',
+            )
+
+        return attrs

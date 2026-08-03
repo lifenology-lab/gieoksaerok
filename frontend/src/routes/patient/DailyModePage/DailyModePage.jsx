@@ -1,40 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import CameraPreview from "../../../features/camera/components/CameraPreview.jsx";
-import useCamera from "../../../features/camera/hooks/useCamera.js";
-import ConversationRecorderControls from "../../../features/conversation/components/ConversationRecorderControls.jsx";
-import useConversationRecorder from "../../../features/conversation/hooks/useConversationRecorder.js";
-import usePatientVoiceRecorder from "../../../features/conversation/hooks/usePatientVoiceRecorder.js";
-import FaceLabelsOverlay from "../../../features/face-recognition/components/FaceLabelsOverlay.jsx";
-import UnknownPersonDialog from "../../../features/face-recognition/components/UnknownPersonDialog.jsx";
-import usePersonRecognition from "../../../features/face-recognition/hooks/usePersonRecognition.js";
-import RecognitionToggleGroup from "../../../features/daily-mode/components/RecognitionToggleGroup";
-import DailyModeBottomActions from "../../../features/daily-mode/components/DailyModeBottomActions";
-import RecognitionStatusToast from "../../../features/daily-mode/components/RecognitionStatusToast.jsx";
-import {
-  DAILY_MODE_RECOGNITION_TYPES,
-  DAILY_MODE_RETURN_RECOGNITION_KEY,
-} from "../../../features/daily-mode/constants/returnRecognition.js";
-import useRecognitionState from "../../../features/daily-mode/hooks/useRecognitionState.js";
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-
+import ConversationRecorderControls from "@/features/conversation/components/ConversationRecorderControls.jsx";
+import useConversationRecorder from "@/features/conversation/hooks/useConversationRecorder.js";
+import usePatientVoiceRecorder from "@/features/conversation/hooks/usePatientVoiceRecorder.js";
 import { CameraPreview } from "@/features/camera/components";
+import useCamera from "@/features/camera/hooks/useCamera.js";
 import {
   DailyModeBottomActions,
   RecognitionStatusToast,
   RecognitionToggleGroup,
 } from "@/features/daily-mode/components";
+import {
+  DAILY_MODE_RECOGNITION_TYPES,
+  DAILY_MODE_RETURN_RECOGNITION_KEY,
+} from "@/features/daily-mode/constants/returnRecognition.js";
 import useRecognitionState from "@/features/daily-mode/hooks/useRecognitionState";
+import FaceLabelsOverlay from "@/features/face-recognition/components/FaceLabelsOverlay.jsx";
+import UnknownPersonDialog from "@/features/face-recognition/components/UnknownPersonDialog.jsx";
+import usePersonRecognition from "@/features/face-recognition/hooks/usePersonRecognition.js";
+import { detectMealScene } from "@/features/meal-recognition/api/mealRecognitionApi";
 import {
   MealRecognitionCard,
   MealRecognitionOverlay,
 } from "@/features/meal-recognition/components";
-import { detectMealScene } from "@/features/meal-recognition/api/mealRecognitionApi";
-
 import { mockMealRecordsEmpty } from "@/features/meal-recognition/data/mockMealRecords";
-
 import {
   getMealContextResult,
   MEAL_CONTEXT_RESULT_TYPES,
@@ -496,13 +486,12 @@ export default function DailyModePage() {
 
   return (
     <main className="daily-mode-page">
-      <CameraPreview {...camera}>
+      <CameraPreview {...camera} onVideoElementReady={handleVideoElementReady}>
         <FaceLabelsOverlay
           faces={recognizedFaces}
           onOpenMemoryAlbum={handleOpenMemoryAlbum}
         />
       </CameraPreview>
-      <CameraPreview onVideoElementReady={handleVideoElementReady} />
 
       <RecognitionToggleGroup
         activeRecognitionType={activeRecognitionType}
@@ -557,8 +546,6 @@ export default function DailyModePage() {
       </section>
 
       <img ref={testImageElementRef} alt="" style={{ display: "none" }} />
-
-      <RecognitionStatusToast message={statusMessage} />
 
       <MealRecognitionOverlay isOpen={Boolean(mealRecognitionResult)}>
         {mealRecognitionResult && (

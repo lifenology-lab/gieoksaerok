@@ -1,0 +1,144 @@
+.auth-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  background:
+    linear-gradient(135deg, rgba(244, 249, 247, 0.92), rgba(255, 255, 255, 0.96)),
+    #ffffff;
+  color: #25222a;
+}
+
+.auth-page--loading {
+  font-weight: 700;
+}
+
+.auth-page__panel {
+  width: min(440px, 100%);
+  display: grid;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid #dde7e1;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 60px rgba(38, 55, 45, 0.12);
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.auth-page__intro {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-page__eyebrow {
+  color: #2f725d;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.auth-page__intro h1 {
+  margin: 0;
+  color: #17141d;
+  font-size: 34px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.auth-page__intro p:last-child {
+  color: #6b6572;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.auth-page__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border: 1px solid #dce5df;
+  border-radius: 8px;
+  background: #f3f7f5;
+}
+
+.auth-page__tabs button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 6px;
+  color: #5d6570;
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.auth-page__tabs button.is-active {
+  color: #15221d;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(38, 55, 45, 0.1);
+}
+
+.auth-page__form {
+  display: grid;
+  gap: 16px;
+}
+
+.auth-page__form label {
+  display: grid;
+  gap: 8px;
+  color: #3d3944;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.auth-page__form input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #d7dfda;
+  border-radius: 8px;
+  padding: 0 14px;
+  color: #17141d;
+  background: #ffffff;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.auth-page__form input:focus {
+  border-color: #2f725d;
+  outline: 3px solid rgba(47, 114, 93, 0.16);
+}
+
+.auth-page__error {
+  padding: 12px;
+  border-radius: 8px;
+  color: #84222f;
+  background: #fff0f2;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.auth-page__submit {
+  min-height: 50px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #2f725d;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.auth-page__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+@media (max-width: 520px) {
+  .auth-page__panel {
+    padding: 22px;
+  }
+
+  .auth-page__intro h1 {
+    font-size: 30px;
+  }
+}

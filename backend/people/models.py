@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -14,13 +15,21 @@ class TimeStampedModel(models.Model):
 
 class Person(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='people',
+    )
     name = models.CharField(max_length=80)
     relationship = models.CharField(max_length=80)
     face_descriptor = models.JSONField()
 
     class Meta:
         db_table = 'people'
-        ordering = ['name', 'id']
+        ordering = ['user', 'name', 'id']
+        indexes = [
+            models.Index(fields=['user', 'name'], name='person_user_name_idx'),
+        ]
 
     def __str__(self):
         return f'{self.name} ({self.relationship})'
@@ -38,6 +47,11 @@ class Conversation(TimeStampedModel):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='conversations',
+    )
     person = models.ForeignKey(
         Person,
         on_delete=models.CASCADE,
@@ -55,13 +69,24 @@ class Conversation(TimeStampedModel):
     class Meta:
         db_table = 'conversations'
         ordering = ['-recorded_at', '-created_at']
+        indexes = [
+            models.Index(
+                fields=['user', '-recorded_at'],
+                name='conversation_user_recent_idx',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.person.name} conversation at {self.recorded_at:%Y-%m-%d %H:%M}'
 
 
 class PatientVoiceProfile(TimeStampedModel):
-    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    id = models.BigAutoField(primary_key=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='patient_voice_profile',
+    )
     speaker_name = models.CharField(max_length=80, default='환자')
     audio_data = models.BinaryField()
     audio_content_type = models.CharField(max_length=100, default='audio/webm')
@@ -70,16 +95,17 @@ class PatientVoiceProfile(TimeStampedModel):
     class Meta:
         db_table = 'patient_voice_profiles'
 
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f'{self.speaker_name} voice profile'
 
 
 class Memory(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='memories',
+    )
     person = models.ForeignKey(
         Person,
         on_delete=models.CASCADE,
@@ -102,6 +128,10 @@ class Memory(TimeStampedModel):
                 fields=['person', '-memory_at'],
                 name='memory_person_recent_idx',
             ),
+            models.Index(
+                fields=['user', '-memory_at'],
+                name='memory_user_recent_idx',
+            ),
         ]
 
     def __str__(self):
@@ -122,6 +152,11 @@ class Promise(TimeStampedModel):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='promises',
+    )
     person = models.ForeignKey(
         Person,
         on_delete=models.CASCADE,
@@ -167,6 +202,10 @@ class Promise(TimeStampedModel):
                 fields=['person', 'status', 'scheduled_date'],
                 name='promise_person_status_date_idx',
             ),
+            models.Index(
+                fields=['user', 'status', 'scheduled_at'],
+                name='promise_user_status_at_idx',
+            ),
         ]
 
     def __str__(self):
@@ -175,6 +214,11 @@ class Promise(TimeStampedModel):
 
 class MemoryAlbumItem(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='memory_album_items',
+    )
     person = models.ForeignKey(
         Person,
         on_delete=models.CASCADE,
@@ -192,6 +236,10 @@ class MemoryAlbumItem(TimeStampedModel):
             models.Index(
                 fields=['person', '-created_at'],
                 name='album_person_recent_idx',
+            ),
+            models.Index(
+                fields=['user', '-created_at'],
+                name='album_user_recent_idx',
             ),
         ]
 
@@ -233,6 +281,11 @@ class LongTermMemory(TimeStampedModel):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='long_term_memories',
+    )
     person = models.ForeignKey(
         Person,
         on_delete=models.CASCADE,
@@ -272,6 +325,10 @@ class LongTermMemory(TimeStampedModel):
                 fields=['person', 'status', '-created_at'],
                 name='ltm_person_status_recent_idx',
             ),
+            models.Index(
+                fields=['user', 'status', '-created_at'],
+                name='ltm_user_status_recent_idx',
+            ),
         ]
 
     def __str__(self):
@@ -290,6 +347,11 @@ class PersonSummary(TimeStampedModel):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='summaries',
+    )
     person = models.ForeignKey(
         Person,
         on_delete=models.CASCADE,
@@ -320,6 +382,10 @@ class PersonSummary(TimeStampedModel):
             models.Index(
                 fields=['person', 'status', '-generated_at'],
                 name='summary_person_status_idx',
+            ),
+            models.Index(
+                fields=['user', 'status', '-generated_at'],
+                name='summary_user_status_idx',
             ),
         ]
 

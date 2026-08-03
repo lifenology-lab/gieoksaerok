@@ -11,7 +11,7 @@ const PatientHomePage = () => {
       <Link to="/patient/confusion">
         <button>잘 모르겠어요</button>
       </Link>
-      <Link to="/">이전으로 돌아가기</Link>
+      <Link to="/roles">이전으로 돌아가기</Link>
     </div>
   );
 };

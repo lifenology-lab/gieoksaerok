@@ -7,7 +7,9 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -58,6 +60,13 @@ PROMISE_MIN_CONFIDENCE = 0.7
 ACTIVE_PROMISE_DISPLAY_LIMIT = 3
 
 
+def get_request_patient_user(request):
+    if request.user and request.user.is_authenticated:
+        return request.user
+
+    raise NotAuthenticated('로그인이 필요합니다.')
+
+
 def normalize_long_term_memory_category(category):
     allowed_categories = {
         choice[0]
@@ -79,8 +88,11 @@ def clamp_confidence(value):
     return min(max(confidence, 0), 1)
 
 
-def expire_stale_promises(person=None):
+def expire_stale_promises(user=None, person=None):
     queryset = Promise.objects.filter(status=Promise.STATUS_ACTIVE)
+
+    if user is not None:
+        queryset = queryset.filter(user=user)
 
     if person is not None:
         queryset = queryset.filter(person=person)
@@ -99,9 +111,10 @@ def expire_stale_promises(person=None):
 
 
 def get_active_promises_for_person(person, limit=ACTIVE_PROMISE_DISPLAY_LIMIT):
-    expire_stale_promises(person)
+    expire_stale_promises(user=person.user, person=person)
     promises = list(
         Promise.objects.filter(
+            user=person.user,
             person=person,
             status=Promise.STATUS_ACTIVE,
         ),
@@ -154,6 +167,7 @@ def create_promise_record(person, conversation, memory, promise_data):
         return None
 
     promise = Promise(
+        user=person.user,
         person=person,
         conversation=conversation,
         memory=memory,
@@ -201,12 +215,14 @@ def create_long_term_memory_records(
         source_text = (candidate.get('source_text') or '').strip()
 
         existing_record = LongTermMemory.objects.filter(
+            user=person.user,
             person=person,
             category=category,
         ).first()
 
         if not existing_record:
             record = LongTermMemory.objects.create(
+                user=person.user,
                 person=person,
                 conversation=conversation,
                 category=category,
@@ -317,18 +333,27 @@ def patient_voice_profile_response(profile):
     }
 
 
-class PersonListCreateView(APIView):
+class PatientOwnedAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+
+class PersonListCreateView(PatientOwnedAPIView):
     def get(self, request):
-        expire_stale_promises()
-        people = Person.objects.prefetch_related(
+        user = get_request_patient_user(request)
+        expire_stale_promises(user=user)
+        people = Person.objects.filter(user=user).prefetch_related(
             Prefetch(
                 'memories',
-                queryset=Memory.objects.order_by('-memory_at', '-created_at'),
+                queryset=Memory.objects.filter(user=user).order_by(
+                    '-memory_at',
+                    '-created_at',
+                ),
                 to_attr='prefetched_latest_memories',
             ),
             Prefetch(
                 'summaries',
                 queryset=PersonSummary.objects.filter(
+                    user=user,
                     status=PersonSummary.STATUS_ACTIVE,
                 ).order_by('-generated_at', '-created_at'),
                 to_attr='prefetched_latest_summaries',
@@ -336,6 +361,7 @@ class PersonListCreateView(APIView):
             Prefetch(
                 'promises',
                 queryset=Promise.objects.filter(
+                    user=user,
                     status=Promise.STATUS_ACTIVE,
                 ).order_by('scheduled_at', 'scheduled_date', 'created_at'),
                 to_attr='prefetched_active_promises',
@@ -345,6 +371,7 @@ class PersonListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        user = get_request_patient_user(request)
         serializer = PersonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         initial_memory = serializer.validated_data.get('initial_memory', '')
@@ -352,7 +379,7 @@ class PersonListCreateView(APIView):
 
         try:
             with transaction.atomic():
-                person = serializer.save()
+                person = serializer.save(user=user)
 
                 if initial_memory:
                     initial_long_term_memory_candidates = (
@@ -381,20 +408,33 @@ class PersonListCreateView(APIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
-class ConversationListCreateView(APIView):
+class ConversationListCreateView(PatientOwnedAPIView):
     def get(self, request):
-        conversations = Conversation.objects.select_related('person').all()
+        user = get_request_patient_user(request)
+        conversations = Conversation.objects.select_related('person').filter(
+            user=user,
+        )
         serializer = ConversationSerializer(conversations, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        user = get_request_patient_user(request)
         serializer = ConversationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        person = serializer.validated_data.get('person')
+
+        if person and person.user_id != user.id:
+            return Response(
+                {'detail': '해당 환자의 person이 아닙니다.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer.save(user=user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class ConversationTranscriptionCreateView(APIView):
+class ConversationTranscriptionCreateView(PatientOwnedAPIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
@@ -413,13 +453,14 @@ class ConversationTranscriptionCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        person = get_object_or_404(Person, pk=person_id)
+        user = get_request_patient_user(request)
+        person = get_object_or_404(Person, pk=person_id, user=user)
         recent_memories = list(
-            Memory.objects.filter(person=person)
+            Memory.objects.filter(user=user, person=person)
             .order_by('-memory_at', '-created_at')[:RECENT_MEMORY_LIMIT],
         )
         long_term_memories = list(
-            LongTermMemory.objects.filter(person=person)
+            LongTermMemory.objects.filter(user=user, person=person)
             .exclude(status=LongTermMemory.STATUS_ARCHIVED)
             .order_by('-created_at')[:LONG_TERM_MEMORY_DISPLAY_LIMIT],
         )
@@ -443,7 +484,9 @@ class ConversationTranscriptionCreateView(APIView):
             recorded_at = parsed_recorded_at
 
         try:
-            patient_voice_profile = PatientVoiceProfile.objects.first()
+            patient_voice_profile = PatientVoiceProfile.objects.filter(
+                user=user,
+            ).first()
             transcription = transcribe_audio_file(
                 audio_file,
                 prompt=prompt,
@@ -464,6 +507,7 @@ class ConversationTranscriptionCreateView(APIView):
             speaker_segments = transcription.speaker_segments
 
         conversation = Conversation.objects.create(
+            user=user,
             person=person,
             transcript=transcript,
             speaker_segments=speaker_segments,
@@ -488,6 +532,7 @@ class ConversationTranscriptionCreateView(APIView):
                 recorded_at=recorded_at,
             )
             memory = Memory.objects.create(
+                user=user,
                 person=person,
                 conversation=conversation,
                 recap=recap,
@@ -525,13 +570,13 @@ class ConversationTranscriptionCreateView(APIView):
 
             try:
                 display_memories = list(
-                    Memory.objects.filter(person=person)
+                    Memory.objects.filter(user=user, person=person)
                     .order_by('-memory_at', '-created_at')[
                         :DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT
                     ],
                 )
                 display_long_term_memories = list(
-                    LongTermMemory.objects.filter(person=person)
+                    LongTermMemory.objects.filter(user=user, person=person)
                     .exclude(status=LongTermMemory.STATUS_ARCHIVED)
                     .order_by('-created_at')[:LONG_TERM_MEMORY_DISPLAY_LIMIT],
                 )
@@ -543,10 +588,12 @@ class ConversationTranscriptionCreateView(APIView):
                     active_promises=active_promises,
                 )
                 PersonSummary.objects.filter(
+                    user=user,
                     person=person,
                     status=PersonSummary.STATUS_ACTIVE,
                 ).update(status=PersonSummary.STATUS_STALE)
                 person_summary = PersonSummary.objects.create(
+                    user=user,
                     person=person,
                     conversation=conversation,
                     card=card,
@@ -603,42 +650,66 @@ class ConversationTranscriptionCreateView(APIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
-class MemoryListCreateView(APIView):
+class MemoryListCreateView(PatientOwnedAPIView):
     def get(self, request):
-        memories = Memory.objects.select_related('person', 'conversation').all()
+        user = get_request_patient_user(request)
+        memories = Memory.objects.select_related(
+            'person',
+            'conversation',
+        ).filter(user=user)
         serializer = MemorySerializer(memories, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        user = get_request_patient_user(request)
         serializer = MemorySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        person = serializer.validated_data.get('person')
+        conversation = serializer.validated_data.get('conversation')
+
+        if (
+            person
+            and person.user_id != user.id
+            or conversation
+            and conversation.user_id != user.id
+        ):
+            return Response(
+                {'detail': '해당 환자의 memory 대상이 아닙니다.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer.save(user=user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class MemoryAlbumItemListCreateView(APIView):
+class MemoryAlbumItemListCreateView(PatientOwnedAPIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request, person_id):
-        person = get_object_or_404(Person, pk=person_id)
-        album_items = MemoryAlbumItem.objects.filter(person=person)
+        user = get_request_patient_user(request)
+        person = get_object_or_404(Person, pk=person_id, user=user)
+        album_items = MemoryAlbumItem.objects.filter(user=user, person=person)
         serializer = MemoryAlbumItemSerializer(album_items, many=True)
         return Response(serializer.data)
 
     def post(self, request, person_id):
-        person = get_object_or_404(Person, pk=person_id)
+        user = get_request_patient_user(request)
+        person = get_object_or_404(Person, pk=person_id, user=user)
         serializer = MemoryAlbumItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(person=person)
+        serializer.save(user=user, person=person)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class MemoryAlbumItemDetailView(APIView):
+class MemoryAlbumItemDetailView(PatientOwnedAPIView):
     def delete(self, request, person_id, item_id):
-        person = get_object_or_404(Person, pk=person_id)
+        user = get_request_patient_user(request)
+        person = get_object_or_404(Person, pk=person_id, user=user)
         album_item = get_object_or_404(
             MemoryAlbumItem,
             pk=item_id,
+            user=user,
             person=person,
         )
 
@@ -649,14 +720,16 @@ class MemoryAlbumItemDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class PatientVoiceProfileView(APIView):
+class PatientVoiceProfileView(PatientOwnedAPIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
-        profile = PatientVoiceProfile.objects.first()
+        user = get_request_patient_user(request)
+        profile = PatientVoiceProfile.objects.filter(user=user).first()
         return Response(patient_voice_profile_response(profile))
 
     def post(self, request):
+        user = get_request_patient_user(request)
         audio_file = request.FILES.get('audio')
 
         if not audio_file:
@@ -680,7 +753,7 @@ class PatientVoiceProfileView(APIView):
             )
 
         profile, created = PatientVoiceProfile.objects.update_or_create(
-            id=1,
+            user=user,
             defaults={
                 'speaker_name': request.data.get('speaker_name') or '환자',
                 'audio_data': audio_data,
@@ -694,5 +767,6 @@ class PatientVoiceProfileView(APIView):
         )
 
     def delete(self, request):
-        PatientVoiceProfile.objects.all().delete()
+        user = get_request_patient_user(request)
+        PatientVoiceProfile.objects.filter(user=user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

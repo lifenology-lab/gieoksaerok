@@ -1,11 +1,14 @@
 import json
 import tempfile
+import uuid
 from datetime import date, datetime, timezone
 from unittest import mock
 
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import (
     Conversation,
@@ -29,6 +32,28 @@ def face_descriptor():
     return [0.01] * 128
 
 
+def create_patient_user(username=None):
+    User = get_user_model()
+    return User.objects.create_user(
+        username=username or f'patient-{uuid.uuid4()}',
+        password='test-password',
+        name='테스트 환자',
+    )
+
+
+def create_person(user=None, name='지훈', relationship='아들'):
+    return Person.objects.create(
+        user=user or create_patient_user(),
+        name=name,
+        relationship=relationship,
+        face_descriptor=face_descriptor(),
+    )
+
+
+def authenticate_client(client, user):
+    client.defaults['HTTP_AUTHORIZATION'] = f'Bearer {AccessToken.for_user(user)}'
+
+
 class TranscribeAudioFileTests(TestCase):
     @override_settings(
         OPENAI_TRANSCRIPTION_DIARIZATION_ENABLED=True,
@@ -40,12 +65,10 @@ class TranscribeAudioFileTests(TestCase):
         self,
         mock_get_openai_client,
     ):
-        person = Person.objects.create(
-            name='지훈',
-            relationship='아들',
-            face_descriptor=face_descriptor(),
-        )
+        user = create_patient_user()
+        person = create_person(user=user)
         voice_profile = PatientVoiceProfile.objects.create(
+            user=user,
             audio_data=b'patient-voice',
             audio_content_type='audio/webm',
         )
@@ -108,12 +131,11 @@ class TranscribeAudioFileTests(TestCase):
 
 class ConversationTranscriptionCreateViewTests(TestCase):
     def setUp(self):
-        self.person = Person.objects.create(
-            name='지훈',
-            relationship='아들',
-            face_descriptor=face_descriptor(),
-        )
+        self.user = create_patient_user()
+        self.person = create_person(user=self.user)
+        authenticate_client(self.client, self.user)
         LongTermMemory.objects.create(
+            user=self.user,
             person=self.person,
             category=LongTermMemory.CATEGORY_CAREER,
             title='삼성전자 근무',
@@ -189,10 +211,12 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             'suggested_question': '병원 예약 시간을 다시 물어보세요.',
         }
         previous_conversation = Conversation.objects.create(
+            user=self.user,
             person=self.person,
             transcript='어제 단호박죽을 같이 먹었다.',
         )
         previous_memory = Memory.objects.create(
+            user=self.user,
             person=self.person,
             conversation=previous_conversation,
             recap={
@@ -303,6 +327,7 @@ class ConversationTranscriptionCreateViewTests(TestCase):
         mock_generate_person_display_summary,
     ):
         voice_profile = PatientVoiceProfile.objects.create(
+            user=self.user,
             audio_data=b'patient-voice',
             audio_content_type='audio/webm',
             audio_filename='patient.webm',
@@ -416,20 +441,19 @@ class ConversationTranscriptionCreateViewTests(TestCase):
 class GeneratePersonDisplaySummaryTests(TestCase):
     @mock.patch('people.services._get_openai_client')
     def test_body_uses_only_three_recent_memories(self, mock_get_openai_client):
-        person = Person.objects.create(
-            name='지민',
-            relationship='딸',
-            face_descriptor=face_descriptor(),
-        )
+        user = create_patient_user()
+        person = create_person(user=user, name='지민', relationship='딸')
         memories = []
 
         for index in range(4):
             conversation = Conversation.objects.create(
+                user=user,
                 person=person,
                 transcript=f'{index}번째 대화',
             )
             memories.append(
                 Memory.objects.create(
+                    user=user,
                     person=person,
                     conversation=conversation,
                     recap={
@@ -443,6 +467,7 @@ class GeneratePersonDisplaySummaryTests(TestCase):
             )
 
         long_term_memory = LongTermMemory.objects.create(
+            user=user,
             person=person,
             category=LongTermMemory.CATEGORY_FAMILY,
             title='가족 관계',
@@ -451,6 +476,7 @@ class GeneratePersonDisplaySummaryTests(TestCase):
             confidence=0.95,
         )
         promise = Promise.objects.create(
+            user=user,
             person=person,
             title='저녁 식사',
             description='딸 지민과 저녁 식사를 합니다.',
@@ -504,6 +530,8 @@ class PersonListCreateViewTests(TestCase):
         self,
         mock_extract_initial_long_term_memories,
     ):
+        user = create_patient_user()
+        authenticate_client(self.client, user)
         mock_extract_initial_long_term_memories.return_value = [
             {
                 'category': 'career',
@@ -550,20 +578,21 @@ class PersonListCreateViewTests(TestCase):
         )
 
     def test_people_response_includes_latest_memory(self):
-        person = Person.objects.create(
-            name='민서',
-            relationship='손녀',
-            face_descriptor=face_descriptor(),
-        )
+        user = create_patient_user()
+        authenticate_client(self.client, user)
+        person = create_person(user=user, name='민서', relationship='손녀')
         older_conversation = Conversation.objects.create(
+            user=user,
             person=person,
             transcript='오래된 대화',
         )
         newer_conversation = Conversation.objects.create(
+            user=user,
             person=person,
             transcript='최근 대화',
         )
         Memory.objects.create(
+            user=user,
             person=person,
             conversation=older_conversation,
             recap={
@@ -575,6 +604,7 @@ class PersonListCreateViewTests(TestCase):
             memory_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
         )
         newer_memory = Memory.objects.create(
+            user=user,
             person=person,
             conversation=newer_conversation,
             recap={
@@ -586,6 +616,7 @@ class PersonListCreateViewTests(TestCase):
             memory_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
         )
         Promise.objects.create(
+            user=user,
             person=person,
             conversation=newer_conversation,
             memory=newer_memory,
@@ -597,6 +628,7 @@ class PersonListCreateViewTests(TestCase):
             confidence=0.9,
         )
         PersonSummary.objects.create(
+            user=user,
             person=person,
             conversation=newer_conversation,
             card={
@@ -634,16 +666,16 @@ class PersonListCreateViewTests(TestCase):
         )
 
     def test_people_response_expires_past_promises(self):
-        person = Person.objects.create(
-            name='민서',
-            relationship='손녀',
-            face_descriptor=face_descriptor(),
-        )
+        user = create_patient_user()
+        authenticate_client(self.client, user)
+        person = create_person(user=user, name='민서', relationship='손녀')
         conversation = Conversation.objects.create(
+            user=user,
             person=person,
             transcript='지난 약속을 이야기했다.',
         )
         PersonSummary.objects.create(
+            user=user,
             person=person,
             conversation=conversation,
             card={
@@ -659,6 +691,7 @@ class PersonListCreateViewTests(TestCase):
             generated_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
         )
         promise = Promise.objects.create(
+            user=user,
             person=person,
             conversation=conversation,
             title='점심 식사',
@@ -679,14 +712,28 @@ class PersonListCreateViewTests(TestCase):
             response.json()[0]['latest_summary']['card']['upcoming_promise'],
         )
 
+    def test_people_response_is_scoped_to_authenticated_user(self):
+        first_user = create_patient_user()
+        second_user = create_patient_user()
+        authenticate_client(self.client, first_user)
+        create_person(user=first_user, name='지민', relationship='딸')
+        create_person(user=second_user, name='민서', relationship='손녀')
+
+        response = self.client.get(
+            reverse('person-list-create'),
+            {'user': str(second_user.id)},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]['name'], '지민')
+
 
 class MemoryAlbumItemListCreateViewTests(TestCase):
     def setUp(self):
-        self.person = Person.objects.create(
-            name='지민',
-            relationship='딸',
-            face_descriptor=face_descriptor(),
-        )
+        self.user = create_patient_user()
+        self.person = create_person(user=self.user, name='지민', relationship='딸')
+        authenticate_client(self.client, self.user)
 
     def test_create_and_list_memory_album_items(self):
         with tempfile.TemporaryDirectory() as media_root:
@@ -745,6 +792,7 @@ class MemoryAlbumItemListCreateViewTests(TestCase):
                     content_type='image/png',
                 )
                 item = MemoryAlbumItem.objects.create(
+                    user=self.user,
                     person=self.person,
                     photo=photo,
                     description='생일에 함께 찍은 사진',
@@ -766,6 +814,8 @@ class MemoryAlbumItemListCreateViewTests(TestCase):
 
 class PatientVoiceProfileViewTests(TestCase):
     def test_patient_voice_profile_status_and_upload(self):
+        user = create_patient_user()
+        authenticate_client(self.client, user)
         initial_response = self.client.get(reverse('patient-voice-profile'))
 
         self.assertEqual(initial_response.status_code, 200)
