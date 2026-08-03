@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { createConfusionEvent } from "@/features/confusion/api/confusionEventsApi";
+
 import "./ConfusionSelectPage.css";
 
 const CONFUSION_OPTIONS = [
@@ -31,41 +33,29 @@ const CONFUSION_OPTIONS = [
   },
 ];
 
-const MOCK_PATIENT_ID = "mock-patient-1";
-
-const createInitialConfusionCounts = () => {
-  return CONFUSION_OPTIONS.reduce((counts, option) => {
-    counts[option.id] = 0;
-    return counts;
-  }, {});
-};
-
 export default function ConfusionSelectPage() {
   const navigate = useNavigate();
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const [confusionCounts, setConfusionCounts] = useState(
-    createInitialConfusionCounts,
-  );
+  const handleConfusionSelect = async (confusionType) => {
+    if (isSaving) {
+      return;
+    }
 
-  const handleConfusionSelect = (confusionType) => {
-    setConfusionCounts((prevCounts) => {
-      const nextCounts = {
-        ...prevCounts,
-        [confusionType]: prevCounts[confusionType] + 1,
-      };
-
-      console.log("현재 혼동 횟수:", nextCounts);
-
-      return nextCounts;
-    });
-
-    const payload = {
-      patient_id: MOCK_PATIENT_ID,
-      confusion_type: confusionType,
-      occurred_at: new Date().toISOString(),
-    };
-
-    console.log("ConfusionEvent payload:", payload);
+    try {
+      setIsSaving(true);
+      setMessage("");
+      await createConfusionEvent({
+        confusionType,
+        occurredAt: new Date().toISOString(),
+      });
+      setMessage("선택한 내용을 기록했어요.");
+    } catch (error) {
+      setMessage(error.message || "선택한 내용을 기록하지 못했어요.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleBack = () => {
@@ -90,6 +80,7 @@ export default function ConfusionSelectPage() {
             key={option.id}
             type="button"
             className="confusion-select-page__option"
+            disabled={isSaving}
             onClick={() => handleConfusionSelect(option.id)}
           >
             <span className="confusion-select-page__option-label">
@@ -98,6 +89,8 @@ export default function ConfusionSelectPage() {
           </button>
         ))}
       </section>
+
+      {message && <p role="status">{message}</p>}
 
       <button
         type="button"

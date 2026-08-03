@@ -10,6 +10,41 @@ export const MEAL_CONTEXT_RESULT_TYPES = {
   MEAL_DETECTED_WITHOUT_RECORD: "meal_detected_without_record",
 };
 
+const MEAL_TYPE_LABELS = {
+  breakfast: "아침",
+  lunch: "점심",
+  dinner: "저녁",
+  snack: "간식",
+  unknown: "식사",
+};
+
+// 백엔드 MealRecord 응답(snake_case)을 식사 인식 화면에서 사용하는 형태로 변환
+export function mapMealRecordFromApi(mealRecord) {
+  if (!mealRecord || typeof mealRecord !== "object") {
+    return null;
+  }
+
+  const mealType = mealRecord.meal_type || "unknown";
+
+  return {
+    id: mealRecord.id,
+    mealType,
+    mealLabel: MEAL_TYPE_LABELS[mealType] || MEAL_TYPE_LABELS.unknown,
+    eatenAt: mealRecord.eaten_at || null,
+    menu: mealRecord.menu || null,
+    memo: mealRecord.memo || null,
+    source: mealRecord.source || null,
+  };
+}
+
+export function mapMealRecordsFromApi(mealRecords) {
+  if (!Array.isArray(mealRecords)) {
+    return [];
+  }
+
+  return mealRecords.map(mapMealRecordFromApi).filter(Boolean);
+}
+
 // 기준 시간(baseTime)에서 대상 시간(targetTime)이 몇 분 전인지 계산
 function getElapsedMinutes(baseTime, targetTime) {
   const baseTimeMs = new Date(baseTime).getTime();

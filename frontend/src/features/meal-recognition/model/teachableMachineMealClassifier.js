@@ -41,9 +41,6 @@ async function loadMealSceneModel() {
   model = await tf.loadLayersModel(MODEL_URL);
   classLabels = await loadMetadata();
 
-  console.log("Teachable Machine model loaded");
-  console.log("Class labels:", classLabels);
-
   return {
     model,
     classLabels,
@@ -100,8 +97,6 @@ export async function classifyMealScene(sourceElement) {
     Array.from(predictionValues),
     loadedClassLabels,
   );
-
-  console.log("Teachable Machine predictions:", predictions);
 
   const mealScenePrediction = findPredictionByClassName(
     predictions,
