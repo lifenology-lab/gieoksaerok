@@ -86,9 +86,6 @@ export default function AuthPage() {
         <div className="auth-page__intro">
           <p className="auth-page__eyebrow">기억새록</p>
           <h1>{isSignUpMode ? "회원가입" : "로그인"}</h1>
-          <p>
-            환자별 사람, 대화, 추억 데이터를 안전하게 나눠 저장합니다.
-          </p>
         </div>
 
         <div className="auth-page__tabs" role="tablist" aria-label="인증 방식">

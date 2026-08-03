@@ -88,6 +88,29 @@ const MEAL_CONTEXT_USER_ACTIONS = {
   CONFIRM: "confirm",
 };
 
+const WEEKDAY_LABELS = [
+  "일요일",
+  "월요일",
+  "화요일",
+  "수요일",
+  "목요일",
+  "금요일",
+  "토요일",
+];
+
+function formatDailyModeDate(date) {
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${WEEKDAY_LABELS[date.getDay()]})`;
+}
+
+function formatDailyModeTime(date) {
+  const hours = date.getHours();
+  const period = hours < 12 ? "오전" : "오후";
+  const displayHours = hours % 12 || 12;
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${period} ${String(displayHours).padStart(2, "0")}:${minutes}`;
+}
+
 export default function DailyModePage() {
   const nav = useNavigate();
   const camera = useCamera();
@@ -101,6 +124,7 @@ export default function DailyModePage() {
 
   const [mealRecognitionResult, setMealRecognitionResult] = useState(null);
   const [mealRecords, setMealRecords] = useState(mockMealRecordsEmpty);
+  const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
 
   const mealRecordsRef = useRef(mealRecords);
   const mealRecognitionResultRef = useRef(mealRecognitionResult);
@@ -135,6 +159,16 @@ export default function DailyModePage() {
     person: activeConversationPerson,
     onConversationSaved: refreshPeople,
   });
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 30000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   useEffect(() => {
     const returnRecognitionType = window.sessionStorage.getItem(
@@ -262,6 +296,15 @@ export default function DailyModePage() {
   // CameraPreview에서 준비된 video 요소를 받아 ref에 저장
   const handleVideoElementReady = (videoElement) => {
     cameraVideoElementRef.current = videoElement;
+  };
+
+  const handlePersonRecognitionToggle = () => {
+    if (activeRecognitionType === DAILY_MODE_RECOGNITION_TYPES.PERSON) {
+      clearRecognition();
+      return;
+    }
+
+    startPersonRecognition();
   };
 
   // 식사 인식 활성화/비활성화 토글
@@ -493,9 +536,15 @@ export default function DailyModePage() {
         />
       </CameraPreview>
 
+      <section className="daily-mode-page__date-time" aria-live="polite">
+        <p>{formatDailyModeDate(currentDateTime)}</p>
+        <strong>{formatDailyModeTime(currentDateTime)}</strong>
+        <span aria-hidden="true" />
+      </section>
+
       <RecognitionToggleGroup
         activeRecognitionType={activeRecognitionType}
-        onPersonRecognition={startPersonRecognition}
+        onPersonRecognition={handlePersonRecognitionToggle}
         onMealRecognition={handleMealRecognitionToggle}
       />
 

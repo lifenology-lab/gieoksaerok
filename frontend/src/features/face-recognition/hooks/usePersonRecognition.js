@@ -270,7 +270,9 @@ export default function usePersonRecognition({
             }
 
             return {
-              id: `${Date.now()}-${index}`,
+              id: match?.person?.id
+                ? `person-${match.person.id}`
+                : `unknown-${index}`,
               box,
               descriptor,
               person: match?.person || null,
