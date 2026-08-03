@@ -1,0 +1,442 @@
+.patient-home-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  background: #111;
+  color: white;
+  z-index: 100;
+}
+
+.patient-home-page .daily-mode-page__camera-area {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  background: #111;
+}
+
+.patient-home-page .daily-mode-page__camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.patient-home-page .daily-mode-page__camera-area > p {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.patient-home-page__date-time {
+  position: absolute;
+  top: 42px;
+  left: 42px;
+  z-index: 12;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  color: white;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.42);
+}
+
+.patient-home-page__date-time p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.patient-home-page__date-time strong {
+  color: white;
+  font-size: 35px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.patient-home-page__date-time span {
+  width: 47px;
+  height: 2px;
+  border-radius: 999px;
+  background: #91e8d6;
+  box-shadow: 0 0 16px rgba(145, 232, 214, 0.58);
+}
+
+.patient-home-page__collapse-button {
+  position: absolute;
+  left: 42px;
+  bottom: 34px;
+  z-index: 12;
+  min-width: 132px;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  padding: 0 22px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 12px 30px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-decoration: none;
+}
+
+.patient-home-page__collapse-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.patient-home-page__intro {
+  position: absolute;
+  top: 148px;
+  left: 42px;
+  z-index: 12;
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  text-align: left;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.42);
+}
+
+.patient-home-page__intro > span {
+  width: 4px;
+  min-height: 69px;
+  border-radius: 999px;
+  background: #91e8d6;
+  box-shadow: 0 0 18px rgba(145, 232, 214, 0.56);
+}
+
+.patient-home-page__intro h1 {
+  margin: 0;
+  color: white;
+  font-size: 32px;
+  line-height: 1.12;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.patient-home-page__intro p {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.patient-home-page__actions {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(128px, 22svh, 196px);
+  z-index: 12;
+  width: min(644px, calc(100vw - 84px));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  transform: translateX(-50%);
+}
+
+.patient-home-page__card {
+  min-height: clamp(128px, 22svh, 175px);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 22px;
+  padding: 22px 20px;
+  color: white;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 22px 60px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  text-align: center;
+  text-decoration: none;
+}
+
+.patient-home-page__card:hover,
+.patient-home-page__card:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.patient-home-page__card-icon {
+  width: 73px;
+  height: 73px;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgba(160, 235, 215, 0.82);
+  border-radius: 50%;
+  color: #a4f0df;
+  background: rgba(160, 235, 215, 0.18);
+  box-shadow: 0 0 30px rgba(160, 235, 215, 0.2);
+}
+
+.patient-home-page__card[data-tone="help"] .patient-home-page__card-icon {
+  border-color: rgba(255, 209, 95, 0.86);
+  color: #ffd15f;
+  background: rgba(255, 209, 95, 0.16);
+  box-shadow: 0 0 30px rgba(255, 209, 95, 0.18);
+}
+
+.patient-home-page__card-icon svg {
+  width: 36px;
+  height: 36px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.patient-home-page__card strong {
+  color: white;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.patient-home-page__card > span:last-child {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+@media (max-width: 920px) {
+  .patient-home-page__date-time {
+    top: 24px;
+    left: 22px;
+  }
+
+  .patient-home-page__date-time p {
+    font-size: 16px;
+  }
+
+  .patient-home-page__date-time strong {
+    font-size: 31px;
+  }
+
+  .patient-home-page__collapse-button {
+    left: 22px;
+    bottom: 24px;
+    min-width: 120px;
+    min-height: 48px;
+    padding: 0 18px;
+    font-size: 16px;
+  }
+
+  .patient-home-page__intro {
+    top: 118px;
+    left: 22px;
+    gap: 14px;
+  }
+
+  .patient-home-page__intro > span {
+    min-height: 58px;
+  }
+
+  .patient-home-page__intro h1 {
+    font-size: 26px;
+  }
+
+  .patient-home-page__intro p {
+    margin-top: 8px;
+    font-size: 15px;
+  }
+
+  .patient-home-page__actions {
+    bottom: clamp(112px, 20svh, 156px);
+    width: min(560px, calc(100vw - 44px));
+    gap: 14px;
+  }
+
+  .patient-home-page__card {
+    min-height: clamp(112px, 20svh, 153px);
+    border-radius: 18px;
+    padding: 18px 16px;
+  }
+
+  .patient-home-page__card-icon {
+    width: 59px;
+    height: 59px;
+  }
+
+  .patient-home-page__card-icon svg {
+    width: 29px;
+    height: 29px;
+  }
+
+  .patient-home-page__card strong {
+    font-size: 21px;
+  }
+
+  .patient-home-page__card > span:last-child {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 640px) {
+  .patient-home-page__collapse-button {
+    left: 16px;
+    bottom: 16px;
+  }
+
+  .patient-home-page__date-time {
+    top: 82px;
+    left: 16px;
+  }
+
+  .patient-home-page__intro {
+    top: 154px;
+    left: 16px;
+  }
+
+  .patient-home-page__intro > span {
+    min-height: 58px;
+  }
+
+  .patient-home-page__intro h1 {
+    font-size: 24px;
+  }
+
+  .patient-home-page__intro p {
+    margin-top: 6px;
+    font-size: 14px;
+  }
+
+  .patient-home-page__actions {
+    top: 224px;
+    bottom: 104px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    transform: none;
+    overflow: hidden;
+  }
+
+  .patient-home-page__card {
+    min-height: 0;
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: start;
+    gap: 6px 12px;
+    padding: 14px;
+    text-align: left;
+  }
+
+  .patient-home-page__card-icon {
+    grid-row: 1 / 3;
+    width: 48px;
+    height: 48px;
+  }
+
+  .patient-home-page__card-icon svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .patient-home-page__card strong {
+    font-size: 19px;
+  }
+
+  .patient-home-page__card > span:last-child {
+    font-size: 13px;
+  }
+}
+
+@media (max-height: 620px) {
+  .patient-home-page__date-time {
+    top: 24px;
+  }
+
+  .patient-home-page__intro {
+    top: 116px;
+  }
+
+  .patient-home-page__actions {
+    bottom: clamp(104px, 18svh, 132px);
+  }
+
+  .patient-home-page__card {
+    min-height: clamp(104px, 20svh, 132px);
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .patient-home-page__card-icon {
+    width: 54px;
+    height: 54px;
+  }
+
+  .patient-home-page__card-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 640px) and (max-height: 620px) {
+  .patient-home-page__date-time {
+    top: 18px;
+  }
+
+  .patient-home-page__collapse-button {
+    bottom: 14px;
+  }
+
+  .patient-home-page__intro {
+    top: 122px;
+  }
+
+  .patient-home-page__actions {
+    top: 194px;
+    bottom: 88px;
+  }
+
+  .patient-home-page__card {
+    gap: 4px 10px;
+    padding: 10px 12px;
+  }
+
+  .patient-home-page__card-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .patient-home-page__card-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .patient-home-page__card strong {
+    font-size: 17px;
+  }
+
+  .patient-home-page__card > span:last-child {
+    font-size: 12px;
+  }
+}
