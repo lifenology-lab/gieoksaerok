@@ -526,23 +526,121 @@
 .meal-recognition-overlay {
   position: absolute;
   inset: 0;
-  z-index: 20;
+  z-index: 32;
 
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
 
-  pointer-events: none;
+  background: rgba(7, 16, 13, 0.38);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .meal-recognition-overlay__content {
-  width: min(320px, calc(100vw - 32px));
-  pointer-events: auto;
-  background: rgba(0, 0, 0, 0.75);
+  width: min(390px, 100%);
 }
 
-.daily-mode-page__test-panel {
-  display: none;
+.meal-recognition-card {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 22px;
+  color: white;
+  background: rgba(30, 52, 44, 0.88);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 22px 60px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.meal-recognition-card h3,
+.meal-recognition-card p {
+  margin: 0;
+}
+
+.meal-recognition-card h3 {
+  font-size: 23px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.meal-recognition-card p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.meal-recognition-card p + p {
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: #d9f8ee;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.meal-recognition-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.meal-recognition-card__actions button {
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 14px;
+  padding: 0 14px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.12);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.meal-recognition-card__actions button:first-child {
+  border-color: #91e8d6;
+  color: #18342c;
+  background: #91e8d6;
+}
+
+.meal-recognition-card__actions button:hover,
+.meal-recognition-card__actions button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.meal-recognition-card__actions button:first-child:hover,
+.meal-recognition-card__actions button:first-child:focus-visible {
+  border-color: #b3f5e6;
+  background: #b3f5e6;
+}
+
+@media (max-width: 560px) {
+  .meal-recognition-overlay {
+    padding: 16px;
+  }
+
+  .meal-recognition-card {
+    gap: 12px;
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .meal-recognition-card h3 {
+    font-size: 21px;
+  }
+
+  .meal-recognition-card p {
+    font-size: 15px;
+  }
 }
 
 @media (max-width: 900px) {
