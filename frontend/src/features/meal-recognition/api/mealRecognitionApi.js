@@ -2,6 +2,7 @@ import { request } from "../../../shared/api/client";
 import { classifyMealScene } from "../model/teachableMachineMealClassifier";
 import {
   getMealContextResult,
+  mapMealRecordFromApi,
   mapMealRecordsFromApi,
   MEAL_CONTEXT_RESULT_TYPES,
 } from "../utils/mealRecordUtils";
@@ -11,6 +12,33 @@ export async function fetchRecentMealRecords() {
   const mealRecords = await request("/api/meal-records/recent/");
 
   return mapMealRecordsFromApi(mealRecords);
+}
+
+export async function fetchMealRecords() {
+  const mealRecords = await request("/api/meal-records/");
+
+  return mapMealRecordsFromApi(mealRecords);
+}
+
+export async function createMealRecord({
+  mealType,
+  eatenAt,
+  source,
+  menu = null,
+  memo = null,
+}) {
+  const mealRecord = await request("/api/meal-records/", {
+    method: "POST",
+    body: JSON.stringify({
+      meal_type: mealType,
+      eaten_at: eatenAt,
+      source,
+      menu,
+      memo,
+    }),
+  });
+
+  return mapMealRecordFromApi(mealRecord);
 }
 
 // 식사 상황이 보이는 source (video)와 식사 기록들을 받아서

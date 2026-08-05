@@ -623,6 +623,11 @@
   background: #b3f5e6;
 }
 
+.meal-recognition-card__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
 @media (max-width: 560px) {
   .meal-recognition-overlay {
     padding: 16px;
