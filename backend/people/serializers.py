@@ -11,7 +11,11 @@ from .models import (
     PersonSummary,
     Promise,
 )
-from .promise_utils import format_promise_display, promise_sort_key
+from .promise_utils import (
+    format_person_summary_promise_display,
+    format_promise_display,
+    promise_sort_key,
+)
 
 
 MAX_MEMORY_ALBUM_PHOTO_BYTES = 10 * 1024 * 1024
@@ -255,12 +259,7 @@ class PersonSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def get_latest_memory(self, obj):
-        prefetched_memories = getattr(obj, 'prefetched_latest_memories', None)
-
-        if prefetched_memories is not None:
-            memory = prefetched_memories[0] if prefetched_memories else None
-        else:
-            memory = obj.memories.order_by('-memory_at', '-created_at').first()
+        memory = self._get_latest_memory_obj(obj)
 
         if not memory:
             return None
@@ -283,10 +282,29 @@ class PersonSerializer(serializers.ModelSerializer):
             return None
 
         data = PersonSummarySerializer(summary).data
+        latest_memory = self._get_latest_memory_obj(obj)
         active_promise = self._get_latest_active_promise(obj)
         card = dict(data.get('card') or {})
+        recap = latest_memory.recap if latest_memory else {}
+
+        if not isinstance(recap, dict):
+            recap = {}
+
+        card['title'] = (
+            recap.get('title')
+            or recap.get('headline')
+            or card.get('title')
+            or ''
+        )
+        card['body'] = (
+            recap.get('description')
+            or recap.get('summary')
+            or card.get('body')
+            or ''
+        )
+        card.pop('suggested_question', None)
         card['upcoming_promise'] = (
-            format_promise_display(active_promise)
+            format_person_summary_promise_display(active_promise, person=obj)
             if active_promise
             else None
         )
@@ -300,6 +318,14 @@ class PersonSerializer(serializers.ModelSerializer):
             return None
 
         return PromiseSerializer(active_promise).data
+
+    def _get_latest_memory_obj(self, obj):
+        prefetched_memories = getattr(obj, 'prefetched_latest_memories', None)
+
+        if prefetched_memories is not None:
+            return prefetched_memories[0] if prefetched_memories else None
+
+        return obj.memories.order_by('-memory_at', '-created_at').first()
 
     def _get_latest_active_promise(self, obj):
         prefetched_promises = getattr(obj, 'prefetched_active_promises', None)

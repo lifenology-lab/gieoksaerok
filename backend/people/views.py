@@ -32,10 +32,13 @@ from .serializers import (
     PersonSummarySerializer,
     PromiseSerializer,
 )
+from .promise_cleanup import expire_stale_promises
 from .promise_utils import (
     ensure_aware_datetime,
     get_default_promise_timezone,
+    infer_korean_relative_date,
     is_promise_expired,
+    normalize_promise_data,
     promise_sort_key,
 )
 from .services import (
@@ -49,6 +52,7 @@ from .services import (
     generate_person_display_summary,
     generate_memory_recap,
     merge_long_term_memory_candidate,
+    prune_conversation_and_memory_history,
     transcribe_audio_file,
 )
 
@@ -68,6 +72,13 @@ def get_request_patient_user(request):
 
 
 def normalize_long_term_memory_category(category):
+    legacy_category_map = {
+        'birth': LongTermMemory.CATEGORY_FAMILY,
+        'marriage': LongTermMemory.CATEGORY_FAMILY,
+        'death': LongTermMemory.CATEGORY_FAMILY,
+        'education': LongTermMemory.CATEGORY_CAREER,
+    }
+    category = legacy_category_map.get(category, category)
     allowed_categories = {
         choice[0]
         for choice in LongTermMemory.CATEGORY_CHOICES
@@ -86,28 +97,6 @@ def clamp_confidence(value):
         return 0
 
     return min(max(confidence, 0), 1)
-
-
-def expire_stale_promises(user=None, person=None):
-    queryset = Promise.objects.filter(status=Promise.STATUS_ACTIVE)
-
-    if user is not None:
-        queryset = queryset.filter(user=user)
-
-    if person is not None:
-        queryset = queryset.filter(person=person)
-
-    expired_ids = [
-        promise.id
-        for promise in queryset
-        if is_promise_expired(promise)
-    ]
-
-    if expired_ids:
-        Promise.objects.filter(id__in=expired_ids).update(
-            status=Promise.STATUS_EXPIRED,
-            updated_at=timezone.now(),
-        )
 
 
 def get_active_promises_for_person(person, limit=ACTIVE_PROMISE_DISPLAY_LIMIT):
@@ -139,6 +128,7 @@ def create_promise_record(person, conversation, memory, promise_data):
     if hasattr(promise_data, 'model_dump'):
         promise_data = promise_data.model_dump()
 
+    promise_data = normalize_promise_data(promise_data, person)
     title = (promise_data.get('title') or '').strip()
     description = (promise_data.get('description') or '').strip()
     confidence = clamp_confidence(promise_data.get('confidence'))
@@ -162,6 +152,23 @@ def create_promise_record(person, conversation, memory, promise_data):
 
     if scheduled_at and not scheduled_date:
         scheduled_date = scheduled_at.astimezone(promise_zone).date()
+
+    if not scheduled_date:
+        reference_datetime = getattr(conversation, 'recorded_at', None) or timezone.now()
+        fallback_text = ' '.join(
+            value
+            for value in [
+                promise_data.get('raw_text'),
+                description,
+                title,
+            ]
+            if value
+        )
+        scheduled_date = infer_korean_relative_date(
+            fallback_text,
+            reference=reference_datetime,
+            zone=promise_zone,
+        )
 
     if not scheduled_at and not scheduled_date:
         return None
@@ -430,7 +437,8 @@ class ConversationListCreateView(PatientOwnedAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer.save(user=user)
+        conversation = serializer.save(user=user)
+        prune_conversation_and_memory_history(user=user, person=conversation.person)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -618,6 +626,8 @@ class ConversationTranscriptionCreateView(PatientOwnedAPIView):
             conversation.status = Conversation.STATUS_FAILED
             conversation.save(update_fields=['status', 'updated_at'])
 
+        prune_conversation_and_memory_history(user=user, person=person)
+
         serializer = ConversationSerializer(conversation)
         data = serializer.data
         data['memory'] = MemorySerializer(memory).data if memory else None
@@ -679,7 +689,8 @@ class MemoryListCreateView(PatientOwnedAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer.save(user=user)
+        memory = serializer.save(user=user)
+        prune_conversation_and_memory_history(user=user, person=memory.person)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
