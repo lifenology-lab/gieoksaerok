@@ -13,6 +13,20 @@ import "./ConfusionReportPage.css";
 
 const CURRENT_WEEK_START = getWeekStart();
 
+function getWeekComparisonMessage(currentTotal, previousTotal) {
+  const difference = currentTotal - previousTotal;
+
+  if (difference === 0) {
+    return `직전 주와 같은 ${currentTotal}회예요.`;
+  }
+
+  if (difference > 0) {
+    return `직전 주보다 ${difference}회 늘었어요.`;
+  }
+
+  return `직전 주보다 ${Math.abs(difference)}회 줄었어요.`;
+}
+
 export default function ConfusionReportPage() {
   const navigate = useNavigate();
   const [weekStart, setWeekStart] = useState(CURRENT_WEEK_START);
@@ -53,7 +67,12 @@ export default function ConfusionReportPage() {
   }, []);
 
   const report = createWeeklyConfusionReport(events, weekStart);
+  const previousReport = createWeeklyConfusionReport(
+    events,
+    addDays(weekStart, -7),
+  );
   const isCurrentWeek = weekStart.getTime() >= CURRENT_WEEK_START.getTime();
+  const topAreaLabel = report.topItems.map((item) => item.label).join(", ");
 
   return (
     <main className="confusion-report-page">
@@ -91,6 +110,27 @@ export default function ConfusionReportPage() {
         </p>
       </section>
 
+      <section className="confusion-report-page__insights">
+        <article>
+          <span>가장 많이 발생한 영역</span>
+          <strong>{topAreaLabel || "기록 없음"}</strong>
+          <p>
+            {report.total > 0
+              ? `${report.maximum}회 발생했어요.`
+              : "아직 이번 주 기록이 없어요."}
+          </p>
+        </article>
+        <article>
+          <span>직전 주와 비교</span>
+          <strong>
+            {report.total - previousReport.total > 0
+              ? `+${report.total - previousReport.total}회`
+              : `${report.total - previousReport.total}회`}
+          </strong>
+          <p>{getWeekComparisonMessage(report.total, previousReport.total)}</p>
+        </article>
+      </section>
+
       <section
         className="confusion-report-page__breakdown"
         aria-busy={isLoading}
@@ -101,26 +141,80 @@ export default function ConfusionReportPage() {
           <p className="confusion-report-page__state is-error">{errorMessage}</p>
         )}
         {!isLoading && !errorMessage && (
-          <ul>
-            {report.items.map((item) => {
-              const barWidth =
-                report.maximum === 0 ? 0 : (item.count / report.maximum) * 100;
+          <>
+            <h2>영역별 발생 횟수</h2>
+            <ul>
+              {report.items.map((item) => {
+                const barWidth =
+                  report.maximum === 0 ? 0 : (item.count / report.maximum) * 100;
 
-              return (
-                <li key={item.id}>
-                  <div>
-                    <span>{item.label}</span>
-                    <strong>{item.count}회</strong>
-                  </div>
-                  <span className="confusion-report-page__bar" aria-hidden="true">
-                    <span style={{ width: `${barWidth}%` }} />
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+                return (
+                  <li key={item.id}>
+                    <div>
+                      <span>{item.label}</span>
+                      <strong>{item.count}회</strong>
+                    </div>
+                    <span className="confusion-report-page__bar" aria-hidden="true">
+                      <span style={{ width: `${barWidth}%` }} />
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </section>
+
+      {!isLoading && !errorMessage && (
+        <section className="confusion-report-page__patterns">
+          <article>
+            <h2>일자별 추이</h2>
+            <div className="confusion-report-page__daily-chart" aria-label="일자별 혼동 횟수">
+              {report.daily.map((item) => {
+                const barHeight =
+                  report.maximumDaily === 0
+                    ? 0
+                    : (item.count / report.maximumDaily) * 100;
+
+                return (
+                  <div key={item.id}>
+                    <strong>{item.count}</strong>
+                    <span className="confusion-report-page__daily-bar" aria-hidden="true">
+                      <span style={{ height: `${barHeight}%` }} />
+                    </span>
+                    <span>{item.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+
+          <article>
+            <h2>시간대별 발생</h2>
+            <ul className="confusion-report-page__time-periods">
+              {report.timePeriods.map((item) => {
+                const barWidth =
+                  report.maximumTimePeriod === 0
+                    ? 0
+                    : (item.count / report.maximumTimePeriod) * 100;
+
+                return (
+                  <li key={item.id}>
+                    <div>
+                      <span>{item.label}</span>
+                      <small>{item.description}</small>
+                      <strong>{item.count}회</strong>
+                    </div>
+                    <span className="confusion-report-page__bar" aria-hidden="true">
+                      <span style={{ width: `${barWidth}%` }} />
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </article>
+        </section>
+      )}
 
       <section className="confusion-report-page__navigation-actions">
         <button
