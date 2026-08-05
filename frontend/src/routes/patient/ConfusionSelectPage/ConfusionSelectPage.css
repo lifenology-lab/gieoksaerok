@@ -87,6 +87,32 @@
   cursor: pointer;
 }
 
+.confusion-select-page__report-button {
+  position: absolute;
+  right: 42px;
+  bottom: 34px;
+  z-index: 12;
+  min-width: 154px;
+  min-height: 52px;
+  border: 1px solid #91e8d6;
+  border-radius: 999px;
+  padding: 0 22px;
+  color: #19372f;
+  background: #91e8d6;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.confusion-select-page__report-button:hover,
+.confusion-select-page__report-button:focus-visible {
+  border-color: #b3f5e6;
+  background: #b3f5e6;
+  outline: none;
+}
+
 .confusion-select-page__back-button:hover,
 .confusion-select-page__back-button:focus-visible {
   border-color: rgba(255, 255, 255, 0.68);
@@ -234,6 +260,14 @@
     font-size: 16px;
   }
 
+  .confusion-select-page__report-button {
+    right: 22px;
+    bottom: 24px;
+    min-height: 48px;
+    padding: 0 18px;
+    font-size: 16px;
+  }
+
   .confusion-select-page__intro {
     top: 118px;
     left: 22px;
@@ -292,6 +326,11 @@
 
   .confusion-select-page__back-button {
     left: 16px;
+    bottom: 16px;
+  }
+
+  .confusion-select-page__report-button {
+    right: 16px;
     bottom: 16px;
   }
 

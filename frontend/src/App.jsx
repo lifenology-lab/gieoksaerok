@@ -9,6 +9,7 @@ import PatientHomePage from "./routes/patient/PatientHomePage/PatientHomePage";
 import CaregiverHomePage from "./routes/caregiver/CaregiverHomePage/CaregiverHomePage";
 import DailyModePage from "./routes/patient/DailyModePage/DailyModePage";
 import ConfusionSelectPage from "./routes/patient/ConfusionSelectPage/ConfusionSelectPage";
+import ConfusionReportPage from "./routes/patient/ConfusionReportPage/ConfusionReportPage";
 import MemoryAlbumPage from "./routes/patient/MemoryAlbumPage/MemoryAlbumPage";
 
 function protectedPage(element) {
@@ -36,6 +37,10 @@ function App() {
           <Route
             path="/patient/confusion"
             element={protectedPage(<ConfusionSelectPage />)}
+          ></Route>
+          <Route
+            path="/patient/confusion/report"
+            element={protectedPage(<ConfusionReportPage />)}
           ></Route>
           <Route
             path="/patient/memory-album/:personId"

@@ -152,6 +152,10 @@ export default function ConfusionSelectPage() {
     navigate("/patient/daily");
   };
 
+  const handleGoReport = () => {
+    navigate("/patient/confusion/report");
+  };
+
   return (
     <main className="confusion-select-page">
       <div className="confusion-select-page__background" aria-hidden="true" />
@@ -202,6 +206,14 @@ export default function ConfusionSelectPage() {
       </section>
 
       {message && <p role="status">{message}</p>}
+
+      <button
+        type="button"
+        className="confusion-select-page__report-button"
+        onClick={handleGoReport}
+      >
+        주간 리포트 보기
+      </button>
     </main>
   );
 }
