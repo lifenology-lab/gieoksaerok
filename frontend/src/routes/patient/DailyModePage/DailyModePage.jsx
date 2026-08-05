@@ -121,13 +121,22 @@ export default function DailyModePage() {
       DAILY_MODE_RETURN_RECOGNITION_KEY,
     );
 
-    if (returnRecognitionType !== DAILY_MODE_RECOGNITION_TYPES.PERSON) {
+    if (
+      returnRecognitionType !== DAILY_MODE_RECOGNITION_TYPES.PERSON &&
+      returnRecognitionType !== DAILY_MODE_RECOGNITION_TYPES.MEAL
+    ) {
       return;
     }
 
     window.sessionStorage.removeItem(DAILY_MODE_RETURN_RECOGNITION_KEY);
-    startPersonRecognition();
-  }, [startPersonRecognition]);
+
+    if (returnRecognitionType === DAILY_MODE_RECOGNITION_TYPES.PERSON) {
+      startPersonRecognition();
+      return;
+    }
+
+    startMealRecognition();
+  }, [startMealRecognition, startPersonRecognition]);
   const isMealRecognitionActive = activeRecognitionType === "meal";
 
   useEffect(() => {

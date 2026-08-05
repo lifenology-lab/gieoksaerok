@@ -1,8 +1,11 @@
 .confusion-report-page {
   position: fixed;
   inset: 0;
-  min-height: 100svh;
-  overflow: auto;
+  box-sizing: border-box;
+  height: 100svh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 42px max(42px, calc((100vw - 760px) / 2)) 110px;
   color: white;
   background: #53655d;
@@ -27,9 +30,7 @@
 .confusion-report-page__header,
 .confusion-report-page__week-actions,
 .confusion-report-page__summary,
-.confusion-report-page__insights,
-.confusion-report-page__breakdown,
-.confusion-report-page__patterns,
+.confusion-report-page__details,
 .confusion-report-page__navigation-actions {
   position: relative;
   z-index: 1;
@@ -108,9 +109,7 @@
 }
 
 .confusion-report-page__summary,
-.confusion-report-page__insights article,
-.confusion-report-page__breakdown,
-.confusion-report-page__patterns article {
+.confusion-report-page__detail-panel {
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.14);
@@ -144,52 +143,53 @@
   color: rgba(255, 255, 255, 0.9);
   font-size: 15px;
   font-weight: 700;
+  line-height: 1.5;
+  word-break: keep-all;
 }
 
-.confusion-report-page__insights {
+.confusion-report-page__details {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
   margin-top: 16px;
 }
 
-.confusion-report-page__insights article {
+.confusion-report-page__detail-tabs {
   display: grid;
-  gap: 7px;
-  padding: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.confusion-report-page__insights span {
-  color: white;
-  font-size: 14px;
-  font-weight: 900;
-}
-
-.confusion-report-page__insights strong {
-  color: #a4f0df;
-  font-size: 24px;
-  line-height: 1.2;
-  word-break: keep-all;
-}
-
-.confusion-report-page__insights p {
-  margin: 0;
+.confusion-report-page__detail-tabs button {
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 14px;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-  word-break: keep-all;
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
-.confusion-report-page__breakdown {
-  margin-top: 16px;
-  padding: 8px 24px;
+.confusion-report-page__detail-tabs button:hover,
+.confusion-report-page__detail-tabs button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
 }
 
-.confusion-report-page__breakdown h2,
-.confusion-report-page__patterns h2 {
+.confusion-report-page__detail-tabs button.is-active {
+  border-color: #91e8d6;
+  color: #18342c;
+  background: #91e8d6;
+}
+
+.confusion-report-page__detail-panel {
+  margin-top: 10px;
+  padding: 20px 24px;
+}
+
+.confusion-report-page__detail-panel h2 {
   margin: 0;
   color: white;
   font-size: 19px;
@@ -197,25 +197,21 @@
   font-weight: 900;
 }
 
-.confusion-report-page__breakdown h2 {
-  padding-top: 16px;
-}
-
-.confusion-report-page__breakdown ul {
+.confusion-report-page__area-list {
   margin: 0;
-  padding: 0;
+  padding: 8px 0 0;
   list-style: none;
 }
 
-.confusion-report-page__breakdown li {
+.confusion-report-page__area-list li {
   padding: 18px 0;
 }
 
-.confusion-report-page__breakdown li + li {
+.confusion-report-page__area-list li + li {
   border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-.confusion-report-page__breakdown li > div {
+.confusion-report-page__area-list li > div {
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -251,19 +247,6 @@
 
 .confusion-report-page__state.is-error {
   color: #ffd4d9;
-}
-
-.confusion-report-page__patterns {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.confusion-report-page__patterns article {
-  padding: 20px;
 }
 
 .confusion-report-page__daily-chart {
@@ -365,26 +348,19 @@
   }
 
   .confusion-report-page__summary,
-  .confusion-report-page__insights article,
-  .confusion-report-page__breakdown,
-  .confusion-report-page__patterns article {
+  .confusion-report-page__detail-panel {
     border-radius: 18px;
-  }
-
-  .confusion-report-page__insights,
-  .confusion-report-page__patterns {
-    grid-template-columns: 1fr;
   }
 
   .confusion-report-page__summary {
     padding: 20px;
   }
 
-  .confusion-report-page__breakdown {
-    padding: 8px 18px;
+  .confusion-report-page__detail-panel {
+    padding: 18px;
   }
 
-  .confusion-report-page__patterns article {
-    padding: 18px;
+  .confusion-report-page__detail-tabs button {
+    font-size: 14px;
   }
 }

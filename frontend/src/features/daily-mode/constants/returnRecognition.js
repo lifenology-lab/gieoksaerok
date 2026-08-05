@@ -3,4 +3,5 @@ export const DAILY_MODE_RETURN_RECOGNITION_KEY =
 
 export const DAILY_MODE_RECOGNITION_TYPES = {
   PERSON: "person",
+  MEAL: "meal",
 };

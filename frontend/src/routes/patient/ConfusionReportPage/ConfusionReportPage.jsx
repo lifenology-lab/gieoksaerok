@@ -12,6 +12,11 @@ import {
 import "./ConfusionReportPage.css";
 
 const CURRENT_WEEK_START = getWeekStart();
+const DETAIL_TABS = [
+  { id: "area", label: "영역별" },
+  { id: "daily", label: "일자별" },
+  { id: "time", label: "시간대별" },
+];
 
 function getWeekComparisonMessage(currentTotal, previousTotal) {
   const difference = currentTotal - previousTotal;
@@ -33,6 +38,7 @@ export default function ConfusionReportPage() {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [activeDetailTab, setActiveDetailTab] = useState("area");
 
   useEffect(() => {
     let isMounted = true;
@@ -105,116 +111,114 @@ export default function ConfusionReportPage() {
         <strong>{report.total}회</strong>
         <p>
           {report.total > 0
-            ? "기록된 혼동 영역을 확인해보세요."
+            ? `가장 많이 발생한 영역은 ${topAreaLabel}이며, ${report.maximum}회 기록됐어요. ${getWeekComparisonMessage(report.total, previousReport.total)}`
             : "이 기간에는 기록된 혼동이 없어요."}
         </p>
       </section>
 
-      <section className="confusion-report-page__insights">
-        <article>
-          <span>가장 많이 발생한 영역</span>
-          <strong>{topAreaLabel || "기록 없음"}</strong>
-          <p>
-            {report.total > 0
-              ? `${report.maximum}회 발생했어요.`
-              : "아직 이번 주 기록이 없어요."}
-          </p>
-        </article>
-        <article>
-          <span>직전 주와 비교</span>
-          <strong>
-            {report.total - previousReport.total > 0
-              ? `+${report.total - previousReport.total}회`
-              : `${report.total - previousReport.total}회`}
-          </strong>
-          <p>{getWeekComparisonMessage(report.total, previousReport.total)}</p>
-        </article>
-      </section>
-
-      <section
-        className="confusion-report-page__breakdown"
-        aria-busy={isLoading}
-        aria-label="영역별 혼동 횟수"
-      >
+      <section className="confusion-report-page__details" aria-busy={isLoading}>
         {isLoading && <p className="confusion-report-page__state">불러오는 중이에요.</p>}
         {!isLoading && errorMessage && (
           <p className="confusion-report-page__state is-error">{errorMessage}</p>
         )}
         {!isLoading && !errorMessage && (
           <>
-            <h2>영역별 발생 횟수</h2>
-            <ul>
-              {report.items.map((item) => {
-                const barWidth =
-                  report.maximum === 0 ? 0 : (item.count / report.maximum) * 100;
+            <div className="confusion-report-page__detail-tabs" role="tablist">
+              {DETAIL_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeDetailTab === tab.id}
+                  className={activeDetailTab === tab.id ? "is-active" : ""}
+                  onClick={() => setActiveDetailTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-                return (
-                  <li key={item.id}>
-                    <div>
-                      <span>{item.label}</span>
-                      <strong>{item.count}회</strong>
-                    </div>
-                    <span className="confusion-report-page__bar" aria-hidden="true">
-                      <span style={{ width: `${barWidth}%` }} />
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+            <article className="confusion-report-page__detail-panel">
+              {activeDetailTab === "area" && (
+                <>
+                  <h2>영역별 발생 횟수</h2>
+                  <ul className="confusion-report-page__area-list">
+                    {report.items.map((item) => {
+                      const barWidth =
+                        report.maximum === 0
+                          ? 0
+                          : (item.count / report.maximum) * 100;
+
+                      return (
+                        <li key={item.id}>
+                          <div>
+                            <span>{item.label}</span>
+                            <strong>{item.count}회</strong>
+                          </div>
+                          <span className="confusion-report-page__bar" aria-hidden="true">
+                            <span style={{ width: `${barWidth}%` }} />
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+
+              {activeDetailTab === "daily" && (
+                <>
+                  <h2>일자별 추이</h2>
+                  <div className="confusion-report-page__daily-chart" aria-label="일자별 혼동 횟수">
+                    {report.daily.map((item) => {
+                      const barHeight =
+                        report.maximumDaily === 0
+                          ? 0
+                          : (item.count / report.maximumDaily) * 100;
+
+                      return (
+                        <div key={item.id}>
+                          <strong>{item.count}</strong>
+                          <span className="confusion-report-page__daily-bar" aria-hidden="true">
+                            <span style={{ height: `${barHeight}%` }} />
+                          </span>
+                          <span>{item.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {activeDetailTab === "time" && (
+                <>
+                  <h2>시간대별 발생</h2>
+                  <ul className="confusion-report-page__time-periods">
+                    {report.timePeriods.map((item) => {
+                      const barWidth =
+                        report.maximumTimePeriod === 0
+                          ? 0
+                          : (item.count / report.maximumTimePeriod) * 100;
+
+                      return (
+                        <li key={item.id}>
+                          <div>
+                            <span>{item.label}</span>
+                            <small>{item.description}</small>
+                            <strong>{item.count}회</strong>
+                          </div>
+                          <span className="confusion-report-page__bar" aria-hidden="true">
+                            <span style={{ width: `${barWidth}%` }} />
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+            </article>
           </>
         )}
       </section>
-
-      {!isLoading && !errorMessage && (
-        <section className="confusion-report-page__patterns">
-          <article>
-            <h2>일자별 추이</h2>
-            <div className="confusion-report-page__daily-chart" aria-label="일자별 혼동 횟수">
-              {report.daily.map((item) => {
-                const barHeight =
-                  report.maximumDaily === 0
-                    ? 0
-                    : (item.count / report.maximumDaily) * 100;
-
-                return (
-                  <div key={item.id}>
-                    <strong>{item.count}</strong>
-                    <span className="confusion-report-page__daily-bar" aria-hidden="true">
-                      <span style={{ height: `${barHeight}%` }} />
-                    </span>
-                    <span>{item.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-
-          <article>
-            <h2>시간대별 발생</h2>
-            <ul className="confusion-report-page__time-periods">
-              {report.timePeriods.map((item) => {
-                const barWidth =
-                  report.maximumTimePeriod === 0
-                    ? 0
-                    : (item.count / report.maximumTimePeriod) * 100;
-
-                return (
-                  <li key={item.id}>
-                    <div>
-                      <span>{item.label}</span>
-                      <small>{item.description}</small>
-                      <strong>{item.count}회</strong>
-                    </div>
-                    <span className="confusion-report-page__bar" aria-hidden="true">
-                      <span style={{ width: `${barWidth}%` }} />
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </article>
-        </section>
-      )}
 
       <section className="confusion-report-page__navigation-actions">
         <button
