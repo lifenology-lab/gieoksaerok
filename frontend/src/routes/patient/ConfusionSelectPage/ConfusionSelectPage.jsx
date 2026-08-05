@@ -84,10 +84,10 @@ const CONFUSION_RESPONSES = {
   meal: {
     title: "최근 식사 기록을 확인해볼까요?",
     message:
-      "카메라로 식사 상황을 확인하고, 필요한 경우 식사 기록을 남길 수 있어요.",
+      "최근에 남긴 식사 기록을 함께 확인할 수 있어요.",
     suggestion: "식사를 했는지 잘 모르겠다면 기록을 함께 확인해보세요.",
-    primaryActionLabel: "식사 확인하기",
-    action: "meal-recognition",
+    primaryActionLabel: "식사 기록 확인하기",
+    action: "meal-records",
   },
 };
 
@@ -229,12 +229,8 @@ export default function ConfusionSelectPage() {
       return;
     }
 
-    if (response.action === "meal-recognition") {
-      window.sessionStorage.setItem(
-        DAILY_MODE_RETURN_RECOGNITION_KEY,
-        DAILY_MODE_RECOGNITION_TYPES.MEAL,
-      );
-      navigate("/patient/daily");
+    if (response.action === "meal-records") {
+      navigate("/patient/meal-records");
       return;
     }
 

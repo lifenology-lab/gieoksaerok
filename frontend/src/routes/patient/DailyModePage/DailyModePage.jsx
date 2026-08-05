@@ -121,22 +121,13 @@ export default function DailyModePage() {
       DAILY_MODE_RETURN_RECOGNITION_KEY,
     );
 
-    if (
-      returnRecognitionType !== DAILY_MODE_RECOGNITION_TYPES.PERSON &&
-      returnRecognitionType !== DAILY_MODE_RECOGNITION_TYPES.MEAL
-    ) {
+    if (returnRecognitionType !== DAILY_MODE_RECOGNITION_TYPES.PERSON) {
       return;
     }
 
     window.sessionStorage.removeItem(DAILY_MODE_RETURN_RECOGNITION_KEY);
-
-    if (returnRecognitionType === DAILY_MODE_RECOGNITION_TYPES.PERSON) {
-      startPersonRecognition();
-      return;
-    }
-
-    startMealRecognition();
-  }, [startMealRecognition, startPersonRecognition]);
+    startPersonRecognition();
+  }, [startPersonRecognition]);
   const isMealRecognitionActive = activeRecognitionType === "meal";
 
   useEffect(() => {
@@ -287,6 +278,7 @@ export default function DailyModePage() {
 
     // 최근 식사 기록이 있는데 식사가 인식된 경우
     if (mealRecognitionResult.type === "recent_meal_found") {
+      nav("/patient/meal-records");
       return;
     }
 
