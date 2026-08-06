@@ -30,6 +30,7 @@ import {
 } from "@/features/meal-recognition/components";
 import {
   getMealContextResult,
+  getSuggestedMealType,
   MEAL_CONTEXT_RESULT_TYPES,
 } from "@/features/meal-recognition/utils/mealRecordUtils";
 
@@ -71,6 +72,7 @@ export default function DailyModePage() {
   const [mealRecognitionResult, setMealRecognitionResult] = useState(null);
   const [mealRecords, setMealRecords] = useState([]);
   const [isMealRecordSaving, setIsMealRecordSaving] = useState(false);
+  const [mealRecordError, setMealRecordError] = useState("");
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
 
   const mealRecordsRef = useRef(mealRecords);
@@ -270,6 +272,50 @@ export default function DailyModePage() {
 
   const handleCloseMealRecognition = () => {
     setMealRecognitionResult(null);
+    setMealRecordError("");
+  };
+
+  const saveQuickMealRecord = async (source) => {
+    if (
+      !mealRecognitionResult ||
+      mealRecognitionResult.type !== "meal_detected_without_record" ||
+      isMealRecordSaving
+    ) {
+      return;
+    }
+
+    try {
+      setIsMealRecordSaving(true);
+      setMealRecordError("");
+      const eatenAt = new Date().toISOString();
+      const createdMealRecord = await createMealRecord({
+        mealType: getSuggestedMealType(eatenAt),
+        eatenAt,
+        source,
+      });
+
+      mealRecordsRef.current = [createdMealRecord, ...mealRecordsRef.current];
+      setMealRecords((prevMealRecords) => [
+        createdMealRecord,
+        ...prevMealRecords,
+      ]);
+      const recordMessage =
+        createdMealRecord.mealType === "unknown"
+          ? "지금 시간으로 식사 기록을 남겨둘게요."
+          : `${createdMealRecord.mealLabel}으로 기록했어요.`;
+      setMealRecognitionResult({
+        type: "meal_record_completed",
+        title: "식사 기록이 완료되었어요",
+        message: recordMessage,
+        suggestion: "",
+        primaryActionLabel: "확인",
+        secondaryActionLabel: "닫기",
+      });
+    } catch {
+      setMealRecordError("식사 기록을 저장하지 못했어요. 다시 시도해주세요.");
+    } finally {
+      setIsMealRecordSaving(false);
+    }
   };
 
   const handleMealRecordPrimaryAction = async () => {
@@ -283,52 +329,9 @@ export default function DailyModePage() {
       return;
     }
 
-    // 최근 식사 기록 없이 식사가 인식된 경우
-    if (
-      mealRecognitionResult.type === "meal_detected_without_record" ||
-      mealRecognitionResult.type === "meal_record_save_error"
-    ) {
-      const now = new Date().toISOString();
-
-      try {
-        setIsMealRecordSaving(true);
-        const createdMealRecord = await createMealRecord({
-          mealType: "unknown",
-          eatenAt: now,
-          source: "patient_confirmed",
-          memo: "환자가 기록한 식사",
-        });
-
-        mealRecordsRef.current = [
-          createdMealRecord,
-          ...mealRecordsRef.current,
-        ];
-        setMealRecords((prevMealRecords) => [
-          createdMealRecord,
-          ...prevMealRecords,
-        ]);
-
-        setMealRecognitionResult({
-          type: "meal_record_completed",
-          title: "식사 기록이 완료되었어요",
-          message: "오늘 식사 기록에 남겨둘게요.",
-          suggestion: "",
-          primaryActionLabel: "확인",
-          secondaryActionLabel: "닫기",
-        });
-      } catch {
-        setMealRecognitionResult({
-          type: "meal_record_save_error",
-          title: "식사 기록을 저장하지 못했어요",
-          message: "잠시 후 다시 시도해주세요.",
-          suggestion: "",
-          primaryActionLabel: "다시 시도",
-          secondaryActionLabel: "닫기",
-        });
-      } finally {
-        setIsMealRecordSaving(false);
-      }
-
+    // 최근 식사 기록 없이 식사가 인식된 경우: 한 번의 확인으로 저장
+    if (mealRecognitionResult.type === "meal_detected_without_record") {
+      saveQuickMealRecord("patient_confirmed");
       return;
     }
 
@@ -336,6 +339,10 @@ export default function DailyModePage() {
     if (mealRecognitionResult.type === "meal_record_completed") {
       setMealRecognitionResult(null);
     }
+  };
+
+  const handleMealRecordSecondaryAction = () => {
+    handleCloseMealRecognition();
   };
 
   const handleGoConfusion = () => {
@@ -422,9 +429,10 @@ export default function DailyModePage() {
             suggestion={mealRecognitionResult.suggestion}
             primaryActionLabel={mealRecognitionResult.primaryActionLabel}
             secondaryActionLabel={mealRecognitionResult.secondaryActionLabel}
+            errorMessage={mealRecordError}
             isActionDisabled={isMealRecordSaving}
             onPrimaryAction={handleMealRecordPrimaryAction}
-            onSecondaryAction={handleCloseMealRecognition}
+            onSecondaryAction={handleMealRecordSecondaryAction}
           />
         )}
       </MealRecognitionOverlay>

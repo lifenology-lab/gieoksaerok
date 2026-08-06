@@ -120,10 +120,10 @@ export async function detectMealScene(srcElement, mealRecords = []) {
     card: {
       type: "meal_detected_without_record",
       title: "식사 중이신가요?",
-      message: "최근 식사 기록은 확인되지 않았어요.",
-      suggestion: "식사 중이라면 식사 기록을 남길 수 있어요.",
-      primaryActionLabel: "식사 기록하기",
-      secondaryActionLabel: "안내 닫기",
+      message: "식사 기록을 도와드릴게요.",
+      suggestion: "",
+      primaryActionLabel: "네, 식사 중이에요",
+      secondaryActionLabel: "식사 중이 아니에요",
     },
   };
 }
