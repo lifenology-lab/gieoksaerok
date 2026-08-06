@@ -326,6 +326,7 @@ export default function DailyModePage() {
 
     // 최근 식사 기록이 있는데 식사가 인식된 경우
     if (mealRecognitionResult.type === "recent_meal_found") {
+      nav("/patient/meal-records");
       return;
     }
 
