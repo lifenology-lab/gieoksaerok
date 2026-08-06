@@ -188,6 +188,7 @@ export default function ConfusionSelectPage() {
     }
 
     setSelectedConfusionType(confusionType);
+    setResponseType(confusionType);
     setMessage("");
 
     try {
@@ -197,9 +198,11 @@ export default function ConfusionSelectPage() {
         occurredAt: new Date().toISOString(),
       });
       setMessage("선택한 내용을 기록했어요.");
-      setResponseType(confusionType);
     } catch (error) {
-      setMessage(error.message || "선택한 내용을 기록하지 못했어요.");
+      setMessage(
+        error.message ||
+          "기록은 저장하지 못했지만, 필요한 도움은 계속 확인할 수 있어요.",
+      );
     } finally {
       setIsSaving(false);
     }
