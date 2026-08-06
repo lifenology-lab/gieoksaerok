@@ -20,6 +20,7 @@ import FaceLabelsOverlay from "@/features/face-recognition/components/FaceLabels
 import UnknownPersonDialog from "@/features/face-recognition/components/UnknownPersonDialog.jsx";
 import usePersonRecognition from "@/features/face-recognition/hooks/usePersonRecognition.js";
 import {
+  createMealRecord,
   detectMealScene,
   fetchRecentMealRecords,
 } from "@/features/meal-recognition/api/mealRecognitionApi";
@@ -69,6 +70,7 @@ export default function DailyModePage() {
 
   const [mealRecognitionResult, setMealRecognitionResult] = useState(null);
   const [mealRecords, setMealRecords] = useState([]);
+  const [isMealRecordSaving, setIsMealRecordSaving] = useState(false);
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
 
   const mealRecordsRef = useRef(mealRecords);
@@ -270,9 +272,9 @@ export default function DailyModePage() {
     setMealRecognitionResult(null);
   };
 
-  const handleMealRecordPrimaryAction = () => {
+  const handleMealRecordPrimaryAction = async () => {
     // 현재 처리할 식사 인식 결과가 없는 경우
-    if (!mealRecognitionResult) {
+    if (!mealRecognitionResult || isMealRecordSaving) {
       return;
     }
 
@@ -282,30 +284,50 @@ export default function DailyModePage() {
     }
 
     // 최근 식사 기록 없이 식사가 인식된 경우
-    if (mealRecognitionResult.type === "meal_detected_without_record") {
+    if (
+      mealRecognitionResult.type === "meal_detected_without_record" ||
+      mealRecognitionResult.type === "meal_record_save_error"
+    ) {
       const now = new Date().toISOString();
 
-      const newMealRecord = {
-        id: crypto.randomUUID(),
-        mealType: "unknown",
-        mealLabel: "식사",
-        eatenAt: now,
-        source: "patient_confirmed",
-        detectionSource: "teachable_machine",
-        menu: null,
-        memo: "환자가 기록한 식사",
-      };
+      try {
+        setIsMealRecordSaving(true);
+        const createdMealRecord = await createMealRecord({
+          mealType: "unknown",
+          eatenAt: now,
+          source: "patient_confirmed",
+          memo: "환자가 기록한 식사",
+        });
 
-      setMealRecords((prevMealRecords) => [newMealRecord, ...prevMealRecords]);
+        mealRecordsRef.current = [
+          createdMealRecord,
+          ...mealRecordsRef.current,
+        ];
+        setMealRecords((prevMealRecords) => [
+          createdMealRecord,
+          ...prevMealRecords,
+        ]);
 
-      setMealRecognitionResult({
-        type: "meal_record_completed",
-        title: "식사 기록이 완료되었어요",
-        message: "오늘 식사 기록에 남겨둘게요.",
-        suggestion: "",
-        primaryActionLabel: "확인",
-        secondaryActionLabel: "닫기",
-      });
+        setMealRecognitionResult({
+          type: "meal_record_completed",
+          title: "식사 기록이 완료되었어요",
+          message: "오늘 식사 기록에 남겨둘게요.",
+          suggestion: "",
+          primaryActionLabel: "확인",
+          secondaryActionLabel: "닫기",
+        });
+      } catch {
+        setMealRecognitionResult({
+          type: "meal_record_save_error",
+          title: "식사 기록을 저장하지 못했어요",
+          message: "잠시 후 다시 시도해주세요.",
+          suggestion: "",
+          primaryActionLabel: "다시 시도",
+          secondaryActionLabel: "닫기",
+        });
+      } finally {
+        setIsMealRecordSaving(false);
+      }
 
       return;
     }
@@ -400,6 +422,7 @@ export default function DailyModePage() {
             suggestion={mealRecognitionResult.suggestion}
             primaryActionLabel={mealRecognitionResult.primaryActionLabel}
             secondaryActionLabel={mealRecognitionResult.secondaryActionLabel}
+            isActionDisabled={isMealRecordSaving}
             onPrimaryAction={handleMealRecordPrimaryAction}
             onSecondaryAction={handleCloseMealRecognition}
           />
