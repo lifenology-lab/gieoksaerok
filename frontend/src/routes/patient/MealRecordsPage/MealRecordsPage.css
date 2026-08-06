@@ -1,0 +1,318 @@
+.meal-records-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  color: white;
+  background: #53655d;
+  z-index: 100;
+}
+
+.meal-records-page__background {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #4c6159 0%, #63766b 52%, #44544f 100%);
+}
+
+.meal-records-page__background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 42%),
+    linear-gradient(0deg, rgba(36, 47, 43, 0.34), transparent 48%);
+}
+
+.meal-records-page__date-time {
+  position: absolute;
+  top: 42px;
+  left: 42px;
+  z-index: 12;
+  display: grid;
+  gap: 8px;
+  color: white;
+  text-align: left;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.42);
+}
+
+.meal-records-page__date-time p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.meal-records-page__date-time strong {
+  color: white;
+  font-size: 35px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.meal-records-page__date-time span {
+  width: 47px;
+  height: 2px;
+  border-radius: 999px;
+  background: #91e8d6;
+  box-shadow: 0 0 16px rgba(145, 232, 214, 0.58);
+}
+
+.meal-records-page__intro {
+  position: absolute;
+  top: 148px;
+  left: 42px;
+  z-index: 12;
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  text-align: left;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.42);
+}
+
+.meal-records-page__intro > span {
+  width: 4px;
+  min-height: 69px;
+  border-radius: 999px;
+  background: #91e8d6;
+  box-shadow: 0 0 18px rgba(145, 232, 214, 0.56);
+}
+
+.meal-records-page__intro h1,
+.meal-records-page__intro p,
+.meal-records-page__notice,
+.meal-records-page__list p {
+  margin: 0;
+}
+
+.meal-records-page__intro h1 {
+  color: white;
+  font-size: 32px;
+  line-height: 1.12;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.meal-records-page__intro p {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.meal-records-page__content {
+  position: absolute;
+  top: 246px;
+  right: 0;
+  bottom: 98px;
+  left: 0;
+  z-index: 12;
+  width: min(760px, calc(100vw - 84px));
+  margin: 0 auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.meal-records-page__notice,
+.meal-records-page__list li {
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 22px 60px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.meal-records-page__notice {
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.meal-records-page__notice.is-error {
+  border-color: rgba(255, 212, 217, 0.52);
+  color: #ffd4d9;
+  background: rgba(125, 43, 52, 0.42);
+}
+
+.meal-records-page__list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meal-records-page__list li {
+  display: grid;
+  gap: 7px;
+  padding: 20px;
+  text-align: left;
+}
+
+.meal-records-page__list strong {
+  color: white;
+  font-size: 23px;
+  line-height: 1.15;
+  font-weight: 900;
+}
+
+.meal-records-page__list time,
+.meal-records-page__list p {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.meal-records-page__navigation {
+  position: absolute;
+  right: 42px;
+  bottom: 34px;
+  left: 42px;
+  z-index: 12;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meal-records-page__navigation button {
+  min-width: 132px;
+  min-height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  padding: 0 22px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 12px 30px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.meal-records-page__navigation button:hover,
+.meal-records-page__navigation button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+@media (max-width: 920px) {
+  .meal-records-page__date-time {
+    top: 24px;
+    left: 22px;
+  }
+
+  .meal-records-page__date-time p {
+    font-size: 16px;
+  }
+
+  .meal-records-page__date-time strong {
+    font-size: 31px;
+  }
+
+  .meal-records-page__intro {
+    top: 118px;
+    left: 22px;
+    gap: 14px;
+  }
+
+  .meal-records-page__intro > span {
+    min-height: 58px;
+  }
+
+  .meal-records-page__intro h1 {
+    font-size: 26px;
+  }
+
+  .meal-records-page__intro p {
+    margin-top: 8px;
+    font-size: 15px;
+  }
+
+  .meal-records-page__content {
+    top: 202px;
+    bottom: 86px;
+    width: min(660px, calc(100vw - 44px));
+  }
+
+  .meal-records-page__navigation {
+    right: 22px;
+    bottom: 24px;
+    left: 22px;
+  }
+
+  .meal-records-page__navigation button {
+    min-height: 48px;
+    padding: 0 18px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .meal-records-page__date-time {
+    top: 82px;
+    left: 16px;
+  }
+
+  .meal-records-page__intro {
+    top: 154px;
+    left: 16px;
+  }
+
+  .meal-records-page__intro h1 {
+    font-size: 24px;
+  }
+
+  .meal-records-page__intro p {
+    margin-top: 6px;
+    font-size: 14px;
+  }
+
+  .meal-records-page__content {
+    top: 238px;
+    right: 16px;
+    bottom: 82px;
+    left: 16px;
+    width: auto;
+  }
+
+  .meal-records-page__list {
+    gap: 10px;
+  }
+
+  .meal-records-page__list li,
+  .meal-records-page__notice {
+    border-radius: 18px;
+    padding: 16px;
+  }
+
+  .meal-records-page__list strong {
+    font-size: 20px;
+  }
+
+  .meal-records-page__navigation {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+  }
+
+  .meal-records-page__navigation button {
+    min-width: 0;
+    flex: 1;
+    padding: 0 10px;
+    font-size: 14px;
+  }
+}
