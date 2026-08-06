@@ -275,7 +275,7 @@ export default function DailyModePage() {
     setMealRecordError("");
   };
 
-  const saveQuickMealRecord = async (source) => {
+  const saveQuickMealRecord = async () => {
     if (
       !mealRecognitionResult ||
       mealRecognitionResult.type !== "meal_detected_without_record" ||
@@ -287,11 +287,12 @@ export default function DailyModePage() {
     try {
       setIsMealRecordSaving(true);
       setMealRecordError("");
+
       const eatenAt = new Date().toISOString();
       const createdMealRecord = await createMealRecord({
         mealType: getSuggestedMealType(eatenAt),
         eatenAt,
-        source,
+        source: "patient_confirmed",
       });
 
       mealRecordsRef.current = [createdMealRecord, ...mealRecordsRef.current];
@@ -299,14 +300,16 @@ export default function DailyModePage() {
         createdMealRecord,
         ...prevMealRecords,
       ]);
-      const recordMessage =
+
+      const message =
         createdMealRecord.mealType === "unknown"
           ? "지금 시간으로 식사 기록을 남겨둘게요."
           : `${createdMealRecord.mealLabel}으로 기록했어요.`;
+
       setMealRecognitionResult({
         type: "meal_record_completed",
         title: "식사 기록이 완료되었어요",
-        message: recordMessage,
+        message,
         suggestion: "",
         primaryActionLabel: "확인",
         secondaryActionLabel: "닫기",
@@ -318,32 +321,24 @@ export default function DailyModePage() {
     }
   };
 
-  const handleMealRecordPrimaryAction = async () => {
-    // 현재 처리할 식사 인식 결과가 없는 경우
+  const handleMealRecordPrimaryAction = () => {
     if (!mealRecognitionResult || isMealRecordSaving) {
       return;
     }
 
-    // 최근 식사 기록이 있는데 식사가 인식된 경우
     if (mealRecognitionResult.type === "recent_meal_found") {
       nav("/patient/meal-records");
       return;
     }
 
-    // 최근 식사 기록 없이 식사가 인식된 경우: 한 번의 확인으로 저장
     if (mealRecognitionResult.type === "meal_detected_without_record") {
-      saveQuickMealRecord("patient_confirmed");
+      saveQuickMealRecord();
       return;
     }
 
-    // 식사 기록이 완료된 경우
     if (mealRecognitionResult.type === "meal_record_completed") {
-      setMealRecognitionResult(null);
+      handleCloseMealRecognition();
     }
-  };
-
-  const handleMealRecordSecondaryAction = () => {
-    handleCloseMealRecognition();
   };
 
   const handleGoConfusion = () => {
@@ -433,7 +428,7 @@ export default function DailyModePage() {
             errorMessage={mealRecordError}
             isActionDisabled={isMealRecordSaving}
             onPrimaryAction={handleMealRecordPrimaryAction}
-            onSecondaryAction={handleMealRecordSecondaryAction}
+            onSecondaryAction={handleCloseMealRecognition}
           />
         )}
       </MealRecognitionOverlay>

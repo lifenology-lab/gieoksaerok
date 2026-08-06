@@ -150,7 +150,6 @@ export default function FaceLabelsOverlay({ faces, onOpenMemoryAlbum }) {
         const upcomingPromise =
           displayCard?.upcoming_promise || memoryRecap?.upcoming_promise;
         const longTermHint = displayCard?.long_term_hint;
-        const suggestedQuestion = displayCard?.suggested_question;
         const hasMemoryDetails = displayCard || memoryRecap;
 
         return (
@@ -177,11 +176,6 @@ export default function FaceLabelsOverlay({ faces, onOpenMemoryAlbum }) {
                       {upcomingPromise && (
                         <p className="daily-mode-page__face-memory-promise">
                           ⏰ [약속] {upcomingPromise}
-                        </p>
-                      )}
-                      {suggestedQuestion && (
-                        <p className="daily-mode-page__face-memory-question">
-                          💬 {suggestedQuestion}
                         </p>
                       )}
                     </>
