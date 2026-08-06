@@ -1,13 +1,16 @@
+from io import StringIO
 import json
 import tempfile
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone as django_timezone
 from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import (
@@ -20,12 +23,16 @@ from .models import (
     PersonSummary,
     Promise,
 )
+from .promise_cleanup import cleanup_expired_promises
 from .services import (
     OpenAIMemorySummaryError,
     TranscriptionResult,
+    generate_memory_recap,
     generate_person_display_summary,
+    prune_conversation_and_memory_history,
     transcribe_audio_file,
 )
+from .views import create_promise_record, normalize_long_term_memory_category
 
 
 def face_descriptor():
@@ -129,6 +136,99 @@ class TranscribeAudioFileTests(TestCase):
         self.assertNotIn('prompt', request_kwargs)
 
 
+class GenerateMemoryRecapTests(TestCase):
+    @mock.patch('people.services._get_openai_client')
+    def test_promise_description_excludes_date_time_and_person(self, mock_get_client):
+        user = create_patient_user()
+        person = create_person(user=user, name='지민', relationship='딸')
+        parsed_recap = mock.Mock()
+        parsed_recap.model_dump.return_value = {
+            'title': '저녁 식사',
+            'summary': '딸 지민과 식사 약속을 정했습니다.',
+            'upcoming_promise': '내일 저녁 7시 어버이날 기념 저녁 식사',
+            'promise': {
+                'title': '저녁 식사',
+                'description': '딸 지민과 내일 저녁 7시에 어버이날 기념으로 식사합니다.',
+                'scheduled_at': None,
+                'scheduled_date': '2026-08-07',
+                'time_label': '저녁 7시',
+                'timezone': 'Asia/Seoul',
+                'raw_text': '내일 저녁 7시에 어버이날 기념으로 밥 먹자.',
+                'confidence': 0.93,
+            },
+            'key_points': ['어버이날 기념 식사 약속'],
+        }
+        fake_client = mock.Mock()
+        fake_client.responses.parse.return_value = mock.Mock(
+            output_parsed=parsed_recap,
+        )
+        mock_get_client.return_value = fake_client
+
+        result = generate_memory_recap(
+            person=person,
+            transcript='내일 저녁 7시에 어버이날 기념으로 밥 먹자.',
+            recorded_at=datetime(2026, 8, 6, tzinfo=timezone.utc),
+            promise_timezone='Asia/Seoul',
+        )
+
+        self.assertEqual(
+            result['promise']['description'],
+            '어버이날 기념 저녁 식사',
+        )
+
+        request_kwargs = fake_client.responses.parse.call_args.kwargs
+        self.assertIn('promise.description', request_kwargs['instructions'])
+        self.assertIn('Do not include dates', request_kwargs['instructions'])
+        self.assertIn('어버이날 기념 저녁 식사', request_kwargs['instructions'])
+
+    @mock.patch('people.services._get_openai_client')
+    def test_broad_evening_does_not_become_specific_clock_time(
+        self,
+        mock_get_client,
+    ):
+        user = create_patient_user()
+        person = create_person(user=user, name='지민', relationship='딸')
+        parsed_recap = mock.Mock()
+        parsed_recap.model_dump.return_value = {
+            'title': '치킨 약속',
+            'summary': '딸 지민과 가족 식사 약속을 정했습니다.',
+            'upcoming_promise': '이번 주 일요일 저녁 가족과 치킨',
+            'promise': {
+                'title': '치킨 식사',
+                'description': '가족과 치킨집 저녁',
+                'scheduled_at': '2026-08-09T19:00:00+09:00',
+                'scheduled_date': None,
+                'time_label': '저녁 7시',
+                'timezone': 'Asia/Seoul',
+                'raw_text': '이번 주 일요일 저녁에 가족들이랑 치킨을 먹을거야.',
+                'confidence': 0.91,
+            },
+            'key_points': ['가족과 치킨을 먹기로 했습니다.'],
+        }
+        fake_client = mock.Mock()
+        fake_client.responses.parse.return_value = mock.Mock(
+            output_parsed=parsed_recap,
+        )
+        mock_get_client.return_value = fake_client
+
+        result = generate_memory_recap(
+            person=person,
+            transcript='이번 주 일요일 저녁에 가족들이랑 치킨을 먹을거야.',
+            recorded_at=datetime(2026, 8, 6, tzinfo=timezone.utc),
+            promise_timezone='Asia/Seoul',
+        )
+
+        self.assertIsNone(result['promise']['scheduled_at'])
+        self.assertEqual(result['promise']['scheduled_date'], '2026-08-09')
+        self.assertEqual(result['promise']['time_label'], '저녁')
+        self.assertNotIn('7시', result['promise']['time_label'])
+        self.assertEqual(result['promise']['description'], '가족과 치킨집 저녁')
+
+        instructions = fake_client.responses.parse.call_args.kwargs['instructions']
+        self.assertIn('Do not convert broad time', instructions)
+        self.assertNotIn('do not rewrite it as "치킨집"', instructions)
+
+
 class ConversationTranscriptionCreateViewTests(TestCase):
     def setUp(self):
         self.user = create_patient_user()
@@ -208,7 +308,6 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             'body': '아들 지훈과 병원 예약 시간을 확인했습니다.',
             'upcoming_promise': '내일 오전 병원에 가기',
             'long_term_hint': '삼성전자에 다닙니다.',
-            'suggested_question': '병원 예약 시간을 다시 물어보세요.',
         }
         previous_conversation = Conversation.objects.create(
             user=self.user,
@@ -279,8 +378,8 @@ class ConversationTranscriptionCreateViewTests(TestCase):
         prompt = mock_transcribe_audio_file.call_args.kwargs['prompt']
         self.assertIn(self.person.name, prompt)
         self.assertIn(self.person.relationship, prompt)
-        self.assertIn('삼성전자', prompt)
-        self.assertIn('단호박죽', prompt)
+        self.assertNotIn('삼성전자', prompt)
+        self.assertNotIn('단호박죽', prompt)
         self.assertEqual(mock_transcribe_audio_file.call_args.kwargs['person'], self.person)
         self.assertIsNone(
             mock_transcribe_audio_file.call_args.kwargs['patient_voice_profile'],
@@ -368,7 +467,6 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             'body': '아들 지훈과 병원 약속을 확인했습니다.',
             'upcoming_promise': '내일 오전 병원에 같이 가기',
             'long_term_hint': None,
-            'suggested_question': None,
         }
         audio = SimpleUploadedFile(
             'conversation.webm',
@@ -402,6 +500,89 @@ class ConversationTranscriptionCreateViewTests(TestCase):
             voice_profile,
         )
         self.assertEqual(PersonSummary.objects.count(), 1)
+
+    @mock.patch('people.views.generate_person_display_summary')
+    @mock.patch('people.views.extract_long_term_memories')
+    @mock.patch('people.views.generate_memory_recap')
+    @mock.patch('people.views.transcribe_audio_file')
+    def test_transcription_prunes_conversations_and_memories_to_recent_five(
+        self,
+        mock_transcribe_audio_file,
+        mock_generate_memory_recap,
+        mock_extract_long_term_memories,
+        mock_generate_person_display_summary,
+    ):
+        base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        old_records = []
+
+        for index in range(5):
+            recorded_at = base_time + timedelta(days=index)
+            conversation = Conversation.objects.create(
+                user=self.user,
+                person=self.person,
+                transcript=f'{index + 1}번째 기존 대화',
+                recorded_at=recorded_at,
+            )
+            memory = Memory.objects.create(
+                user=self.user,
+                person=self.person,
+                conversation=conversation,
+                recap={
+                    'title': f'{index + 1}번째 기억',
+                    'summary': f'{index + 1}번째 요약',
+                    'upcoming_promise': None,
+                    'key_points': [],
+                },
+                memory_at=recorded_at,
+            )
+            old_records.append((conversation, memory))
+
+        mock_transcribe_audio_file.return_value = '새로운 대화'
+        mock_generate_memory_recap.return_value = {
+            'title': '새 대화',
+            'summary': '아들 지훈과 새 대화를 나눴습니다.',
+            'upcoming_promise': None,
+            'key_points': ['새 대화'],
+        }
+        mock_extract_long_term_memories.return_value = []
+        mock_generate_person_display_summary.return_value = {
+            'display_name': '아들 지훈',
+            'title': '새 대화',
+            'body': '아들 지훈과 새 대화를 나눴습니다.',
+            'upcoming_promise': None,
+            'long_term_hint': None,
+        }
+        audio = SimpleUploadedFile(
+            'conversation.webm',
+            b'audio-bytes',
+            content_type='audio/webm',
+        )
+
+        response = self.client.post(
+            reverse('conversation-transcription-create'),
+            {
+                'person': str(self.person.id),
+                'audio': audio,
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            Conversation.objects.filter(user=self.user, person=self.person).count(),
+            5,
+        )
+        self.assertEqual(
+            Memory.objects.filter(user=self.user, person=self.person).count(),
+            5,
+        )
+        self.assertFalse(Conversation.objects.filter(id=old_records[0][0].id).exists())
+        self.assertFalse(Memory.objects.filter(id=old_records[0][1].id).exists())
+        self.assertTrue(
+            Conversation.objects.filter(
+                id=response.json()['id'],
+                transcript='새로운 대화',
+            ).exists(),
+        )
 
     @mock.patch('people.views.generate_memory_recap')
     @mock.patch('people.views.transcribe_audio_file')
@@ -438,34 +619,334 @@ class ConversationTranscriptionCreateViewTests(TestCase):
         self.assertIn('memory_error', response.json())
 
 
-class GeneratePersonDisplaySummaryTests(TestCase):
-    @mock.patch('people.services._get_openai_client')
-    def test_body_uses_only_three_recent_memories(self, mock_get_openai_client):
+class ConversationMemoryRetentionTests(TestCase):
+    def create_conversation_memory_pair(self, user, person, index):
+        recorded_at = datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(
+            days=index,
+        )
+        conversation = Conversation.objects.create(
+            user=user,
+            person=person,
+            transcript=f'{index}번째 대화',
+            recorded_at=recorded_at,
+        )
+        memory = Memory.objects.create(
+            user=user,
+            person=person,
+            conversation=conversation,
+            recap={
+                'title': f'{index}번째 기억',
+                'summary': f'{index}번째 요약',
+                'upcoming_promise': None,
+                'key_points': [],
+            },
+            memory_at=recorded_at,
+        )
+        return conversation, memory
+
+    def test_prune_keeps_recent_five_for_each_user_person_pair(self):
         user = create_patient_user()
         person = create_person(user=user, name='지민', relationship='딸')
-        memories = []
+        other_person = create_person(user=user, name='민서', relationship='손녀')
+        other_user = create_patient_user()
+        other_user_person = create_person(
+            user=other_user,
+            name='지훈',
+            relationship='아들',
+        )
 
-        for index in range(4):
-            conversation = Conversation.objects.create(
-                user=user,
-                person=person,
-                transcript=f'{index}번째 대화',
-            )
-            memories.append(
-                Memory.objects.create(
-                    user=user,
-                    person=person,
-                    conversation=conversation,
-                    recap={
-                        'title': f'{index}번째 기억',
-                        'summary': f'{index}번째 대화 요약',
-                        'upcoming_promise': None,
-                        'key_points': [f'{index}번째 핵심'],
-                    },
-                    memory_at=datetime(2026, 1, index + 1, tzinfo=timezone.utc),
-                ),
+        target_records = [
+            self.create_conversation_memory_pair(user, person, index)
+            for index in range(6)
+        ]
+
+        for index in range(6):
+            self.create_conversation_memory_pair(user, other_person, index)
+            self.create_conversation_memory_pair(
+                other_user,
+                other_user_person,
+                index,
             )
 
+        prune_conversation_and_memory_history(user=user, person=person)
+
+        self.assertEqual(
+            Conversation.objects.filter(user=user, person=person).count(),
+            5,
+        )
+        self.assertEqual(Memory.objects.filter(user=user, person=person).count(), 5)
+        self.assertFalse(
+            Conversation.objects.filter(id=target_records[0][0].id).exists(),
+        )
+        self.assertFalse(Memory.objects.filter(id=target_records[0][1].id).exists())
+        self.assertEqual(
+            Conversation.objects.filter(user=user, person=other_person).count(),
+            6,
+        )
+        self.assertEqual(
+            Memory.objects.filter(user=user, person=other_person).count(),
+            6,
+        )
+        self.assertEqual(
+            Conversation.objects.filter(
+                user=other_user,
+                person=other_user_person,
+            ).count(),
+            6,
+        )
+        self.assertEqual(
+            Memory.objects.filter(user=other_user, person=other_user_person).count(),
+            6,
+        )
+
+
+class PromiseDateInferenceTests(TestCase):
+    def setUp(self):
+        self.user = create_patient_user()
+        self.person = create_person(user=self.user, name='지민', relationship='딸')
+        self.recorded_at = datetime(2099, 8, 6, 11, tzinfo=timezone.utc)
+        self.conversation = Conversation.objects.create(
+            user=self.user,
+            person=self.person,
+            transcript='약속 날짜를 이야기했다.',
+            recorded_at=self.recorded_at,
+        )
+        self.memory = Memory.objects.create(
+            user=self.user,
+            person=self.person,
+            conversation=self.conversation,
+            recap={
+                'title': '약속',
+                'summary': '딸 지민과 약속을 정했습니다.',
+                'upcoming_promise': None,
+                'key_points': [],
+            },
+            memory_at=self.recorded_at,
+        )
+
+    def create_promise(self, raw_text):
+        return create_promise_record(
+            person=self.person,
+            conversation=self.conversation,
+            memory=self.memory,
+            promise_data={
+                'title': '병원 방문',
+                'description': '딸 지민과 병원에 갑니다.',
+                'scheduled_at': None,
+                'scheduled_date': None,
+                'time_label': '오전',
+                'timezone': 'Asia/Seoul',
+                'raw_text': raw_text,
+                'confidence': 0.92,
+            },
+        )
+
+    def test_infers_tomorrow_from_raw_text(self):
+        promise = self.create_promise('내일 오전 병원에 같이 가요.')
+
+        self.assertIsNotNone(promise)
+        self.assertEqual(promise.scheduled_date, date(2099, 8, 7))
+
+    def test_infers_this_week_friday_from_raw_text(self):
+        promise = self.create_promise('이번 주 금요일 오전 병원에 같이 가요.')
+
+        self.assertIsNotNone(promise)
+        self.assertEqual(promise.scheduled_date, date(2099, 8, 7))
+
+    def test_infers_next_week_friday_from_raw_text(self):
+        promise = self.create_promise('다음 주 금요일 오전 병원에 같이 가요.')
+
+        self.assertIsNotNone(promise)
+        self.assertEqual(promise.scheduled_date, date(2099, 8, 14))
+
+    def test_create_promise_drops_inferred_clock_time(self):
+        conversation = Conversation.objects.create(
+            user=self.user,
+            person=self.person,
+            transcript='이번 주 일요일 저녁에 가족들이랑 치킨을 먹을거야.',
+            recorded_at=datetime(2026, 8, 6, tzinfo=timezone.utc),
+        )
+        memory = Memory.objects.create(
+            user=self.user,
+            person=self.person,
+            conversation=conversation,
+            recap={
+                'title': '치킨 약속',
+                'summary': '딸 지민과 가족 식사 약속을 정했습니다.',
+                'upcoming_promise': None,
+                'key_points': [],
+            },
+            memory_at=conversation.recorded_at,
+        )
+
+        promise = create_promise_record(
+            person=self.person,
+            conversation=conversation,
+            memory=memory,
+            promise_data={
+                'title': '치킨 식사',
+                'description': '가족과 치킨집 저녁',
+                'scheduled_at': '2026-08-09T19:00:00+09:00',
+                'scheduled_date': None,
+                'time_label': '저녁 7시',
+                'timezone': 'Asia/Seoul',
+                'raw_text': '이번 주 일요일 저녁에 가족들이랑 치킨을 먹을거야.',
+                'confidence': 0.91,
+            },
+        )
+
+        self.assertIsNotNone(promise)
+        self.assertIsNone(promise.scheduled_at)
+        self.assertEqual(promise.scheduled_date, date(2026, 8, 9))
+        self.assertEqual(promise.time_label, '저녁')
+        self.assertEqual(promise.description, '가족과 치킨집 저녁')
+
+
+class ExpiredPromiseCleanupTests(TestCase):
+    def setUp(self):
+        self.user = create_patient_user()
+        self.person = create_person(user=self.user, name='지민', relationship='딸')
+
+    def create_promise(self, status, scheduled_date, title):
+        return Promise.objects.create(
+            user=self.user,
+            person=self.person,
+            title=title,
+            description=f'{title} 약속입니다.',
+            scheduled_date=scheduled_date,
+            time_label='오전',
+            timezone='Asia/Seoul',
+            status=status,
+            confidence=0.9,
+        )
+
+    def test_cleanup_deletes_only_old_expired_promises(self):
+        now = datetime(2099, 1, 31, 12, tzinfo=timezone.utc)
+        old_expired = self.create_promise(
+            Promise.STATUS_EXPIRED,
+            date(2098, 12, 1),
+            '오래된 만료 약속',
+        )
+        recent_expired = self.create_promise(
+            Promise.STATUS_EXPIRED,
+            date(2099, 1, 1),
+            '최근 만료 약속',
+        )
+        stale_active = self.create_promise(
+            Promise.STATUS_ACTIVE,
+            date(2099, 1, 1),
+            '지난 활성 약속',
+        )
+        future_active = self.create_promise(
+            Promise.STATUS_ACTIVE,
+            date(2099, 2, 10),
+            '다가오는 약속',
+        )
+
+        Promise.objects.filter(id=old_expired.id).update(
+            updated_at=now - timedelta(days=31),
+        )
+        Promise.objects.filter(id=recent_expired.id).update(
+            updated_at=now - timedelta(days=5),
+        )
+
+        result = cleanup_expired_promises(retention_days=30, now=now)
+
+        self.assertEqual(result['expired_count'], 1)
+        self.assertEqual(result['deleted_count'], 1)
+        self.assertFalse(Promise.objects.filter(id=old_expired.id).exists())
+        self.assertTrue(Promise.objects.filter(id=recent_expired.id).exists())
+        stale_active.refresh_from_db()
+        future_active.refresh_from_db()
+        self.assertEqual(stale_active.status, Promise.STATUS_EXPIRED)
+        self.assertEqual(future_active.status, Promise.STATUS_ACTIVE)
+
+    def test_cleanup_expired_promises_command(self):
+        old_expired = self.create_promise(
+            Promise.STATUS_EXPIRED,
+            date(2020, 1, 1),
+            '삭제할 만료 약속',
+        )
+        Promise.objects.filter(id=old_expired.id).update(
+            updated_at=django_timezone.now() - timedelta(days=31),
+        )
+        output = StringIO()
+
+        call_command(
+            'cleanup_expired_promises',
+            '--retention-days',
+            '30',
+            stdout=output,
+        )
+
+        self.assertIn('deleted 1 expired promises', output.getvalue())
+        self.assertFalse(Promise.objects.filter(id=old_expired.id).exists())
+
+
+class LongTermMemoryCategoryTests(TestCase):
+    def test_long_term_memory_choices_are_simplified(self):
+        self.assertEqual(
+            [choice[0] for choice in LongTermMemory.CATEGORY_CHOICES],
+            ['family', 'health', 'career', 'relationship', 'other'],
+        )
+
+    def test_legacy_categories_are_mapped_to_simplified_categories(self):
+        self.assertEqual(
+            normalize_long_term_memory_category('birth'),
+            LongTermMemory.CATEGORY_FAMILY,
+        )
+        self.assertEqual(
+            normalize_long_term_memory_category('marriage'),
+            LongTermMemory.CATEGORY_FAMILY,
+        )
+        self.assertEqual(
+            normalize_long_term_memory_category('death'),
+            LongTermMemory.CATEGORY_FAMILY,
+        )
+        self.assertEqual(
+            normalize_long_term_memory_category('education'),
+            LongTermMemory.CATEGORY_CAREER,
+        )
+
+
+class GeneratePersonDisplaySummaryTests(TestCase):
+    def test_card_uses_latest_memory_and_nearest_active_promise(self):
+        user = create_patient_user()
+        person = create_person(user=user, name='지민', relationship='딸')
+        older_conversation = Conversation.objects.create(
+            user=user,
+            person=person,
+            transcript='오래된 대화',
+        )
+        newer_conversation = Conversation.objects.create(
+            user=user,
+            person=person,
+            transcript='최근 대화',
+        )
+        older_memory = Memory.objects.create(
+            user=user,
+            person=person,
+            conversation=older_conversation,
+            recap={
+                'title': '오래된 기억',
+                'description': '오래된 대화 요약입니다.',
+                'upcoming_promise': None,
+                'key_points': [],
+            },
+            memory_at=datetime(2026, 8, 1, tzinfo=timezone.utc),
+        )
+        newer_memory = Memory.objects.create(
+            user=user,
+            person=person,
+            conversation=newer_conversation,
+            recap={
+                'title': '병원 이야기',
+                'description': '딸 지민과 병원에 다녀왔습니다.',
+                'upcoming_promise': None,
+                'key_points': [],
+            },
+            memory_at=datetime(2026, 8, 5, tzinfo=timezone.utc),
+        )
         long_term_memory = LongTermMemory.objects.create(
             user=user,
             person=person,
@@ -475,53 +956,48 @@ class GeneratePersonDisplaySummaryTests(TestCase):
             status=LongTermMemory.STATUS_CONFIRMED,
             confidence=0.95,
         )
-        promise = Promise.objects.create(
+        farther_promise = Promise.objects.create(
+            user=user,
+            person=person,
+            title='주말 산책',
+            description='딸 지민과 주말 산책',
+            scheduled_date=date(2026, 8, 9),
+            timezone='Asia/Seoul',
+            confidence=0.9,
+        )
+        nearest_promise = Promise.objects.create(
             user=user,
             person=person,
             title='저녁 식사',
-            description='딸 지민과 저녁 식사를 합니다.',
-            scheduled_date=date(2099, 1, 2),
+            description='딸 지민과 어버이날 기념 저녁 식사',
+            scheduled_date=date(2026, 8, 7),
             time_label='저녁 7시',
             timezone='Asia/Seoul',
             confidence=0.9,
         )
-        parsed_card = mock.Mock()
-        parsed_card.model_dump.return_value = {
-            'display_name': '딸 지민',
-            'title': '최근 대화',
-            'body': '딸 지민과 중요한 이야기를 나눴습니다.',
-            'upcoming_promise': '1월 2일 저녁 7시 저녁 식사',
-            'long_term_hint': '딸 지민은 환자의 딸입니다.',
-            'suggested_question': None,
-        }
-        fake_client = mock.Mock()
-        fake_client.responses.parse.return_value = mock.Mock(
-            output_parsed=parsed_card,
-        )
-        mock_get_openai_client.return_value = fake_client
 
         result = generate_person_display_summary(
             person=person,
-            recent_memories=memories,
+            recent_memories=[newer_memory, older_memory],
             long_term_memories=[long_term_memory],
-            active_promises=[promise],
+            active_promises=[farther_promise, nearest_promise],
+            now=datetime(2026, 8, 6, 12, tzinfo=timezone.utc),
         )
 
         self.assertEqual(result['display_name'], '딸 지민')
-        self.assertEqual(result['upcoming_promise'], '1월 2일 저녁 7시 저녁 식사')
-
-        request_kwargs = fake_client.responses.parse.call_args.kwargs
-        input_payload = json.loads(
-            request_kwargs['input'].split('\n', maxsplit=1)[1],
-        )
-
-        self.assertIn('3 most recent conversation summaries', request_kwargs['instructions'])
-        self.assertIn('active_promises', request_kwargs['instructions'])
-        self.assertEqual(len(input_payload['recent_memories']), 3)
         self.assertEqual(
-            input_payload['active_promises'][0]['display_text'],
-            '1월 2일 저녁 7시 저녁 식사',
+            result['title'],
+            '병원 이야기',
         )
+        self.assertEqual(
+            result['body'],
+            '딸 지민과 병원에 다녀왔습니다.',
+        )
+        self.assertEqual(
+            result['upcoming_promise'],
+            '내일 저녁 7시 어버이날 기념 저녁 식사 예정',
+        )
+        self.assertNotIn('suggested_question', result)
 
 
 class PersonListCreateViewTests(TestCase):
@@ -657,8 +1133,16 @@ class PersonListCreateViewTests(TestCase):
             '최근 기억',
         )
         self.assertEqual(
+            response.json()[0]['latest_summary']['card']['body'],
+            '최근 요약',
+        )
+        self.assertEqual(
             response.json()[0]['latest_summary']['card']['upcoming_promise'],
-            '1월 2일 저녁 7시 저녁 식사',
+            '1월 2일 저녁 7시 저녁 식사 예정',
+        )
+        self.assertNotIn(
+            'suggested_question',
+            response.json()[0]['latest_summary']['card'],
         )
         self.assertEqual(
             response.json()[0]['latest_promise']['title'],

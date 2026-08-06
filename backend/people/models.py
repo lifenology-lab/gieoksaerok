@@ -249,25 +249,17 @@ class MemoryAlbumItem(TimeStampedModel):
 
 class LongTermMemory(TimeStampedModel):
     CATEGORY_FAMILY = 'family'
-    CATEGORY_BIRTH = 'birth'
-    CATEGORY_MARRIAGE = 'marriage'
-    CATEGORY_EDUCATION = 'education'
     CATEGORY_CAREER = 'career'
     CATEGORY_HEALTH = 'health'
-    CATEGORY_DEATH = 'death'
     CATEGORY_RELATIONSHIP = 'relationship'
     CATEGORY_OTHER = 'other'
 
     CATEGORY_CHOICES = [
-        (CATEGORY_FAMILY, 'Family'),
-        (CATEGORY_BIRTH, 'Birth'),
-        (CATEGORY_MARRIAGE, 'Marriage'),
-        (CATEGORY_EDUCATION, 'Education'),
-        (CATEGORY_CAREER, 'Career'),
-        (CATEGORY_HEALTH, 'Health'),
-        (CATEGORY_DEATH, 'Death'),
-        (CATEGORY_RELATIONSHIP, 'Relationship'),
-        (CATEGORY_OTHER, 'Other'),
+        (CATEGORY_FAMILY, '가족'),
+        (CATEGORY_HEALTH, '건강'),
+        (CATEGORY_CAREER, '커리어'),
+        (CATEGORY_RELATIONSHIP, '관계'),
+        (CATEGORY_OTHER, '기타'),
     ]
 
     STATUS_SUGGESTED = 'suggested'

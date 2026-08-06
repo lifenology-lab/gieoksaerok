@@ -17,7 +17,7 @@ let modelLoadPromise = null;
 function loadFaceApiModule() {
   if (!faceApiModulePromise) {
     faceApiModulePromise = import(
-      "@vladmandic/face-api/dist/face-api.esm.js"
+      "@vladmandic/face-api/dist/face-api.esm-nobundle.js"
     ).catch((error) => {
       faceApiModulePromise = null;
       error.userMessage = MODEL_LOAD_ERROR_MESSAGE;

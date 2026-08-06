@@ -4,6 +4,8 @@ export default function MealRecognitionCard({
   suggestion,
   primaryActionLabel = "식사 기록 보기",
   secondaryActionLabel = "안내 닫기",
+  errorMessage = "",
+  isActionDisabled = false,
   onPrimaryAction,
   onSecondaryAction,
 }) {
@@ -15,14 +17,17 @@ export default function MealRecognitionCard({
 
       {suggestion && <p>{suggestion}</p>}
 
+      {errorMessage && <p className="meal-recognition-card__error">{errorMessage}</p>}
+
       <div className="meal-recognition-card__actions">
-        <button type="button" onClick={onPrimaryAction}>
+        <button type="button" disabled={isActionDisabled} onClick={onPrimaryAction}>
           {primaryActionLabel}
         </button>
-        <button type="button" onClick={onSecondaryAction}>
+        <button type="button" disabled={isActionDisabled} onClick={onSecondaryAction}>
           {secondaryActionLabel}
         </button>
       </div>
+
     </article>
   );
 }

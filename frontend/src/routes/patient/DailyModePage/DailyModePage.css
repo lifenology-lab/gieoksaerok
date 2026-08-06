@@ -623,6 +623,20 @@
   background: #b3f5e6;
 }
 
+.meal-recognition-card__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.meal-recognition-card__error {
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #ffd4d9 !important;
+  background: rgba(153, 39, 54, 0.28) !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
 @media (max-width: 560px) {
   .meal-recognition-overlay {
     padding: 16px;
@@ -641,6 +655,7 @@
   .meal-recognition-card p {
     font-size: 15px;
   }
+
 }
 
 @media (max-width: 900px) {

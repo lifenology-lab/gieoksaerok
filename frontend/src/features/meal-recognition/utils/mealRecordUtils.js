@@ -18,6 +18,36 @@ const MEAL_TYPE_LABELS = {
   unknown: "식사",
 };
 
+// 환자에게 식사 종류를 다시 묻지 않기 위해 기록 시각으로만 식사 종류를 제안한다.
+// 일반적인 식사 시간대 밖의 기록은 임의로 간식으로 분류하지 않는다.
+export function getSuggestedMealType(eatenAt = new Date()) {
+  const date = new Date(eatenAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return "unknown";
+  }
+
+  const hour = date.getHours();
+
+  if (hour >= 5 && hour < 10) {
+    return "breakfast";
+  }
+
+  if (hour >= 10 && hour < 14) {
+    return "lunch";
+  }
+
+  if (hour >= 14 && hour < 17) {
+    return "snack";
+  }
+
+  if (hour >= 17 && hour < 21) {
+    return "dinner";
+  }
+
+  return "unknown";
+}
+
 // 백엔드 MealRecord 응답(snake_case)을 식사 인식 화면에서 사용하는 형태로 변환
 export function mapMealRecordFromApi(mealRecord) {
   if (!mealRecord || typeof mealRecord !== "object") {
