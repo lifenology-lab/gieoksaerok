@@ -13,6 +13,7 @@ import ConfusionReportPage from "./routes/patient/ConfusionReportPage/ConfusionR
 import MealRecordsPage from "./routes/patient/MealRecordsPage/MealRecordsPage";
 import MemoryAlbumPage from "./routes/patient/MemoryAlbumPage/MemoryAlbumPage";
 import LandingPage from "./routes/LandingPage/LandingPage";
+import InstallGuidePage from "./routes/InstallGuidePage/InstallGuidePage";
 
 function protectedPage(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>;
@@ -25,6 +26,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />}></Route>
           <Route path="/auth" element={<AuthPage />}></Route>
+          <Route path="install" element={<InstallGuidePage />}></Route>
           <Route
             path="/roles"
             element={protectedPage(<RoleSelectPage />)}
