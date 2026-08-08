@@ -364,6 +364,33 @@ export default function DailyModePage() {
     });
   };
 
+  const renderFaceConversationControls = (person) => {
+    const activePersonId = activeConversationPerson?.id || null;
+    const recordingPersonId = conversationRecorder.recordingPerson?.id || null;
+
+    if (person.id !== activePersonId && person.id !== recordingPersonId) {
+      return null;
+    }
+
+    return (
+      <ConversationRecorderControls
+        person={person}
+        recordingStatus={conversationRecorder.recordingStatus}
+        statusMessage={conversationRecorder.statusMessage}
+        errorMessage={conversationRecorder.errorMessage}
+        recordingPerson={conversationRecorder.recordingPerson}
+        patientVoiceIsRegistered={patientVoiceRecorder.isRegistered}
+        patientVoiceRecordingStatus={patientVoiceRecorder.recordingStatus}
+        patientVoiceStatusMessage={patientVoiceRecorder.statusMessage}
+        patientVoiceErrorMessage={patientVoiceRecorder.errorMessage}
+        onStartPatientVoiceRecording={patientVoiceRecorder.startRecording}
+        onStopPatientVoiceRecording={patientVoiceRecorder.stopRecording}
+        onStartRecording={conversationRecorder.startRecording}
+        onStopRecording={conversationRecorder.stopRecording}
+      />
+    );
+  };
+
   const recognitionStatusMessage =
     activeRecognitionType === "person"
       ? personRecognitionStatusMessage
@@ -375,6 +402,7 @@ export default function DailyModePage() {
         <FaceLabelsOverlay
           faces={recognizedFaces}
           onOpenMemoryAlbum={handleOpenMemoryAlbum}
+          renderFaceActions={renderFaceConversationControls}
         />
       </CameraPreview>
 
@@ -391,23 +419,6 @@ export default function DailyModePage() {
       />
 
       <RecognitionStatusToast message={recognitionStatusMessage} />
-
-      <ConversationRecorderControls
-        person={activeConversationPerson}
-        recordingStatus={conversationRecorder.recordingStatus}
-        statusMessage={conversationRecorder.statusMessage}
-        errorMessage={conversationRecorder.errorMessage}
-        lastConversation={conversationRecorder.lastConversation}
-        recordingPerson={conversationRecorder.recordingPerson}
-        patientVoiceIsRegistered={patientVoiceRecorder.isRegistered}
-        patientVoiceRecordingStatus={patientVoiceRecorder.recordingStatus}
-        patientVoiceStatusMessage={patientVoiceRecorder.statusMessage}
-        patientVoiceErrorMessage={patientVoiceRecorder.errorMessage}
-        onStartPatientVoiceRecording={patientVoiceRecorder.startRecording}
-        onStopPatientVoiceRecording={patientVoiceRecorder.stopRecording}
-        onStartRecording={conversationRecorder.startRecording}
-        onStopRecording={conversationRecorder.stopRecording}
-      />
 
       <UnknownPersonDialog
         open={isRegisterDialogOpen}

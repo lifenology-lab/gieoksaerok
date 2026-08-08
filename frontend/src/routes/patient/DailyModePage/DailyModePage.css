@@ -2,7 +2,8 @@
   position: fixed;
   inset: 0;
   width: 100vw;
-  height: 100svh;
+  height: 100dvh;
+  min-height: 100svh;
   overflow: hidden;
   background: #111;
   z-index: 100;
@@ -297,9 +298,13 @@
 
 .daily-mode-page__face-label {
   position: absolute;
-  top: 0;
+  top: var(--face-label-top, 0);
+  left: var(--face-label-left, calc(100% + 8px));
   width: min(260px, calc(100vw - 32px));
   max-width: 260px;
+  max-height: var(--face-label-max-height, min(260px, calc(100dvh - 32px)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 8px 10px;
   border-radius: 10px;
   background: rgba(12, 16, 18, 0.82);
@@ -307,14 +312,7 @@
   text-align: left;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
   pointer-events: auto;
-}
-
-.daily-mode-page__face-box--label-right .daily-mode-page__face-label {
-  left: calc(100% + 8px);
-}
-
-.daily-mode-page__face-box--label-left .daily-mode-page__face-label {
-  right: calc(100% + 8px);
+  -webkit-overflow-scrolling: touch;
 }
 
 .daily-mode-page__face-label strong,
@@ -376,14 +374,82 @@
   width: 100%;
   min-height: 36px;
   margin-top: 10px;
+  border: 1px solid #FFFFFF79;
+  border-radius: 8px;
+  color: #FFFFFFE0;
+  background: #FFFFFF45;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.daily-mode-page__face-memory-button:hover,
+.daily-mode-page__face-memory-button:focus-visible {
+  border-color: #FFFFFFA4;
+  background: #FFFFFF5F;
+  outline: none;
+}
+
+.daily-mode-page__face-card-actions {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.daily-mode-page__face-conversation {
+  display: grid;
+  gap: 6px;
+}
+
+.daily-mode-page__face-conversation-button {
+  width: 100%;
+  min-height: 36px;
   border: 0;
   border-radius: 8px;
   color: #101014;
   background: #b9f7d0;
   font: inherit;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
+}
+
+.daily-mode-page__face-conversation-button:hover,
+.daily-mode-page__face-conversation-button:focus-visible {
+  background: #d0ffe8;
+  outline: none;
+}
+
+.daily-mode-page__face-conversation-button--stop {
+  color: #281100;
+  background: #ffd15f;
+}
+
+.daily-mode-page__face-conversation-button--stop:hover,
+.daily-mode-page__face-conversation-button--stop:focus-visible {
+  background: #ffe08a;
+}
+
+.daily-mode-page__face-conversation-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.daily-mode-page__face-conversation-button:disabled:hover,
+.daily-mode-page__face-conversation-button:disabled:focus-visible {
+  background: #b9f7d0;
+}
+
+.daily-mode-page__face-conversation-status {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.daily-mode-page__face-conversation-status.is-error {
+  color: #ffb8c0;
 }
 
 .daily-mode-page__dialog-backdrop {
@@ -398,12 +464,16 @@
 
 .daily-mode-page__dialog {
   width: min(420px, 100%);
+  max-height: min(560px, calc(100dvh - 40px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px;
   border-radius: 16px;
   background: white;
   color: #141418;
   text-align: left;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  -webkit-overflow-scrolling: touch;
 }
 
 .daily-mode-page__dialog h2 {
@@ -509,7 +579,9 @@
   color: #c72c41;
 }
 
-.daily-mode-page__voice-dialog .daily-mode-page__dialog-actions button:last-child {
+.daily-mode-page__voice-dialog
+  .daily-mode-page__dialog-actions
+  button:last-child {
   color: white;
   background: #176f42;
 }
@@ -655,7 +727,6 @@
   .meal-recognition-card p {
     font-size: 15px;
   }
-
 }
 
 @media (max-width: 900px) {
@@ -748,5 +819,265 @@
 
   .daily-mode-page__home-actions .daily-mode-page__glass-button {
     min-width: 164px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .daily-mode-page {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  .daily-mode-page__date-time {
+    top: max(12px, env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+    gap: 5px;
+  }
+
+  .daily-mode-page__date-time p {
+    font-size: 13px;
+  }
+
+  .daily-mode-page__date-time strong {
+    font-size: 24px;
+  }
+
+  .daily-mode-page__date-time span {
+    width: 36px;
+  }
+
+  .daily-mode-page__top-actions {
+    top: 90px;
+    left: max(18px, env(safe-area-inset-left));
+    gap: 8px;
+  }
+
+  .daily-mode-page__glass-button {
+    min-width: 114px;
+    min-height: 40px;
+    gap: 8px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  .daily-mode-page__glass-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .daily-mode-page__glass-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .daily-mode-page__home-actions {
+    left: max(18px, env(safe-area-inset-left));
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .daily-mode-page__bottom-actions {
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .daily-mode-page__status {
+    top: 190px;
+    left: max(18px, env(safe-area-inset-left));
+    max-width: min(300px, 45vw);
+    padding: 9px 12px;
+    border-radius: 14px;
+  }
+
+  .daily-mode-page__status p {
+    font-size: 12px;
+  }
+
+  .daily-mode-page__conversation-actions {
+    right: 12px;
+    bottom: 64px;
+    left: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 10px;
+    max-height: calc(100dvh - 84px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .daily-mode-page__conversation-actions button,
+  .daily-mode-page__dialog button {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .daily-mode-page__conversation-actions strong {
+    font-size: 14px;
+  }
+
+  .daily-mode-page__conversation-actions span {
+    font-size: 12px;
+  }
+
+  .daily-mode-page__patient-voice {
+    gap: 6px 10px;
+    padding-top: 6px;
+  }
+
+  .daily-mode-page__conversation-transcript {
+    max-height: 46px;
+    overflow-y: auto;
+  }
+
+  .daily-mode-page__face-label {
+    width: min(220px, calc(100vw - 32px));
+    max-width: 220px;
+    padding: 7px 8px;
+  }
+
+  .daily-mode-page__face-label strong {
+    font-size: 14px;
+  }
+
+  .daily-mode-page__face-label span {
+    font-size: 12px;
+  }
+
+  .daily-mode-page__face-memory {
+    margin-top: 7px;
+    padding-top: 6px;
+  }
+
+  .daily-mode-page__face-memory b {
+    font-size: 12px;
+  }
+
+  .daily-mode-page__face-memory p {
+    margin-top: 4px;
+    font-size: 11px;
+  }
+
+  .daily-mode-page__face-memory-button {
+    min-height: 30px;
+    margin-top: 7px;
+    font-size: 12px;
+  }
+
+  .daily-mode-page__face-card-actions {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .daily-mode-page__face-conversation {
+    gap: 5px;
+  }
+
+  .daily-mode-page__face-conversation-button {
+    min-height: 30px;
+    font-size: 12px;
+  }
+
+  .daily-mode-page__face-conversation-status {
+    font-size: 11px;
+  }
+
+  .daily-mode-page__dialog-backdrop,
+  .daily-mode-page__voice-dialog-backdrop {
+    padding: 12px;
+  }
+
+  .daily-mode-page__dialog {
+    width: min(420px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .daily-mode-page__voice-dialog {
+    width: min(440px, calc(100vw - 24px));
+  }
+
+  .daily-mode-page__dialog h2 {
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+
+  .daily-mode-page__dialog label {
+    gap: 4px;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+
+  .daily-mode-page__dialog input,
+  .daily-mode-page__dialog textarea {
+    min-height: 36px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .daily-mode-page__dialog textarea {
+    min-height: 58px;
+    line-height: 1.35;
+  }
+
+  .daily-mode-page__dialog-error,
+  .daily-mode-page__voice-dialog-status,
+  .daily-mode-page__voice-dialog-message {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .daily-mode-page__dialog-actions {
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .daily-mode-page__voice-sample {
+    gap: 6px;
+    margin-top: 10px;
+    padding: 10px;
+  }
+
+  .daily-mode-page__voice-sample p {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 390px) and (pointer: coarse) {
+  .daily-mode-page__top-actions {
+    top: 82px;
+  }
+
+  .daily-mode-page__glass-button {
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .daily-mode-page__status {
+    top: 174px;
+  }
+
+  .daily-mode-page__conversation-actions {
+    bottom: 56px;
+    max-height: calc(100dvh - 70px);
+  }
+
+  .daily-mode-page__dialog {
+    max-height: calc(100dvh - 20px);
+    padding: 14px;
+  }
+
+  .daily-mode-page__dialog h2 {
+    font-size: 17px;
+  }
+
+  .daily-mode-page__dialog-actions button {
+    min-height: 34px;
+  }
+
+  .daily-mode-page__voice-sample {
+    padding: 8px;
   }
 }

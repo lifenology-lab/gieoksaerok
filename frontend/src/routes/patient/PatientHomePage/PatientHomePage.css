@@ -2,7 +2,8 @@
   position: fixed;
   inset: 0;
   width: 100vw;
-  height: 100svh;
+  height: 100dvh;
+  min-height: 100svh;
   overflow: hidden;
   background: #111;
   color: white;
@@ -438,5 +439,112 @@
 
   .patient-home-page__card > span:last-child {
     font-size: 12px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .patient-home-page {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  .patient-home-page__date-time {
+    top: max(12px, env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+    gap: 5px;
+  }
+
+  .patient-home-page__date-time p {
+    font-size: 13px;
+  }
+
+  .patient-home-page__date-time strong {
+    font-size: 24px;
+  }
+
+  .patient-home-page__date-time span {
+    width: 36px;
+  }
+
+  .patient-home-page__intro {
+    top: 92px;
+    left: max(18px, env(safe-area-inset-left));
+    gap: 12px;
+  }
+
+  .patient-home-page__intro > span {
+    width: 3px;
+    min-height: 48px;
+  }
+
+  .patient-home-page__intro h1 {
+    font-size: 22px;
+  }
+
+  .patient-home-page__intro p {
+    margin-top: 5px;
+    font-size: 13px;
+  }
+
+  .patient-home-page__actions {
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: min(46vw, 420px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    gap: 12px;
+    transform: translate(-50%, -50%);
+    overflow: visible;
+  }
+
+  .patient-home-page__card {
+    min-height: min(34dvh, 122px);
+    gap: 6px;
+    border-radius: 16px;
+    padding: 12px;
+  }
+
+  .patient-home-page__card-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .patient-home-page__card-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .patient-home-page__card strong {
+    font-size: 17px;
+  }
+
+  .patient-home-page__card > span:last-child {
+    font-size: 12px;
+  }
+
+  .patient-home-page__collapse-button {
+    left: max(18px, env(safe-area-inset-left));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    min-width: 110px;
+    min-height: 40px;
+    gap: 8px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 390px) and (pointer: coarse) {
+  .patient-home-page__intro {
+    top: 82px;
+  }
+
+  .patient-home-page__actions {
+    width: min(44vw, 390px);
+  }
+
+  .patient-home-page__card {
+    min-height: min(30dvh, 102px);
   }
 }

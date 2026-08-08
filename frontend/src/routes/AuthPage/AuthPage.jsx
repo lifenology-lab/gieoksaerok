@@ -82,7 +82,11 @@ export default function AuthPage() {
 
   return (
     <main className="auth-page">
-      <section className="auth-page__panel">
+      <section
+        className={`auth-page__panel ${
+          isSignUpMode ? "auth-page__panel--signup" : "auth-page__panel--login"
+        }`}
+      >
         <div className="auth-page__intro">
           <p className="auth-page__eyebrow">기억새록</p>
           <h1>{isSignUpMode ? "회원가입" : "로그인"}</h1>
