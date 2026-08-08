@@ -12,6 +12,7 @@ import ConfusionSelectPage from "./routes/patient/ConfusionSelectPage/ConfusionS
 import ConfusionReportPage from "./routes/patient/ConfusionReportPage/ConfusionReportPage";
 import MealRecordsPage from "./routes/patient/MealRecordsPage/MealRecordsPage";
 import MemoryAlbumPage from "./routes/patient/MemoryAlbumPage/MemoryAlbumPage";
+import LandingPage from "./routes/LandingPage/LandingPage";
 
 function protectedPage(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>;
@@ -22,7 +23,8 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<AuthPage />}></Route>
+          <Route path="/" element={<LandingPage />}></Route>
+          <Route path="/auth" element={<AuthPage />}></Route>
           <Route
             path="/roles"
             element={protectedPage(<RoleSelectPage />)}
