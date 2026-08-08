@@ -14,6 +14,8 @@ from pathlib import Path
 from datetime import timedelta
 
 import environ
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,7 +36,7 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -57,9 +59,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -91,9 +93,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": env("DB_NAME"),
+        "USER": env("DB_USER"),
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": env("DB_HOST"),
+        "PORT": env("DB_PORT", default="3306"),
     }
 }
 
@@ -133,13 +139,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = (
+        "accept",
+        "authorization",
+        "content-type",
+        "user-agent",
+        "x-csrftoken",
+        "x-requested-with",
+)
 
 OPENAI_API_KEY = env('OPENAI_API_KEY', default=None)
 OPENAI_TRANSCRIPTION_MODEL = env(
@@ -157,7 +170,7 @@ OPENAI_TRANSCRIPTION_DIARIZATION_MODEL = env(
 OPENAI_TRANSCRIPTION_LANGUAGE = env('OPENAI_TRANSCRIPTION_LANGUAGE', default='ko')
 OPENAI_MEMORY_SUMMARY_MODEL = env('OPENAI_MEMORY_SUMMARY_MODEL', default='gpt-4o')
 OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS = env.int(
-    'OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS',
+        'OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS',
     default=700,
 )
 PROMISE_DEFAULT_TIMEZONE = env('PROMISE_DEFAULT_TIMEZONE', default='Asia/Seoul')
