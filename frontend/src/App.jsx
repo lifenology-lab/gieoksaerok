@@ -26,7 +26,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />}></Route>
           <Route path="/auth" element={<AuthPage />}></Route>
-          <Route path="install" element={<InstallGuidePage />}></Route>
+          <Route path="/install" element={<InstallGuidePage />}></Route>
           <Route
             path="/roles"
             element={protectedPage(<RoleSelectPage />)}
