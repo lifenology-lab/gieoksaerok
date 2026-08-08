@@ -15,7 +15,7 @@ export function ProtectedRoute({ children }) {
   }
 
   if (!isAuthenticated || !hasPassedLoginPage) {
-    return <Navigate to="/" replace state={{ from: location }} />;
+    return <Navigate to="/auth" replace state={{ from: location }} />;
   }
 
   return children;
