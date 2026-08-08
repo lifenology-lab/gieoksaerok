@@ -7,7 +7,32 @@ import {
 } from "@/shared/api/authTokens";
 import { request } from "@/shared/api/client";
 import { isStandalonePwa } from "@/shared/pwa/isStandalonePwa";
+import { promptPwaInstall } from "@/shared/pwa/installPrompt";
 import "./LandingPage.css";
+
+async function handleInstallClick() {
+  if (isStandalonePwa()) {
+    navigate(getAccessToken() ? "/roles" : "/auth");
+    return;
+  }
+
+  try {
+    const result = await promptPwaInstall();
+
+    if (!result.prompted) {
+      navigate("/install");
+      return;
+    }
+
+    if (result.outcome === "accepted") {
+      return;
+    }
+
+    navigate("/install");
+  } catch (error) {
+    navigate("/install");
+  }
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -125,7 +150,7 @@ export default function LandingPage() {
           <button
             type="button"
             className="landing-primary-button"
-            onClick={() => navigate("/install")}
+            onClick={handleInstallClick}
           >
             앱 다운로드하기
           </button>
