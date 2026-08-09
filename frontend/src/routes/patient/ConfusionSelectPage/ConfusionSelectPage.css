@@ -2,7 +2,8 @@
   position: fixed;
   inset: 0;
   width: 100vw;
-  height: 100svh;
+  height: 100dvh;
+  min-height: 100svh;
   overflow: hidden;
   background: #53655d;
   color: white;
@@ -65,8 +66,8 @@
   left: 42px;
   bottom: 34px;
   z-index: 12;
-  min-width: 132px;
-  min-height: 52px;
+  min-width: 142px;
+  min-height: 53px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -93,10 +94,10 @@
   bottom: 34px;
   z-index: 12;
   min-width: 154px;
-  min-height: 52px;
+  min-height: 53px;
   border: 1px solid #91e8d6;
   border-radius: 999px;
-  padding: 0 22px;
+  padding: 0 21px;
   color: #19372f;
   background: #91e8d6;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
@@ -140,8 +141,11 @@
 
 .confusion-response-card {
   width: min(420px, 100%);
+  max-height: min(560px, calc(100dvh - 48px));
   display: grid;
   gap: 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 26px;
   border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 22px;
@@ -152,6 +156,7 @@
     0 22px 60px rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  -webkit-overflow-scrolling: touch;
 }
 
 .confusion-response-card h2,
@@ -540,6 +545,7 @@
   }
 
   .confusion-response-card {
+    max-height: calc(100dvh - 32px);
     padding: 20px;
     border-radius: 18px;
   }
@@ -613,5 +619,188 @@
 
   .confusion-select-page__option-label {
     font-size: 17px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .confusion-select-page {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  .confusion-select-page__date-time {
+    top: max(12px, env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+    gap: 5px;
+  }
+
+  .confusion-select-page__date-time p {
+    font-size: 13px;
+  }
+
+  .confusion-select-page__date-time strong {
+    font-size: 24px;
+  }
+
+  .confusion-select-page__date-time span {
+    width: 36px;
+  }
+
+  .confusion-select-page__intro {
+    top: 92px;
+    left: max(18px, env(safe-area-inset-left));
+    gap: 12px;
+  }
+
+  .confusion-select-page__intro > span {
+    width: 3px;
+    min-height: 48px;
+  }
+
+  .confusion-select-page__intro h1 {
+    font-size: 22px;
+  }
+
+  .confusion-select-page__intro p {
+    margin-top: 5px;
+    font-size: 13px;
+  }
+
+  .confusion-select-page__options {
+    top: 158px;
+    bottom: 64px;
+    width: min(620px, calc(100vw - 36px));
+    gap: 8px;
+    overflow: auto;
+  }
+
+  .confusion-select-page__option {
+    min-height: 78px;
+    gap: 3px 10px;
+    border-radius: 16px;
+    padding: 10px 12px;
+  }
+
+  .confusion-select-page__option-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .confusion-select-page__option-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .confusion-select-page__option-label {
+    font-size: 17px;
+  }
+
+  .confusion-select-page__option-description {
+    font-size: 12px;
+  }
+
+  .confusion-select-page__back-button,
+  .confusion-select-page__report-button {
+    bottom: max(12px, env(safe-area-inset-bottom));
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .confusion-select-page__back-button {
+    left: max(18px, env(safe-area-inset-left));
+    min-width: 110px;
+  }
+
+  .confusion-select-page__report-button {
+    right: max(18px, env(safe-area-inset-right));
+    min-width: 140px;
+  }
+
+  .confusion-select-page__status {
+    bottom: 58px;
+    font-size: 12px;
+  }
+
+  .confusion-response-overlay {
+    padding: 12px;
+  }
+
+  .confusion-response-card {
+    width: min(420px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .confusion-response-card h2 {
+    font-size: 19px;
+  }
+
+  .confusion-response-card p {
+    font-size: 14px;
+  }
+
+  .confusion-response-card__time-information {
+    padding: 12px;
+  }
+
+  .confusion-response-card__time-information strong,
+  .confusion-response-card__time-information strong:last-child {
+    font-size: 18px;
+  }
+
+  .confusion-response-card__actions button {
+    min-height: 40px;
+    font-size: 13px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 390px) and (pointer: coarse) {
+  .confusion-select-page__intro {
+    top: 82px;
+  }
+
+  .confusion-select-page__options {
+    top: 142px;
+    bottom: 58px;
+  }
+
+  .confusion-select-page__option {
+    min-height: 66px;
+  }
+
+  .confusion-select-page__option-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .confusion-select-page__option-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .confusion-select-page__option-label {
+    font-size: 16px;
+  }
+
+  .confusion-select-page__option-description {
+    font-size: 11px;
+  }
+
+  .confusion-select-page__back-button,
+  .confusion-select-page__report-button {
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .confusion-response-card {
+    max-height: calc(100dvh - 20px);
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .confusion-response-card__time-information {
+    padding: 10px;
   }
 }
