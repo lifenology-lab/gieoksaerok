@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 const FACE_LABEL_WIDTH = 260;
 const FACE_LABEL_GAP = 8;
 const FACE_LABEL_SCREEN_MARGIN = 16;
+const FACE_LABEL_MAX_HEIGHT = 260;
 const FACE_BOX_SMOOTHING_FACTOR = 0.35;
 const FACE_BOX_SNAP_DISTANCE = 140;
 
@@ -22,43 +23,33 @@ function getFaceIdentity(face) {
   return face.person?.id || face.id;
 }
 
-function getLabelWidth(face) {
+function getLabelWidth(box) {
   return Math.min(
     FACE_LABEL_WIDTH,
-    Math.max(0, face.box.elementWidth - FACE_LABEL_SCREEN_MARGIN * 2),
+    Math.max(0, box.elementWidth - FACE_LABEL_SCREEN_MARGIN * 2),
   );
 }
 
-function canShowLabelOnRight(face) {
-  return (
-    face.box.left +
-      face.box.width +
-      FACE_LABEL_GAP +
-      getLabelWidth(face) <=
-    face.box.elementWidth - FACE_LABEL_SCREEN_MARGIN
+function getLabelHeight(box) {
+  return Math.min(
+    FACE_LABEL_MAX_HEIGHT,
+    Math.max(0, box.elementHeight - FACE_LABEL_SCREEN_MARGIN * 2),
   );
 }
 
-function canShowLabelOnLeft(face) {
-  return (
-    face.box.left - FACE_LABEL_GAP - getLabelWidth(face) >=
-    FACE_LABEL_SCREEN_MARGIN
+function getLabelTopOffset(box) {
+  const labelHeight = getLabelHeight(box);
+  const desiredTop = box.top + box.height / 2 - labelHeight / 2;
+  const maxTop = Math.max(
+    FACE_LABEL_SCREEN_MARGIN,
+    box.elementHeight - FACE_LABEL_SCREEN_MARGIN - labelHeight,
   );
-}
+  const labelTop = Math.min(
+    Math.max(FACE_LABEL_SCREEN_MARGIN, desiredTop),
+    maxTop,
+  );
 
-function getNextLabelSide(face, previousSide) {
-  const rightFits = canShowLabelOnRight(face);
-  const leftFits = canShowLabelOnLeft(face);
-
-  if (!previousSide) {
-    return rightFits || !leftFits ? "right" : "left";
-  }
-
-  if (previousSide === "right") {
-    return rightFits || !leftFits ? "right" : "left";
-  }
-
-  return leftFits || !rightFits ? "left" : "right";
+  return labelTop - box.top;
 }
 
 function getBoxCenter(box) {
@@ -104,16 +95,33 @@ function getSmoothedBox(previousBox, nextBox) {
   };
 }
 
-export default function FaceLabelsOverlay({ faces, onOpenMemoryAlbum }) {
-  const labelSideByFaceRef = useRef(new Map());
+function getLabelLeftOffset(box) {
+  const labelWidth = getLabelWidth(box);
+  const desiredLeft = box.left + box.width + FACE_LABEL_GAP;
+  const maxLeft = Math.max(
+    FACE_LABEL_SCREEN_MARGIN,
+    box.elementWidth - FACE_LABEL_SCREEN_MARGIN - labelWidth,
+  );
+  const labelLeft = Math.min(
+    Math.max(FACE_LABEL_SCREEN_MARGIN, desiredLeft),
+    maxLeft,
+  );
+
+  return labelLeft - box.left;
+}
+
+export default function FaceLabelsOverlay({
+  faces,
+  onOpenMemoryAlbum,
+  renderFaceActions,
+}) {
   const boxByFaceRef = useRef(new Map());
 
   useEffect(() => {
     const visibleFaceIds = new Set(faces.map(getFaceIdentity));
 
-    labelSideByFaceRef.current.forEach((_, faceId) => {
+    boxByFaceRef.current.forEach((_, faceId) => {
       if (!visibleFaceIds.has(faceId)) {
-        labelSideByFaceRef.current.delete(faceId);
         boxByFaceRef.current.delete(faceId);
       }
     });
@@ -127,21 +135,16 @@ export default function FaceLabelsOverlay({ faces, onOpenMemoryAlbum }) {
     <div className="daily-mode-page__face-overlay">
       {faces.map((face) => {
         const faceIdentity = getFaceIdentity(face);
-        const labelSide = getNextLabelSide(
-          face,
-          labelSideByFaceRef.current.get(faceIdentity),
-        );
         const smoothedBox = getSmoothedBox(
           boxByFaceRef.current.get(faceIdentity),
           face.box,
         );
 
-        labelSideByFaceRef.current.set(faceIdentity, labelSide);
         boxByFaceRef.current.set(faceIdentity, smoothedBox);
 
-        const labelSideClass = labelSide === "right"
-          ? "daily-mode-page__face-box--label-right"
-          : "daily-mode-page__face-box--label-left";
+        const labelHeight = getLabelHeight(smoothedBox);
+        const labelLeftOffset = getLabelLeftOffset(smoothedBox);
+        const labelTopOffset = getLabelTopOffset(smoothedBox);
         const displayCard = getDisplayCard(face);
         const memoryRecap = getMemoryRecap(face);
         const cardTitle =
@@ -151,22 +154,26 @@ export default function FaceLabelsOverlay({ faces, onOpenMemoryAlbum }) {
           displayCard?.upcoming_promise || memoryRecap?.upcoming_promise;
         const longTermHint = displayCard?.long_term_hint;
         const hasMemoryDetails = displayCard || memoryRecap;
+        const faceActions = renderFaceActions?.(face.person);
 
         return (
           <div
-            className={`daily-mode-page__face-box ${labelSideClass}`}
+            className="daily-mode-page__face-box"
             key={faceIdentity}
             style={{
               left: `${smoothedBox.left}px`,
               top: `${smoothedBox.top}px`,
               width: `${smoothedBox.width}px`,
               height: `${smoothedBox.height}px`,
+              "--face-label-left": `${labelLeftOffset}px`,
+              "--face-label-max-height": `${labelHeight}px`,
+              "--face-label-top": `${labelTopOffset}px`,
             }}
           >
             <div className="daily-mode-page__face-label">
               <strong>{getDisplayName(face.person)}</strong>
 
-              {onOpenMemoryAlbum && (
+              {(onOpenMemoryAlbum || faceActions) && (
                 <div className="daily-mode-page__face-memory">
                   {hasMemoryDetails && (
                     <>
@@ -180,13 +187,22 @@ export default function FaceLabelsOverlay({ faces, onOpenMemoryAlbum }) {
                       )}
                     </>
                   )}
-                  <button
-                    className="daily-mode-page__face-memory-button"
-                    type="button"
-                    onClick={() => onOpenMemoryAlbum?.(face.person)}
-                  >
-                    추억 카드
-                  </button>
+
+                  {onOpenMemoryAlbum && (
+                    <button
+                      className="daily-mode-page__face-memory-button"
+                      type="button"
+                      onClick={() => onOpenMemoryAlbum?.(face.person)}
+                    >
+                      추억 카드
+                    </button>
+                  )}
+
+                  {faceActions && (
+                    <div className="daily-mode-page__face-card-actions">
+                      {faceActions}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

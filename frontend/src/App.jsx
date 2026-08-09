@@ -1,4 +1,3 @@
-import "./App.css";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { ProtectedRoute } from "./features/auth/components/AuthRoutes";
@@ -12,9 +11,16 @@ import ConfusionSelectPage from "./routes/patient/ConfusionSelectPage/ConfusionS
 import ConfusionReportPage from "./routes/patient/ConfusionReportPage/ConfusionReportPage";
 import MealRecordsPage from "./routes/patient/MealRecordsPage/MealRecordsPage";
 import MemoryAlbumPage from "./routes/patient/MemoryAlbumPage/MemoryAlbumPage";
+import LandingPage from "./routes/LandingPage/LandingPage";
+import InstallGuidePage from "./routes/InstallGuidePage/InstallGuidePage";
+import LandscapeGuard from "./shared/layout/LandScapeGuard";
 
 function protectedPage(element) {
-  return <ProtectedRoute>{element}</ProtectedRoute>;
+  return (
+    <ProtectedRoute>
+      <LandscapeGuard>{element}</LandscapeGuard>
+    </ProtectedRoute>
+  );
 }
 
 function App() {
@@ -22,7 +28,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<AuthPage />}></Route>
+          <Route path="/" element={<LandingPage />}></Route>
+          <Route path="/auth" element={<AuthPage />}></Route>
+          <Route path="/install" element={<InstallGuidePage />}></Route>
           <Route
             path="/roles"
             element={protectedPage(<RoleSelectPage />)}

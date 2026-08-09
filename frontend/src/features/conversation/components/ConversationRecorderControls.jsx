@@ -11,7 +11,6 @@ export default function ConversationRecorderControls({
   recordingStatus,
   statusMessage,
   errorMessage,
-  lastConversation,
   recordingPerson,
   patientVoiceIsRegistered,
   patientVoiceRecordingStatus,
@@ -36,16 +35,14 @@ export default function ConversationRecorderControls({
     !patientVoiceIsRegistered || Boolean(patientVoiceErrorMessage);
   const canStart =
     Boolean(person) &&
-    recordingStatus !== "recording" &&
+    !isRecording &&
+    !isTranscribing &&
     !isPatientVoiceBusy;
   const canRecordPatientVoice =
     !isRecording &&
     !isTranscribing &&
     !isPatientVoiceLoading &&
     !isPatientVoiceSaving;
-  const shouldShowTranscript =
-    lastConversation?.transcript &&
-    (!person || lastConversation.person === person.id);
   const patientVoiceMessage =
     patientVoiceErrorMessage ||
     patientVoiceStatusMessage ||
@@ -54,6 +51,11 @@ export default function ConversationRecorderControls({
       : patientVoiceIsRegistered
         ? "등록되어 있어요. 오류가 계속되면 2~10초로 다시 등록해주세요."
         : "환자 목소리를 2~10초로 등록해야 대화를 구분할 수 있어요.");
+  const startButtonLabel = isTranscribing
+    ? "처리 중"
+    : isPatientVoiceLoading
+      ? "확인 중"
+      : "대화 시작";
 
   useEffect(() => {
     if (!isPatientVoiceDialogOpen || needsPatientVoiceRegistration) {
@@ -84,45 +86,43 @@ export default function ConversationRecorderControls({
     !activePerson &&
     !statusMessage &&
     !errorMessage &&
-    !shouldShowTranscript
+    !isPatientVoiceDialogOpen
   ) {
     return null;
   }
 
   return (
-    <section className="daily-mode-page__conversation-actions">
-      {activePerson && (
-        <p>
-          <strong>{activePerson.name}</strong>
-          <span>{activePerson.relationship}</span>
-        </p>
-      )}
+    <>
+      <div className="daily-mode-page__face-conversation">
+        {isRecording ? (
+          <button
+            className="daily-mode-page__face-conversation-button daily-mode-page__face-conversation-button--stop"
+            type="button"
+            onClick={onStopRecording}
+          >
+            대화 종료
+          </button>
+        ) : (
+          <button
+            className="daily-mode-page__face-conversation-button"
+            type="button"
+            onClick={handleStartRecording}
+            disabled={!canStart}
+          >
+            {startButtonLabel}
+          </button>
+        )}
 
-      {isRecording ? (
-        <button type="button" onClick={onStopRecording}>
-          대화 종료
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={handleStartRecording}
-          disabled={!canStart || isTranscribing}
-        >
-          {isTranscribing ? "변환 중" : "대화 시작"}
-        </button>
-      )}
-
-      {(statusMessage || errorMessage) && (
-        <p className={errorMessage ? "is-error" : ""}>
-          {errorMessage || statusMessage}
-        </p>
-      )}
-
-      {shouldShowTranscript && (
-        <p className="daily-mode-page__conversation-transcript">
-          {lastConversation.transcript}
-        </p>
-      )}
+        {(statusMessage || errorMessage) && (
+          <p
+            className={`daily-mode-page__face-conversation-status ${
+              errorMessage ? "is-error" : ""
+            }`}
+          >
+            {errorMessage || statusMessage}
+          </p>
+        )}
+      </div>
 
       {isPatientVoiceDialogOpen && (
         <div
@@ -180,6 +180,6 @@ export default function ConversationRecorderControls({
           </section>
         </div>
       )}
-    </section>
+    </>
   );
 }
