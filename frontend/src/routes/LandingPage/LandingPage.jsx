@@ -10,36 +10,29 @@ import { isStandalonePwa } from "@/shared/pwa/isStandalonePwa";
 import { promptPwaInstall } from "@/shared/pwa/installPrompt";
 import "./LandingPage.css";
 
-async function handleInstallClick() {
-  if (isStandalonePwa()) {
-    navigate(getAccessToken() ? "/roles" : "/auth");
-    return;
-  }
-
-  try {
-    const result = await promptPwaInstall();
-
-    if (!result.prompted) {
-      navigate("/install");
-      return;
-    }
-
-    if (result.outcome === "accepted") {
-      return;
-    }
-
-    navigate("/install");
-  } catch (error) {
-    navigate("/install");
-  }
-}
-
 export default function LandingPage() {
   const navigate = useNavigate();
   const isPwa = isStandalonePwa();
 
   const [authCheckStatus, setAuthCheckStatus] = useState("idle");
   const [authCheckMessage, setAuthCheckMessage] = useState("");
+
+  const handleInstallClick = async () => {
+    if (isStandalonePwa()) {
+      navigate(getAccessToken() ? "/roles" : "/auth");
+      return;
+    }
+
+    try {
+      const result = await promptPwaInstall();
+
+      if (!result.prompted || result.outcome !== "accepted") {
+        navigate("/install");
+      }
+    } catch {
+      navigate("/install");
+    }
+  };
 
   useEffect(() => {
     if (!isPwa) return;
@@ -65,7 +58,7 @@ export default function LandingPage() {
         if (isMounted) {
           navigate("/roles", { replace: true });
         }
-      } catch (error) {
+      } catch {
         clearAuthTokens();
 
         if (isMounted) {
