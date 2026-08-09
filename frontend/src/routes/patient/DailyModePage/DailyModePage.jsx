@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ConversationRecorderControls from "@/features/conversation/components/ConversationRecorderControls.jsx";
+import PatientQuestionAssistant from "@/features/patient-voice/components/PatientQuestionAssistant.jsx";
 import useConversationRecorder from "@/features/conversation/hooks/useConversationRecorder.js";
 import usePatientVoiceRecorder from "@/features/conversation/hooks/usePatientVoiceRecorder.js";
 import { CameraPreview } from "@/features/camera/components";
@@ -74,6 +75,7 @@ export default function DailyModePage() {
   const [isMealRecordSaving, setIsMealRecordSaving] = useState(false);
   const [mealRecordError, setMealRecordError] = useState("");
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
+  const [isQuestionAssistantOpen, setIsQuestionAssistantOpen] = useState(false);
 
   const mealRecordsRef = useRef(mealRecords);
   const mealRecognitionResultRef = useRef(mealRecognitionResult);
@@ -341,8 +343,8 @@ export default function DailyModePage() {
     }
   };
 
-  const handleGoConfusion = () => {
-    nav("/patient/confusion");
+  const handleOpenQuestionAssistant = () => {
+    setIsQuestionAssistantOpen(true);
   };
 
   const handleGoHome = () => {
@@ -444,8 +446,13 @@ export default function DailyModePage() {
         )}
       </MealRecognitionOverlay>
 
+      <PatientQuestionAssistant
+        open={isQuestionAssistantOpen}
+        onClose={() => setIsQuestionAssistantOpen(false)}
+      />
+
       <DailyModeBottomActions
-        onGoConfusion={handleGoConfusion}
+        onOpenQuestionAssistant={handleOpenQuestionAssistant}
         onGoHome={handleGoHome}
       />
     </main>

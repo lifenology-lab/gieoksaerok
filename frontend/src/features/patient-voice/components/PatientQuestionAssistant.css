@@ -1,0 +1,257 @@
+.patient-question-assistant {
+  position: absolute;
+  inset: 0;
+  z-index: 36;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 16, 13, 0.48);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.patient-question-assistant__card {
+  position: relative;
+  width: min(440px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 22px;
+  color: white;
+  background: rgba(30, 52, 44, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 22px 60px rgba(0, 0, 0, 0.32);
+}
+
+.patient-question-assistant__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.patient-question-assistant__heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-right: 32px;
+}
+
+.patient-question-assistant__heading > span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid rgba(255, 209, 95, 0.82);
+  border-radius: 50%;
+  color: #ffd15f;
+  background: rgba(255, 209, 95, 0.16);
+  font-size: 27px;
+  font-weight: 900;
+}
+
+.patient-question-assistant h2,
+.patient-question-assistant p {
+  color: rgba(255, 255, 255, 0.84);
+  margin: 0;
+}
+
+.patient-question-assistant h2 {
+  font-size: 23px;
+  line-height: 1.3;
+  font-weight: 900;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__heading p {
+  margin-top: 5px;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__form {
+  display: grid;
+  gap: 9px;
+}
+
+.patient-question-assistant__form label,
+.patient-question-assistant__examples > p,
+.patient-question-assistant__transcript span {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.patient-question-assistant__form textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.patient-question-assistant__form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.patient-question-assistant__form textarea:focus-visible,
+.patient-question-assistant__close:focus-visible,
+.patient-question-assistant__examples button:focus-visible {
+  outline: 2px solid #b3f5e6;
+  outline-offset: 2px;
+}
+
+.patient-question-assistant__form > button {
+  min-height: 48px;
+  border: 1px solid #91e8d6;
+  border-radius: 14px;
+  color: #18342c;
+  background: #91e8d6;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__form > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.patient-question-assistant__examples {
+  display: grid;
+  gap: 9px;
+  padding-top: 2px;
+}
+
+.patient-question-assistant__examples > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.patient-question-assistant__examples button {
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 999px;
+  padding: 8px 11px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.patient-question-assistant__transcript {
+  display: grid;
+  gap: 6px;
+  padding: 15px;
+  border-radius: 16px;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.patient-question-assistant__transcript strong {
+  font-size: 18px;
+  line-height: 1.45;
+  font-weight: 900;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__transcript p {
+  color: #d9f8ee;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 800;
+}
+
+.patient-question-assistant__response {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(145, 232, 214, 0.32);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.patient-question-assistant__response h3,
+.patient-question-assistant__response p {
+  margin: 0;
+}
+
+.patient-question-assistant__response h3 {
+  font-size: 19px;
+  line-height: 1.35;
+  font-weight: 900;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__response p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__response p + p {
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #d9f8ee;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.patient-question-assistant__response button {
+  min-height: 44px;
+  margin-top: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__response button:hover,
+.patient-question-assistant__response button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+
+@media (max-width: 560px) {
+  .patient-question-assistant {
+    padding: 16px;
+  }
+
+  .patient-question-assistant__card {
+    gap: 16px;
+    padding: 22px 20px;
+    border-radius: 18px;
+  }
+
+  .patient-question-assistant h2 {
+    font-size: 21px;
+  }
+}
