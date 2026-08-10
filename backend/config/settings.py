@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'people',
     'accounts',
     'records',
+    'patient_assistant',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
