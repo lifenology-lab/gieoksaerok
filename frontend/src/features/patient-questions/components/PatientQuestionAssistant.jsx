@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchRecentMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
 
@@ -22,6 +22,8 @@ export default function PatientQuestionAssistant({ open, onClose }) {
   const [isAnswerLoading, setIsAnswerLoading] = useState(false);
   const [answerError, setAnswerError] = useState("");
   const [recordError, setRecordError] = useState("");
+  const [isTextInputOpen, setIsTextInputOpen] = useState(false);
+  const textInputRef = useRef(null);
 
   const saveQuestionEvent = useCallback(
     async ({ transcript, inputMethod, intentType, patientResponse }) => {
@@ -94,14 +96,24 @@ export default function PatientQuestionAssistant({ open, onClose }) {
     questionRecorder.recordingStatus,
   );
 
+  useEffect(() => {
+    if (isTextInputOpen) {
+      textInputRef.current?.focus();
+    }
+  }, [isTextInputOpen]);
+
   if (!open) {
     return null;
   }
 
-  const handleSubmit = async (event) => {
+  const handleTextSubmit = async (event) => {
     event.preventDefault();
 
     await handleQuestion(question);
+
+    if (question.trim()) {
+      setIsTextInputOpen(false);
+    }
   };
 
   const handleClose = () => {
@@ -111,7 +123,13 @@ export default function PatientQuestionAssistant({ open, onClose }) {
     setAnswerError("");
     setRecordError("");
     setIsAnswerLoading(false);
+    setIsTextInputOpen(false);
     onClose();
+  };
+
+  const handleTextInputClose = () => {
+    setQuestion("");
+    setIsTextInputOpen(false);
   };
 
   return (
@@ -137,7 +155,7 @@ export default function PatientQuestionAssistant({ open, onClose }) {
             <h2 id="patient-question-assistant-title">
               무엇이 궁금하신가요?
             </h2>
-            <p>천천히 말하거나 직접 입력해 주세요.</p>
+            <p>말로 물어보거나 글자로 입력해 주세요.</p>
           </div>
         </div>
 
@@ -165,20 +183,15 @@ export default function PatientQuestionAssistant({ open, onClose }) {
           )}
         </section>
 
-        <form className="patient-question-assistant__form" onSubmit={handleSubmit}>
-          <label htmlFor="patient-question-input">궁금한 내용을 입력해 주세요</label>
-          <textarea
-            id="patient-question-input"
-            value={question}
-            rows="3"
-            placeholder="예: 나 아까 점심 뭐 먹었더라?"
-            disabled={isRecordingBusy}
-            onChange={(event) => setQuestion(event.target.value)}
-          />
-          <button type="submit" disabled={!question.trim() || isAnswerLoading || isRecordingBusy}>
-            질문하기
-          </button>
-        </form>
+        <button
+          type="button"
+          className="patient-question-assistant__text-action"
+          disabled={isAnswerLoading || isRecordingBusy}
+          aria-expanded={isTextInputOpen}
+          onClick={() => setIsTextInputOpen(true)}
+        >
+          텍스트로 입력하기
+        </button>
 
         {!submittedQuestion && (
           <div className="patient-question-assistant__examples">
@@ -188,7 +201,10 @@ export default function PatientQuestionAssistant({ open, onClose }) {
                 <button
                   key={exampleQuestion}
                   type="button"
-                  onClick={() => setQuestion(exampleQuestion)}
+                  onClick={() => {
+                    setQuestion(exampleQuestion);
+                    setIsTextInputOpen(true);
+                  }}
                 >
                   {exampleQuestion}
                 </button>
@@ -234,6 +250,7 @@ export default function PatientQuestionAssistant({ open, onClose }) {
                     setResponse(null);
                     setAnswerError("");
                     setRecordError("");
+                    setQuestion("");
                   }}
                 >
                   다른 질문하기
@@ -241,6 +258,62 @@ export default function PatientQuestionAssistant({ open, onClose }) {
               </div>
             )}
           </>
+        )}
+
+        {isTextInputOpen && (
+          <section
+            className="patient-question-assistant__text-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="patient-question-text-title"
+          >
+            <form
+              className="patient-question-assistant__form"
+              onSubmit={handleTextSubmit}
+            >
+              <div className="patient-question-assistant__text-modal-heading">
+                <div>
+                  <h3 id="patient-question-text-title">글자로 질문하기</h3>
+                  <p>궁금한 내용을 천천히 입력해 주세요.</p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="텍스트 입력 닫기"
+                  onClick={handleTextInputClose}
+                >
+                  ×
+                </button>
+              </div>
+
+              <label htmlFor="patient-question-input">궁금한 내용</label>
+              <textarea
+                ref={textInputRef}
+                id="patient-question-input"
+                value={question}
+                rows="4"
+                placeholder="예: 나 아까 점심 뭐 먹었더라?"
+                onChange={(event) => setQuestion(event.target.value)}
+              />
+              <button type="submit" disabled={!question.trim() || isAnswerLoading}>
+                질문하기
+              </button>
+
+              <div className="patient-question-assistant__examples">
+                <p>이렇게 물어볼 수 있어요</p>
+                <div>
+                  {EXAMPLE_QUESTIONS.map((exampleQuestion) => (
+                    <button
+                      key={exampleQuestion}
+                      type="button"
+                      onClick={() => setQuestion(exampleQuestion)}
+                    >
+                      {exampleQuestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </form>
+          </section>
         )}
       </article>
     </section>
