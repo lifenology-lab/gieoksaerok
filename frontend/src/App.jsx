@@ -6,6 +6,7 @@ import AuthPage from "./routes/AuthPage/AuthPage";
 import RoleSelectPage from "./routes/RoleSelectPage/RoleSelectPage";
 import PatientHomePage from "./routes/patient/PatientHomePage/PatientHomePage";
 import CaregiverHomePage from "./routes/caregiver/CaregiverHomePage/CaregiverHomePage";
+import CaregiverMemoryRegisterPage from "./routes/caregiver/CaregiverMemoryRegisterPage/CaregiverMemoryRegisterPage";
 import DailyModePage from "./routes/patient/DailyModePage/DailyModePage";
 import ConfusionSelectPage from "./routes/patient/ConfusionSelectPage/ConfusionSelectPage";
 import ConfusionReportPage from "./routes/patient/ConfusionReportPage/ConfusionReportPage";
@@ -62,6 +63,14 @@ function App() {
           <Route
             path="/caregiver"
             element={protectedPage(<CaregiverHomePage />)}
+          ></Route>
+          <Route
+            path="/caregiver/weekly-report"
+            element={protectedPage(<ConfusionReportPage />)}
+          ></Route>
+          <Route
+            path="/caregiver/memories/new"
+            element={protectedPage(<CaregiverMemoryRegisterPage />)}
           ></Route>
           <Route path="*" element={<Navigate to="/" replace />}></Route>
         </Routes>

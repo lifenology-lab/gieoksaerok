@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { fetchConfusionEvents } from "@/features/confusion/api/confusionEventsApi";
 import {
@@ -34,6 +34,7 @@ function getWeekComparisonMessage(currentTotal, previousTotal) {
 
 export default function ConfusionReportPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [weekStart, setWeekStart] = useState(CURRENT_WEEK_START);
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,6 +80,7 @@ export default function ConfusionReportPage() {
   );
   const isCurrentWeek = weekStart.getTime() >= CURRENT_WEEK_START.getTime();
   const topAreaLabel = report.topItems.map((item) => item.label).join(", ");
+  const isCaregiverRoute = location.pathname.startsWith("/caregiver");
 
   return (
     <main className="confusion-report-page">
@@ -221,19 +223,21 @@ export default function ConfusionReportPage() {
       </section>
 
       <section className="confusion-report-page__navigation-actions">
+        {!isCaregiverRoute && (
+          <button
+            type="button"
+            className="confusion-report-page__back-button"
+            onClick={() => navigate("/patient/confusion")}
+          >
+            혼동 선택으로 돌아가기
+          </button>
+        )}
         <button
           type="button"
           className="confusion-report-page__back-button"
-          onClick={() => navigate("/patient/confusion")}
+          onClick={() => navigate(isCaregiverRoute ? "/caregiver" : "/patient")}
         >
-          혼동 선택으로 돌아가기
-        </button>
-        <button
-          type="button"
-          className="confusion-report-page__back-button"
-          onClick={() => navigate("/patient")}
-        >
-          홈으로 돌아가기
+          {isCaregiverRoute ? "보호자 홈으로 돌아가기" : "홈으로 돌아가기"}
         </button>
       </section>
     </main>
