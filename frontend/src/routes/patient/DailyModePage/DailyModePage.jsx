@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ConversationRecorderControls from "@/features/conversation/components/ConversationRecorderControls.jsx";
-import PatientQuestionAssistant from "@/features/patient-voice/components/PatientQuestionAssistant.jsx";
+import PatientQuestionAssistant from "@/features/patient-questions/components/PatientQuestionAssistant.jsx";
 import useConversationRecorder from "@/features/conversation/hooks/useConversationRecorder.js";
 import usePatientVoiceRecorder from "@/features/conversation/hooks/usePatientVoiceRecorder.js";
 import { CameraPreview } from "@/features/camera/components";

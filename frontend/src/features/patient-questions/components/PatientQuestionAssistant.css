@@ -87,6 +87,58 @@
   gap: 9px;
 }
 
+.patient-question-assistant__voice-input {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.patient-question-assistant__voice-input > button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 209, 95, 0.7);
+  border-radius: 14px;
+  color: #fff1c6;
+  background: rgba(255, 209, 95, 0.14);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__voice-input > button span {
+  color: #ffd15f;
+  font-size: 18px;
+}
+
+.patient-question-assistant__voice-input > button.is-recording {
+  border-color: rgba(255, 145, 154, 0.82);
+  color: #ffd9dd;
+  background: rgba(176, 48, 62, 0.34);
+}
+
+.patient-question-assistant__voice-input > button.is-recording span {
+  color: #ff9ba5;
+}
+
+.patient-question-assistant__voice-input > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.patient-question-assistant__voice-input > p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
 .patient-question-assistant__form label,
 .patient-question-assistant__examples > p,
 .patient-question-assistant__transcript span {
@@ -182,6 +234,35 @@
   font-size: 15px;
   line-height: 1.4;
   font-weight: 800;
+}
+
+.patient-question-assistant__loading,
+.patient-question-assistant__error {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 800;
+}
+
+.patient-question-assistant__loading {
+  color: #d9f8ee;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.patient-question-assistant__error {
+  color: #ffd4d9;
+  background: rgba(153, 39, 54, 0.28);
+}
+
+.patient-question-assistant__record-error {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 700;
+  text-align: center;
 }
 
 .patient-question-assistant__response {
