@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -5,12 +6,21 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from people.services import OpenAITranscriptionError, transcribe_audio_file
+from records.models import ConfusionEvent
 
 from .models import PatientQuestionEvent
 from .serializers import PatientQuestionEventSerializer
 
 
 MAX_PATIENT_QUESTION_AUDIO_BYTES = 10 * 1024 * 1024
+
+QUESTION_INTENT_TO_CONFUSION_TYPE = {
+    'person': 'person',
+    'place': 'place',
+    'way_home': 'place',
+    'schedule': 'task',
+    'meal': 'meal',
+}
 
 
 class PatientQuestionTranscriptionView(APIView):
@@ -72,7 +82,20 @@ class PatientQuestionEventView(APIView):
     def post(self, request):
         serializer = PatientQuestionEventSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        event = serializer.save(user=request.user)
+
+        with transaction.atomic():
+            event = serializer.save(user=request.user)
+            confusion_type = QUESTION_INTENT_TO_CONFUSION_TYPE.get(
+                event.intent_type,
+            )
+
+            if confusion_type:
+                ConfusionEvent.objects.create(
+                    user=request.user,
+                    confusion_type=confusion_type,
+                    occurred_at=event.occurred_at,
+                )
+
         return Response(
             PatientQuestionEventSerializer(event).data,
             status=status.HTTP_201_CREATED,
