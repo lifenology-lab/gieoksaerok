@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchRecentMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
 
 import {
+  classifyPatientQuestionWithModel,
   fetchPatientQuestionSchedules,
   savePatientQuestionEvent,
 } from "../api/patientQuestionApi";
@@ -32,6 +33,7 @@ export default function PatientQuestionAssistant({
   const [submittedQuestion, setSubmittedQuestion] = useState("");
   const [response, setResponse] = useState(null);
   const [isAnswerLoading, setIsAnswerLoading] = useState(false);
+  const [answerLoadingMessage, setAnswerLoadingMessage] = useState("");
   const [answerError, setAnswerError] = useState("");
   const [recordError, setRecordError] = useState("");
   const [isTextInputOpen, setIsTextInputOpen] = useState(false);
@@ -65,11 +67,31 @@ export default function PatientQuestionAssistant({
 
     setQuestion(normalizedQuestion);
     setSubmittedQuestion(normalizedQuestion);
-    const result = classifyPatientQuestion(normalizedQuestion);
+    let result = classifyPatientQuestion(normalizedQuestion);
     setResponse(null);
     setAnswerError("");
     setRecordError("");
+    setAnswerLoadingMessage("");
     setIsWaitingForPersonRecognition(false);
+
+    if (result.intent === "unknown") {
+      try {
+        setIsAnswerLoading(true);
+        setAnswerLoadingMessage("질문을 이해하고 있어요.");
+        const modelResult = await classifyPatientQuestionWithModel(
+          normalizedQuestion,
+        );
+        result = {
+          ...result,
+          intent: modelResult.intent || "unknown",
+        };
+      } catch {
+        // 모델 폴백이 실패하면 기존 unknown 안내를 계속 사용한다.
+      } finally {
+        setIsAnswerLoading(false);
+        setAnswerLoadingMessage("");
+      }
+    }
 
     if (result.intent === "person") {
       const patientResponse = createPatientQuestionResponse(result.intent, {
@@ -109,6 +131,11 @@ export default function PatientQuestionAssistant({
 
     try {
       setIsAnswerLoading(true);
+      setAnswerLoadingMessage(
+        result.intent === "meal"
+          ? "식사 기록을 확인하고 있어요."
+          : "예정된 약속을 확인하고 있어요.",
+      );
       const context = result.intent === "meal"
         ? {
             mealRecords: await fetchRecentMealRecords(),
@@ -135,6 +162,7 @@ export default function PatientQuestionAssistant({
       );
     } finally {
       setIsAnswerLoading(false);
+      setAnswerLoadingMessage("");
     }
   }, [
     isUnknownPersonDetected,
@@ -239,6 +267,7 @@ export default function PatientQuestionAssistant({
     setAnswerError("");
     setRecordError("");
     setIsAnswerLoading(false);
+    setAnswerLoadingMessage("");
     setIsTextInputOpen(false);
     setIsWaitingForPersonRecognition(false);
   };
@@ -426,7 +455,7 @@ export default function PatientQuestionAssistant({
 
             {isAnswerLoading && (
               <p className="patient-question-assistant__loading" role="status">
-                식사 기록을 확인하고 있어요.
+                {answerLoadingMessage}
               </p>
             )}
 

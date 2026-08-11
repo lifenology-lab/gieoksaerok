@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    PatientQuestionClassificationView,
     PatientQuestionEventView,
     PatientQuestionScheduleContextView,
     PatientQuestionTranscriptionView,
@@ -8,6 +9,11 @@ from .views import (
 
 
 urlpatterns = [
+    path(
+        'patient-questions/classify/',
+        PatientQuestionClassificationView.as_view(),
+        name='patient-question-classification',
+    ),
     path(
         'patient-questions/',
         PatientQuestionEventView.as_view(),

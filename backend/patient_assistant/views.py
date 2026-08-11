@@ -14,9 +14,14 @@ from records.models import ConfusionEvent
 
 from .models import PatientQuestionEvent
 from .serializers import PatientQuestionEventSerializer
+from .services import (
+    OpenAIPatientQuestionClassificationError,
+    classify_patient_question,
+)
 
 
 MAX_PATIENT_QUESTION_AUDIO_BYTES = 10 * 1024 * 1024
+MAX_PATIENT_QUESTION_TRANSCRIPT_LENGTH = 500
 
 QUESTION_INTENT_TO_CONFUSION_TYPE = {
     'person': 'person',
@@ -105,6 +110,35 @@ class PatientQuestionEventView(APIView):
             PatientQuestionEventSerializer(event).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class PatientQuestionClassificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        transcript = str(request.data.get('transcript') or '').strip()
+
+        if not transcript:
+            return Response(
+                {'detail': '질문 내용이 필요합니다.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(transcript) > MAX_PATIENT_QUESTION_TRANSCRIPT_LENGTH:
+            return Response(
+                {'detail': '질문은 500자 이하로 입력해 주세요.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            intent = classify_patient_question(transcript)
+        except OpenAIPatientQuestionClassificationError as exc:
+            return Response(
+                {'detail': str(exc)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response({'intent': intent}, status=status.HTTP_200_OK)
 
 
 class PatientQuestionScheduleContextView(APIView):

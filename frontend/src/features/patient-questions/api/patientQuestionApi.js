@@ -16,6 +16,13 @@ export function fetchPatientQuestionSchedules() {
   return request("/api/patient-questions/schedules/");
 }
 
+export function classifyPatientQuestionWithModel(transcript) {
+  return request("/api/patient-questions/classify/", {
+    method: "POST",
+    body: JSON.stringify({ transcript }),
+  });
+}
+
 export function savePatientQuestionEvent({
   transcript,
   inputMethod,
