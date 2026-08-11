@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ConversationRecorderControls from "@/features/conversation/components/ConversationRecorderControls.jsx";
+import PatientQuestionAssistant from "@/features/patient-questions/components/PatientQuestionAssistant.jsx";
 import useConversationRecorder from "@/features/conversation/hooks/useConversationRecorder.js";
 import usePatientVoiceRecorder from "@/features/conversation/hooks/usePatientVoiceRecorder.js";
 import { CameraPreview } from "@/features/camera/components";
@@ -74,6 +75,8 @@ export default function DailyModePage() {
   const [isMealRecordSaving, setIsMealRecordSaving] = useState(false);
   const [mealRecordError, setMealRecordError] = useState("");
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
+  const [isQuestionAssistantOpen, setIsQuestionAssistantOpen] = useState(false);
+  const [questionRecordingRequestId, setQuestionRecordingRequestId] = useState(0);
 
   const mealRecordsRef = useRef(mealRecords);
   const mealRecognitionResultRef = useRef(mealRecognitionResult);
@@ -341,8 +344,9 @@ export default function DailyModePage() {
     }
   };
 
-  const handleGoConfusion = () => {
-    nav("/patient/confusion");
+  const handleOpenQuestionAssistant = () => {
+    setIsQuestionAssistantOpen(true);
+    setQuestionRecordingRequestId((requestId) => requestId + 1);
   };
 
   const handleGoHome = () => {
@@ -421,7 +425,7 @@ export default function DailyModePage() {
       <RecognitionStatusToast message={recognitionStatusMessage} />
 
       <UnknownPersonDialog
-        open={isRegisterDialogOpen}
+        open={isRegisterDialogOpen && !isQuestionAssistantOpen}
         isSaving={isSavingPerson}
         errorMessage={registrationError}
         onClose={closeUnknownPersonDialog}
@@ -444,8 +448,22 @@ export default function DailyModePage() {
         )}
       </MealRecognitionOverlay>
 
+      <PatientQuestionAssistant
+        open={isQuestionAssistantOpen}
+        onClose={() => setIsQuestionAssistantOpen(false)}
+        recordingRequestId={questionRecordingRequestId}
+        recognizedPerson={activeConversationPerson}
+        isUnknownPersonDetected={isRegisterDialogOpen}
+        onRequestPersonRecognition={startPersonRecognition}
+        onRegisterUnknownPerson={() => setIsQuestionAssistantOpen(false)}
+        onDismissUnknownPersonRegistration={() => {
+          closeUnknownPersonDialog();
+          clearRecognition();
+        }}
+      />
+
       <DailyModeBottomActions
-        onGoConfusion={handleGoConfusion}
+        onOpenQuestionAssistant={handleOpenQuestionAssistant}
         onGoHome={handleGoHome}
       />
     </main>

@@ -28,8 +28,13 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
+# 개발 환경은 .env.local을 우선 사용하고, 배포 환경은 .env를 사용한다.
+local_env_file = BASE_DIR / '.env.local'
+default_env_file = BASE_DIR / '.env'
+is_local_environment = local_env_file.exists()
+
 environ.Env.read_env(
-    env_file=BASE_DIR / '.env'
+    env_file=local_env_file if local_env_file.exists() else default_env_file,
 )
 
 SECRET_KEY = env('SECRET_KEY')
@@ -53,6 +58,7 @@ INSTALLED_APPS = [
     'people',
     'accounts',
     'records',
+    'patient_assistant',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
@@ -90,18 +96,32 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# .env.local이 있으면 SQLite를, .env만 있으면 MySQL을 기본으로 사용한다.
+database_engine = env(
+    'DB_ENGINE',
+    default='sqlite' if is_local_environment else 'mysql',
+)
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": env("DB_NAME"),
-        "USER": env("DB_USER"),
-        "PASSWORD": env("DB_PASSWORD"),
-        "HOST": env("DB_HOST"),
-        "PORT": env("DB_PORT", default="3306"),
+if database_engine == 'sqlite':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / env('DB_NAME', default='db.sqlite3'),
+        }
     }
-}
+elif database_engine == 'mysql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': env('DB_NAME'),
+            'USER': env('DB_USER'),
+            'PASSWORD': env('DB_PASSWORD'),
+            'HOST': env('DB_HOST'),
+            'PORT': env('DB_PORT', default='3306'),
+        }
+    }
+else:
+    raise ValueError('DB_ENGINE은 sqlite 또는 mysql이어야 합니다.')
 
 
 # Password validation
@@ -168,6 +188,10 @@ OPENAI_TRANSCRIPTION_DIARIZATION_MODEL = env(
     default='gpt-4o-transcribe-diarize',
 )
 OPENAI_TRANSCRIPTION_LANGUAGE = env('OPENAI_TRANSCRIPTION_LANGUAGE', default='ko')
+OPENAI_PATIENT_QUESTION_CLASSIFICATION_MODEL = env(
+    'OPENAI_PATIENT_QUESTION_CLASSIFICATION_MODEL',
+    default='gpt-4o-mini',
+)
 OPENAI_MEMORY_SUMMARY_MODEL = env('OPENAI_MEMORY_SUMMARY_MODEL', default='gpt-4o')
 OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS = env.int(
         'OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS',

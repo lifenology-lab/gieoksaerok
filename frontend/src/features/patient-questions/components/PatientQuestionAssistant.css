@@ -1,0 +1,570 @@
+.patient-question-assistant {
+  position: absolute;
+  inset: 0;
+  z-index: 36;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 16, 13, 0.1);
+}
+
+.patient-question-assistant__card {
+  position: relative;
+  width: min(440px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 22px;
+  color: white;
+  background: rgba(30, 52, 44, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 22px 60px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.patient-question-assistant__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.patient-question-assistant__heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-right: 32px;
+}
+
+.patient-question-assistant__heading > span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid rgba(145, 232, 214, 0.82);
+  border-radius: 50%;
+  color: #b3f5e6;
+  background: rgba(145, 232, 214, 0.16);
+  font-size: 27px;
+  font-weight: 900;
+}
+
+.patient-question-assistant__heading.is-recording > span {
+  border-color: rgba(145, 232, 214, 0.92);
+  box-shadow: 0 0 0 9px rgba(145, 232, 214, 0.1);
+  animation: patient-question-assistant-listening 1.2s ease-in-out infinite;
+}
+
+@keyframes patient-question-assistant-listening {
+  50% {
+    box-shadow: 0 0 0 15px rgba(145, 232, 214, 0.03);
+  }
+}
+
+.patient-question-assistant h2,
+.patient-question-assistant p {
+  color: rgba(255, 255, 255, 0.84);
+  margin: 0;
+}
+
+.patient-question-assistant h2 {
+  font-size: 23px;
+  line-height: 1.3;
+  font-weight: 900;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__heading p {
+  margin-top: 5px;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__form {
+  display: grid;
+  gap: 9px;
+}
+
+.patient-question-assistant__text-action {
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__text-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.patient-question-assistant__voice-input {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.patient-question-assistant__voice-wave {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 2px 0;
+}
+
+.patient-question-assistant__voice-wave span {
+  width: 7px;
+  height: 18px;
+  border-radius: 999px;
+  background: #b3f5e6;
+  box-shadow: 0 0 12px rgba(145, 232, 214, 0.72);
+  animation: patient-question-assistant-wave 850ms ease-in-out infinite alternate;
+}
+
+.patient-question-assistant__voice-wave span:nth-child(2),
+.patient-question-assistant__voice-wave span:nth-child(4) {
+  height: 34px;
+  animation-delay: 140ms;
+}
+
+.patient-question-assistant__voice-wave span:nth-child(3) {
+  height: 48px;
+  animation-delay: 260ms;
+}
+
+@keyframes patient-question-assistant-wave {
+  from {
+    opacity: 0.58;
+    transform: scaleY(0.42);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.patient-question-assistant__voice-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.patient-question-assistant__voice-primary-button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 209, 95, 0.7);
+  border-radius: 14px;
+  color: #fff1c6;
+  background: rgba(255, 209, 95, 0.14);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__voice-primary-button span {
+  color: #ffd15f;
+  font-size: 18px;
+}
+
+.patient-question-assistant__voice-primary-button.is-recording {
+  border-color: rgba(255, 145, 154, 0.82);
+  color: #ffd9dd;
+  background: rgba(176, 48, 62, 0.34);
+}
+
+.patient-question-assistant__voice-primary-button.is-recording span {
+  color: #ff9ba5;
+}
+
+.patient-question-assistant__voice-primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.patient-question-assistant__voice-cancel-button {
+  min-width: 64px;
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__voice-input > p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.patient-question-assistant__voice-input > .patient-question-assistant__voice-tip {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 13px;
+}
+
+.patient-question-assistant__form label,
+.patient-question-assistant__examples > p,
+.patient-question-assistant__transcript span {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.patient-question-assistant__form textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.patient-question-assistant__form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.patient-question-assistant__form textarea:focus-visible,
+.patient-question-assistant__close:focus-visible,
+.patient-question-assistant__examples button:focus-visible,
+.patient-question-assistant__text-action:focus-visible,
+.patient-question-assistant__text-modal-heading button:focus-visible,
+.patient-question-assistant__voice-primary-button:focus-visible,
+.patient-question-assistant__voice-cancel-button:focus-visible {
+  outline: 2px solid #b3f5e6;
+  outline-offset: 2px;
+}
+
+.patient-question-assistant__form > button {
+  min-height: 48px;
+  border: 1px solid #91e8d6;
+  border-radius: 14px;
+  color: #18342c;
+  background: #91e8d6;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__form > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.patient-question-assistant__text-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 16, 13, 0.16);
+}
+
+.patient-question-assistant__text-modal .patient-question-assistant__form {
+  width: min(440px, 100%);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 22px;
+  color: white;
+  background: rgba(30, 52, 44, 0.84);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 22px 60px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.patient-question-assistant__text-modal-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.patient-question-assistant__text-modal-heading h3,
+.patient-question-assistant__text-modal-heading p {
+  margin: 0;
+}
+
+.patient-question-assistant__text-modal-heading h3 {
+  color: white;
+  font-size: 21px;
+  line-height: 1.3;
+  font-weight: 900;
+}
+
+.patient-question-assistant__text-modal-heading p {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.patient-question-assistant__text-modal-heading button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.patient-question-assistant__examples {
+  display: grid;
+  gap: 9px;
+  padding-top: 2px;
+}
+
+.patient-question-assistant__examples > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.patient-question-assistant__examples button {
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 999px;
+  padding: 8px 11px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.patient-question-assistant__transcript {
+  display: grid;
+  gap: 6px;
+  padding: 15px;
+  border-radius: 16px;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.patient-question-assistant__transcript strong {
+  font-size: 18px;
+  line-height: 1.45;
+  font-weight: 900;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__transcript p {
+  color: #d9f8ee;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 800;
+}
+
+.patient-question-assistant__loading,
+.patient-question-assistant__error {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 800;
+}
+
+.patient-question-assistant__loading {
+  color: #d9f8ee;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.patient-question-assistant__error {
+  color: #ffd4d9;
+  background: rgba(153, 39, 54, 0.28);
+}
+
+.patient-question-assistant__record-error {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 700;
+  text-align: center;
+}
+
+.patient-question-assistant__response {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(145, 232, 214, 0.32);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.patient-question-assistant__response h3,
+.patient-question-assistant__response p {
+  margin: 0;
+}
+
+.patient-question-assistant__response h3 {
+  font-size: 19px;
+  line-height: 1.35;
+  font-weight: 900;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__response p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.patient-question-assistant__response p + p {
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #d9f8ee;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.patient-question-assistant__upcoming-promises {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.patient-question-assistant__upcoming-promises strong {
+  color: #d9f8ee;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.patient-question-assistant__upcoming-promises ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.patient-question-assistant__upcoming-promises li,
+.patient-question-assistant__upcoming-promises p {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.patient-question-assistant__upcoming-promises p {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.patient-question-assistant__response button {
+  min-height: 44px;
+  margin-top: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__response-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.patient-question-assistant__response-primary-action {
+  border-color: #91e8d6 !important;
+  color: #18342c !important;
+  background: #91e8d6 !important;
+}
+
+.patient-question-assistant__response button:hover,
+.patient-question-assistant__response button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+
+.patient-question-assistant__text-action:hover,
+.patient-question-assistant__text-action:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+
+.patient-question-assistant__voice-cancel-button:hover,
+.patient-question-assistant__voice-cancel-button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+
+@media (max-width: 560px) {
+  .patient-question-assistant {
+    padding: 16px;
+  }
+
+  .patient-question-assistant__card {
+    gap: 16px;
+    padding: 22px 20px;
+    border-radius: 18px;
+  }
+
+  .patient-question-assistant h2 {
+    font-size: 21px;
+  }
+
+  .patient-question-assistant__text-modal {
+    padding: 16px;
+  }
+
+  .patient-question-assistant__text-modal .patient-question-assistant__form {
+    padding: 22px 20px;
+    border-radius: 18px;
+  }
+}

@@ -17,7 +17,10 @@ function HelpIcon() {
   );
 }
 
-export default function DailyModeBottomActions({ onGoConfusion, onGoHome }) {
+export default function DailyModeBottomActions({
+  onOpenQuestionAssistant,
+  onGoHome,
+}) {
   return (
     <>
       <section className="daily-mode-page__home-actions">
@@ -37,12 +40,12 @@ export default function DailyModeBottomActions({ onGoConfusion, onGoHome }) {
         <button
           className="daily-mode-page__glass-button daily-mode-page__glass-button--help"
           type="button"
-          onClick={onGoConfusion}
+          onClick={onOpenQuestionAssistant}
         >
           <span className="daily-mode-page__glass-icon daily-mode-page__glass-icon--help">
             <HelpIcon />
           </span>
-          <span>잘 모르겠어요</span>
+          <span>새록이에게 말하기</span>
         </button>
       </section>
     </>
