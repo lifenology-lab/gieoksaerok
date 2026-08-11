@@ -15,7 +15,13 @@ const EXAMPLE_QUESTIONS = [
   "여기가 어디야?",
 ];
 
-export default function PatientQuestionAssistant({ open, onClose }) {
+export default function PatientQuestionAssistant({
+  open,
+  onClose,
+  recognizedPerson,
+  isUnknownPersonDetected,
+  onRequestPersonRecognition,
+}) {
   const [question, setQuestion] = useState("");
   const [submittedQuestion, setSubmittedQuestion] = useState("");
   const [response, setResponse] = useState(null);
@@ -23,6 +29,8 @@ export default function PatientQuestionAssistant({ open, onClose }) {
   const [answerError, setAnswerError] = useState("");
   const [recordError, setRecordError] = useState("");
   const [isTextInputOpen, setIsTextInputOpen] = useState(false);
+  const [isWaitingForPersonRecognition, setIsWaitingForPersonRecognition] =
+    useState(false);
   const textInputRef = useRef(null);
 
   const saveQuestionEvent = useCallback(
@@ -55,6 +63,31 @@ export default function PatientQuestionAssistant({ open, onClose }) {
     setResponse(null);
     setAnswerError("");
     setRecordError("");
+    setIsWaitingForPersonRecognition(false);
+
+    if (result.intent === "person") {
+      const patientResponse = createPatientQuestionResponse(result.intent, {
+        person: recognizedPerson,
+        isUnknownPerson: isUnknownPersonDetected,
+      });
+      const isPersonRecognitionNeeded =
+        !recognizedPerson && !isUnknownPersonDetected;
+
+      setResponse(patientResponse);
+      setIsWaitingForPersonRecognition(isPersonRecognitionNeeded);
+
+      if (isPersonRecognitionNeeded) {
+        onRequestPersonRecognition?.();
+      }
+
+      void saveQuestionEvent({
+        transcript: normalizedQuestion,
+        inputMethod,
+        intentType: result.intent,
+        patientResponse,
+      });
+      return;
+    }
 
     if (result.intent !== "meal") {
       const patientResponse = createPatientQuestionResponse(result.intent);
@@ -86,7 +119,12 @@ export default function PatientQuestionAssistant({ open, onClose }) {
     } finally {
       setIsAnswerLoading(false);
     }
-  }, [saveQuestionEvent]);
+  }, [
+    isUnknownPersonDetected,
+    onRequestPersonRecognition,
+    recognizedPerson,
+    saveQuestionEvent,
+  ]);
 
   const questionRecorder = usePatientQuestionRecorder({
     onTranscript: (transcript) => handleQuestion(transcript, "voice"),
@@ -101,6 +139,30 @@ export default function PatientQuestionAssistant({ open, onClose }) {
       textInputRef.current?.focus();
     }
   }, [isTextInputOpen]);
+
+  useEffect(() => {
+    if (!isWaitingForPersonRecognition) {
+      return;
+    }
+
+    if (recognizedPerson) {
+      setResponse(
+        createPatientQuestionResponse("person", { person: recognizedPerson }),
+      );
+    } else if (isUnknownPersonDetected) {
+      setResponse(
+        createPatientQuestionResponse("person", { isUnknownPerson: true }),
+      );
+    } else {
+      return;
+    }
+
+    setIsWaitingForPersonRecognition(false);
+  }, [
+    isUnknownPersonDetected,
+    isWaitingForPersonRecognition,
+    recognizedPerson,
+  ]);
 
   if (!open) {
     return null;
@@ -124,6 +186,7 @@ export default function PatientQuestionAssistant({ open, onClose }) {
     setRecordError("");
     setIsAnswerLoading(false);
     setIsTextInputOpen(false);
+    setIsWaitingForPersonRecognition(false);
     onClose();
   };
 
@@ -251,6 +314,7 @@ export default function PatientQuestionAssistant({ open, onClose }) {
                     setAnswerError("");
                     setRecordError("");
                     setQuestion("");
+                    setIsWaitingForPersonRecognition(false);
                   }}
                 >
                   다른 질문하기

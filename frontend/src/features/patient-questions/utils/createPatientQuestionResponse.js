@@ -1,8 +1,8 @@
 const RESPONSES = {
-  way_home: {
-    title: "집으로 가는 길을 함께 확인해볼게요",
-    message: "지금은 가까운 보호자에게 현재 위치를 알려달라고 말해보세요.",
-    suggestion: "혼자 서두르지 말고, 안전한 곳에서 잠시 기다려도 괜찮아요.",
+  person: {
+    title: "앞에 계신 분을 확인하고 있어요",
+    message: "카메라에 얼굴이 잘 보이도록 잠시 기다려 주세요.",
+    suggestion: "얼굴을 찾지 못하면 가까운 분에게 이름을 물어봐도 괜찮아요.",
   },
   schedule: {
     title: "오늘 해야 할 일을 확인해볼게요",
@@ -20,6 +20,32 @@ const RESPONSES = {
     suggestion: "천천히 다시 말씀하시거나, 다른 표현으로 입력해 주세요.",
   },
 };
+
+function createPersonResponse(person, isUnknownPerson) {
+  if (isUnknownPerson) {
+    return {
+      title: "등록되지 않은 분이에요",
+      message: "앞에 계신 분의 정보가 아직 기억새록에 없어요.",
+      suggestion: "질문 도우미를 닫으면 이 분의 정보를 등록할 수 있어요.",
+    };
+  }
+
+  if (!person?.name) {
+    return RESPONSES.person;
+  }
+
+  const personLabel = person.relationship
+    ? `${person.relationship} ${person.name}님`
+    : `${person.name}님`;
+  const summary = person.latest_summary?.card;
+  const memoryHint = summary?.title || summary?.body;
+
+  return {
+    title: "앞에 계신 분을 찾았어요",
+    message: `앞에 계신 분은 ${personLabel}이에요.`,
+    suggestion: memoryHint || "천천히 인사를 건네 보셔도 괜찮아요.",
+  };
+}
 
 function formatMealRecordTime(eatenAt) {
   const date = new Date(eatenAt);
@@ -57,10 +83,17 @@ function createMealResponse(mealRecord) {
   };
 }
 
-export function createPatientQuestionResponse(intent, { mealRecord } = {}) {
+export function createPatientQuestionResponse(
+  intent,
+  { mealRecord, person, isUnknownPerson = false } = {},
+) {
   if (intent === "meal") {
     return createMealResponse(mealRecord);
   }
 
-  return RESPONSES[intent] || RESPONSES.unknown;
+  if (intent === "person") {
+    return createPersonResponse(person, isUnknownPerson);
+  }
+
+  return RESPONSES[intent] || RESPONSES.other;
 }

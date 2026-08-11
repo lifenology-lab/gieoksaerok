@@ -423,7 +423,7 @@ export default function DailyModePage() {
       <RecognitionStatusToast message={recognitionStatusMessage} />
 
       <UnknownPersonDialog
-        open={isRegisterDialogOpen}
+        open={isRegisterDialogOpen && !isQuestionAssistantOpen}
         isSaving={isSavingPerson}
         errorMessage={registrationError}
         onClose={closeUnknownPersonDialog}
@@ -449,6 +449,9 @@ export default function DailyModePage() {
       <PatientQuestionAssistant
         open={isQuestionAssistantOpen}
         onClose={() => setIsQuestionAssistantOpen(false)}
+        recognizedPerson={activeConversationPerson}
+        isUnknownPersonDetected={isRegisterDialogOpen}
+        onRequestPersonRecognition={startPersonRecognition}
       />
 
       <DailyModeBottomActions
