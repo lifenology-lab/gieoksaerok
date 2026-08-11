@@ -112,7 +112,13 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-.patient-question-assistant__voice-input > button {
+.patient-question-assistant__voice-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.patient-question-assistant__voice-primary-button {
   min-height: 48px;
   display: inline-flex;
   align-items: center;
@@ -128,24 +134,37 @@
   cursor: pointer;
 }
 
-.patient-question-assistant__voice-input > button span {
+.patient-question-assistant__voice-primary-button span {
   color: #ffd15f;
   font-size: 18px;
 }
 
-.patient-question-assistant__voice-input > button.is-recording {
+.patient-question-assistant__voice-primary-button.is-recording {
   border-color: rgba(255, 145, 154, 0.82);
   color: #ffd9dd;
   background: rgba(176, 48, 62, 0.34);
 }
 
-.patient-question-assistant__voice-input > button.is-recording span {
+.patient-question-assistant__voice-primary-button.is-recording span {
   color: #ff9ba5;
 }
 
-.patient-question-assistant__voice-input > button:disabled {
+.patient-question-assistant__voice-primary-button:disabled {
   cursor: not-allowed;
   opacity: 0.56;
+}
+
+.patient-question-assistant__voice-cancel-button {
+  min-width: 64px;
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .patient-question-assistant__voice-input > p {
@@ -154,6 +173,11 @@
   font-size: 14px;
   line-height: 1.4;
   font-weight: 700;
+}
+
+.patient-question-assistant__voice-input > .patient-question-assistant__voice-tip {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 13px;
 }
 
 .patient-question-assistant__form label,
@@ -187,7 +211,9 @@
 .patient-question-assistant__close:focus-visible,
 .patient-question-assistant__examples button:focus-visible,
 .patient-question-assistant__text-action:focus-visible,
-.patient-question-assistant__text-modal-heading button:focus-visible {
+.patient-question-assistant__text-modal-heading button:focus-visible,
+.patient-question-assistant__voice-primary-button:focus-visible,
+.patient-question-assistant__voice-cancel-button:focus-visible {
   outline: 2px solid #b3f5e6;
   outline-offset: 2px;
 }
@@ -417,6 +443,13 @@
 
 .patient-question-assistant__text-action:hover,
 .patient-question-assistant__text-action:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+
+.patient-question-assistant__voice-cancel-button:hover,
+.patient-question-assistant__voice-cancel-button:focus-visible {
   border-color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.18);
   outline: none;

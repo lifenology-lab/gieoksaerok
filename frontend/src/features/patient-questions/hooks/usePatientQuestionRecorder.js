@@ -25,6 +25,22 @@ function stopStream(stream) {
   stream.getTracks().forEach((track) => track.stop());
 }
 
+function getMicrophoneErrorMessage(error) {
+  if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+    return '마이크 사용을 허용해 주세요. 어려우면 텍스트로 질문할 수 있어요.';
+  }
+
+  if (error?.name === 'NotFoundError') {
+    return '사용할 수 있는 마이크를 찾지 못했어요. 텍스트로 질문해 주세요.';
+  }
+
+  if (error?.name === 'NotReadableError') {
+    return '다른 앱에서 마이크를 사용하고 있을 수 있어요. 잠시 후 다시 시도해 주세요.';
+  }
+
+  return '마이크를 시작하지 못했어요. 텍스트로 질문할 수도 있어요.';
+}
+
 export default function usePatientQuestionRecorder({ onTranscript }) {
   const [recordingStatus, setRecordingStatus] = useState("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -35,6 +51,7 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
   const chunksRef = useRef([]);
   const timeoutRef = useRef(null);
   const stopRecordingRef = useRef(null);
+  const recordingAttemptRef = useRef(0);
 
   const cleanupRecording = useCallback(() => {
     if (timeoutRef.current) {
@@ -68,6 +85,9 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
       return;
     }
 
+    const recordingAttempt = recordingAttemptRef.current + 1;
+    recordingAttemptRef.current = recordingAttempt;
+
     try {
       setRecordingStatus("preparing");
       setStatusMessage("마이크를 준비하고 있어요.");
@@ -80,6 +100,12 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
         },
         video: false,
       });
+
+      if (recordingAttemptRef.current !== recordingAttempt) {
+        stopStream(stream);
+        return;
+      }
+
       const mimeType = getSupportedAudioMimeType();
       const mediaRecorder = new MediaRecorder(
         stream,
@@ -108,10 +134,30 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
       setRecordingStatus("recording");
       setStatusMessage("듣고 있어요. 말씀해 주세요.");
     } catch (error) {
+      if (recordingAttemptRef.current !== recordingAttempt) {
+        return;
+      }
+
       cleanupRecording();
       setRecordingStatus("error");
-      setErrorMessage(error?.message || "녹음을 시작하지 못했어요.");
+      setStatusMessage("");
+      setErrorMessage(getMicrophoneErrorMessage(error));
     }
+  }, [cleanupRecording]);
+
+  const cancelRecording = useCallback(() => {
+    const mediaRecorder = mediaRecorderRef.current;
+
+    recordingAttemptRef.current += 1;
+
+    if (mediaRecorder?.state === 'recording') {
+      mediaRecorder.stop();
+    }
+
+    cleanupRecording();
+    setRecordingStatus('idle');
+    setStatusMessage('');
+    setErrorMessage('');
   }, [cleanupRecording]);
 
   const stopRecording = useCallback(async () => {
@@ -175,6 +221,8 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
 
   useEffect(() => {
     return () => {
+      recordingAttemptRef.current += 1;
+
       if (mediaRecorderRef.current?.state === "recording") {
         mediaRecorderRef.current.stop();
       }
@@ -189,5 +237,6 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
     errorMessage,
     startRecording,
     stopRecording,
+    cancelRecording,
   };
 }

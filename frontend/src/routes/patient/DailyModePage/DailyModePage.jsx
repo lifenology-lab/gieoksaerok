@@ -76,6 +76,7 @@ export default function DailyModePage() {
   const [mealRecordError, setMealRecordError] = useState("");
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
   const [isQuestionAssistantOpen, setIsQuestionAssistantOpen] = useState(false);
+  const [questionRecordingRequestId, setQuestionRecordingRequestId] = useState(0);
 
   const mealRecordsRef = useRef(mealRecords);
   const mealRecognitionResultRef = useRef(mealRecognitionResult);
@@ -345,6 +346,7 @@ export default function DailyModePage() {
 
   const handleOpenQuestionAssistant = () => {
     setIsQuestionAssistantOpen(true);
+    setQuestionRecordingRequestId((requestId) => requestId + 1);
   };
 
   const handleGoHome = () => {
@@ -449,6 +451,7 @@ export default function DailyModePage() {
       <PatientQuestionAssistant
         open={isQuestionAssistantOpen}
         onClose={() => setIsQuestionAssistantOpen(false)}
+        recordingRequestId={questionRecordingRequestId}
         recognizedPerson={activeConversationPerson}
         isUnknownPersonDetected={isRegisterDialogOpen}
         onRequestPersonRecognition={startPersonRecognition}

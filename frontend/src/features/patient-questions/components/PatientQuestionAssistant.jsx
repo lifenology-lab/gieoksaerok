@@ -18,6 +18,7 @@ const EXAMPLE_QUESTIONS = [
 export default function PatientQuestionAssistant({
   open,
   onClose,
+  recordingRequestId,
   recognizedPerson,
   isUnknownPersonDetected,
   onRequestPersonRecognition,
@@ -131,16 +132,39 @@ export default function PatientQuestionAssistant({
   const questionRecorder = usePatientQuestionRecorder({
     onTranscript: (transcript) => handleQuestion(transcript, "voice"),
   });
+  const startQuestionRecording = questionRecorder.startRecording;
   const isRecording = questionRecorder.recordingStatus === "recording";
   const isRecordingBusy = ["preparing", "recording", "transcribing"].includes(
     questionRecorder.recordingStatus,
   );
+  const voiceActionLabel = isRecording
+    ? "말하기 끝내기"
+    : questionRecorder.recordingStatus === "preparing"
+      ? "마이크를 켜고 있어요"
+      : questionRecorder.recordingStatus === "transcribing"
+        ? "말씀을 확인하고 있어요"
+        : "말로 물어보기";
 
   useEffect(() => {
     if (isTextInputOpen) {
       textInputRef.current?.focus();
     }
   }, [isTextInputOpen]);
+
+  const handledRecordingRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    if (
+      !open ||
+      !recordingRequestId ||
+      handledRecordingRequestIdRef.current === recordingRequestId
+    ) {
+      return;
+    }
+
+    handledRecordingRequestIdRef.current = recordingRequestId;
+    startQuestionRecording();
+  }, [open, recordingRequestId, startQuestionRecording]);
 
   useEffect(() => {
     if (!isWaitingForPersonRecognition) {
@@ -196,6 +220,7 @@ export default function PatientQuestionAssistant({
       onDismissUnknownPersonRegistration?.();
     }
 
+    questionRecorder.cancelRecording();
     resetAssistantState();
     onClose();
   };
@@ -203,6 +228,14 @@ export default function PatientQuestionAssistant({
   const handleTextInputClose = () => {
     setQuestion("");
     setIsTextInputOpen(false);
+  };
+
+  const handleOpenTextInput = () => {
+    if (isRecording) {
+      questionRecorder.cancelRecording();
+    }
+
+    setIsTextInputOpen(true);
   };
 
   const handleOtherQuestion = () => {
@@ -251,25 +284,51 @@ export default function PatientQuestionAssistant({
         </div>
 
         <section className="patient-question-assistant__voice-input">
-          <button
-            type="button"
-            className={isRecording ? "is-recording" : ""}
-            disabled={isAnswerLoading || questionRecorder.recordingStatus === "preparing" || questionRecorder.recordingStatus === "transcribing"}
-            onClick={
-              isRecording
-                ? questionRecorder.stopRecording
-                : questionRecorder.startRecording
-            }
-          >
-            <span aria-hidden="true">●</span>
-            {isRecording ? "말하기 끝내기" : "말로 물어보기"}
-          </button>
+          <div className="patient-question-assistant__voice-actions">
+            <button
+              type="button"
+              className={`patient-question-assistant__voice-primary-button ${isRecording ? "is-recording" : ""}`}
+              disabled={
+                isAnswerLoading ||
+                questionRecorder.recordingStatus === "preparing" ||
+                questionRecorder.recordingStatus === "transcribing"
+              }
+              onClick={
+                isRecording
+                  ? questionRecorder.stopRecording
+                  : questionRecorder.startRecording
+              }
+            >
+              <span aria-hidden="true">●</span>
+              {voiceActionLabel}
+            </button>
+
+            {isRecording && (
+              <button
+                type="button"
+                className="patient-question-assistant__voice-cancel-button"
+                onClick={questionRecorder.cancelRecording}
+              >
+                취소
+              </button>
+            )}
+          </div>
           <p aria-live="polite">
-            {questionRecorder.statusMessage || "버튼을 누르고 천천히 말씀해 주세요."}
+            {questionRecorder.statusMessage || "버튼을 누른 뒤 천천히 말씀해 주세요."}
           </p>
+          {isRecording && (
+            <p className="patient-question-assistant__voice-tip">
+              말씀을 마치셨으면 ‘말하기 끝내기’를 눌러 주세요.
+            </p>
+          )}
           {questionRecorder.errorMessage && (
             <p className="patient-question-assistant__error" role="alert">
               {questionRecorder.errorMessage}
+            </p>
+          )}
+          {!isRecordingBusy && (
+            <p className="patient-question-assistant__voice-tip">
+              주변이 시끄럽거나 마이크가 어렵다면 텍스트로 질문할 수 있어요.
             </p>
           )}
         </section>
@@ -277,9 +336,13 @@ export default function PatientQuestionAssistant({
         <button
           type="button"
           className="patient-question-assistant__text-action"
-          disabled={isAnswerLoading || isRecordingBusy}
+          disabled={
+            isAnswerLoading ||
+            questionRecorder.recordingStatus === "preparing" ||
+            questionRecorder.recordingStatus === "transcribing"
+          }
           aria-expanded={isTextInputOpen}
-          onClick={() => setIsTextInputOpen(true)}
+          onClick={handleOpenTextInput}
         >
           텍스트로 입력하기
         </button>
@@ -294,7 +357,7 @@ export default function PatientQuestionAssistant({
                   type="button"
                   onClick={() => {
                     setQuestion(exampleQuestion);
-                    setIsTextInputOpen(true);
+                    handleOpenTextInput();
                   }}
                 >
                   {exampleQuestion}
