@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import ConversationRecorderControls from "@/features/conversation/components/ConversationRecorderControls.jsx";
 import PatientQuestionAssistant from "@/features/patient-questions/components/PatientQuestionAssistant.jsx";
+import useWakeWordMicrophone from "@/features/patient-questions/hooks/useWakeWordMicrophone.js";
 import useConversationRecorder from "@/features/conversation/hooks/useConversationRecorder.js";
 import usePatientVoiceRecorder from "@/features/conversation/hooks/usePatientVoiceRecorder.js";
 import { CameraPreview } from "@/features/camera/components";
@@ -77,6 +78,8 @@ export default function DailyModePage() {
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
   const [isQuestionAssistantOpen, setIsQuestionAssistantOpen] = useState(false);
   const [questionRecordingRequestId, setQuestionRecordingRequestId] = useState(0);
+  const [isWakeWordModeEnabled, setIsWakeWordModeEnabled] = useState(false);
+  const wakeWordMicrophone = useWakeWordMicrophone(isWakeWordModeEnabled);
 
   const mealRecordsRef = useRef(mealRecords);
   const mealRecognitionResultRef = useRef(mealRecognitionResult);
@@ -349,6 +352,10 @@ export default function DailyModePage() {
     setQuestionRecordingRequestId((requestId) => requestId + 1);
   };
 
+  const handleToggleWakeWordMode = () => {
+    setIsWakeWordModeEnabled((isEnabled) => !isEnabled);
+  };
+
   const handleGoHome = () => {
     nav("/patient");
   };
@@ -463,8 +470,13 @@ export default function DailyModePage() {
       />
 
       <DailyModeBottomActions
+        isWakeWordModeEnabled={isWakeWordModeEnabled}
+        wakeWordErrorMessage={wakeWordMicrophone.errorMessage}
+        wakeWordMicrophoneStatus={wakeWordMicrophone.status}
+        isWakeWordVoiceDetected={wakeWordMicrophone.isVoiceDetected}
         onOpenQuestionAssistant={handleOpenQuestionAssistant}
         onGoHome={handleGoHome}
+        onToggleWakeWordMode={handleToggleWakeWordMode}
       />
     </main>
   );

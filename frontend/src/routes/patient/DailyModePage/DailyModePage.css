@@ -82,6 +82,9 @@
   right: 42px;
   bottom: 36px;
   z-index: 12;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
 }
 
 .daily-mode-page__glass-button {
@@ -148,6 +151,72 @@
   border-color: rgba(255, 209, 95, 0.82);
   color: #ffd15f;
   background: rgba(255, 209, 95, 0.16);
+}
+
+.daily-mode-page__glass-button--wake-word {
+  min-width: 174px;
+}
+
+.daily-mode-page__glass-icon--wake-word {
+  border-color: rgba(145, 232, 214, 0.8);
+  color: #b3f5e6;
+  background: rgba(145, 232, 214, 0.18);
+}
+
+.daily-mode-page__wake-word-status {
+  width: min(300px, calc(100vw - 32px));
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 13px;
+  border: 1px solid rgba(145, 232, 214, 0.44);
+  border-radius: 16px;
+  color: white;
+  background: rgba(18, 56, 47, 0.78);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  text-align: left;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.daily-mode-page__wake-word-status > span {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #91e8d6;
+  box-shadow: 0 0 12px rgba(145, 232, 214, 0.8);
+}
+
+.daily-mode-page__wake-word-status.is-error {
+  border-color: rgba(255, 155, 165, 0.55);
+  background: rgba(92, 28, 37, 0.82);
+}
+
+.daily-mode-page__wake-word-status.is-error > span {
+  background: #ff9ba5;
+  box-shadow: 0 0 12px rgba(255, 155, 165, 0.72);
+}
+
+.daily-mode-page__wake-word-status strong,
+.daily-mode-page__wake-word-status p {
+  display: block;
+  margin: 0;
+}
+
+.daily-mode-page__wake-word-status strong {
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.daily-mode-page__wake-word-status p {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 700;
 }
 
 .daily-mode-page__glass-icon svg {
@@ -766,6 +835,10 @@
     font-size: 16px;
   }
 
+  .daily-mode-page__glass-button--wake-word {
+    min-width: 162px;
+  }
+
   .daily-mode-page__glass-icon {
     width: 30px;
     height: 30px;
@@ -815,6 +888,10 @@
     min-width: 130px;
     min-height: 48px;
     font-size: 15px;
+  }
+
+  .daily-mode-page__glass-button--wake-word {
+    min-width: 154px;
   }
 
   .daily-mode-page__home-actions .daily-mode-page__glass-button {
