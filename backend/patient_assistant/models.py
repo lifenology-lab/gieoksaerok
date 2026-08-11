@@ -12,6 +12,7 @@ class PatientQuestionEvent(models.Model):
 
     INTENT_MEAL = 'meal'
     INTENT_PERSON = 'person'
+    INTENT_TIME = 'time'
     INTENT_WAY_HOME = 'way_home'
     INTENT_SCHEDULE = 'schedule'
     INTENT_PLACE = 'place'
@@ -19,6 +20,7 @@ class PatientQuestionEvent(models.Model):
     INTENT_TYPE_CHOICES = [
         (INTENT_MEAL, 'Meal'),
         (INTENT_PERSON, 'Person'),
+        (INTENT_TIME, 'Time'),
         (INTENT_WAY_HOME, 'Way Home'),
         (INTENT_SCHEDULE, 'Schedule'),
         (INTENT_PLACE, 'Place'),

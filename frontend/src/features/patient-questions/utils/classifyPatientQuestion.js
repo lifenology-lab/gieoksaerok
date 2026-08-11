@@ -52,6 +52,21 @@ const INTENT_RULES = [
     ],
   },
   {
+    intent: "time",
+    patterns: [
+      ["몇 시", 5],
+      ["몇시", 5],
+      ["지금 시간", 5],
+      ["시간이", 4],
+      ["오늘 며칠", 5],
+      ["오늘은 며칠", 5],
+      ["무슨 요일", 5],
+      ["요일이", 4],
+      ["날짜", 4],
+      ["언제", 2],
+    ],
+  },
+  {
     intent: "place",
     patterns: [
       ["여기가 어디", 5],
@@ -108,6 +123,10 @@ function getConfidence(topCandidate, nextCandidate) {
   }
 
   const scoreGap = topCandidate.score - (nextCandidate?.score || 0);
+
+  if (nextCandidate?.score >= 3) {
+    return 0.75;
+  }
 
   if (topCandidate.score >= 5 && scoreGap >= 2) {
     return 0.95;

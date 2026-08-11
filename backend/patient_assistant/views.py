@@ -19,6 +19,7 @@ QUESTION_INTENT_TO_CONFUSION_TYPE = {
     'place': 'place',
     'way_home': 'place',
     'schedule': 'task',
+    'time': 'time',
     'meal': 'meal',
 }
 

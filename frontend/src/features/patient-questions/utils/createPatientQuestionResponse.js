@@ -21,6 +21,29 @@ const RESPONSES = {
   },
 };
 
+const WEEKDAY_LABELS = [
+  "일요일",
+  "월요일",
+  "화요일",
+  "수요일",
+  "목요일",
+  "금요일",
+  "토요일",
+];
+
+function createTimeResponse() {
+  const now = new Date();
+  const period = now.getHours() < 12 ? "오전" : "오후";
+  const hours = now.getHours() % 12 || 12;
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  return {
+    title: "지금의 시간을 알려드릴게요",
+    message: `오늘은 ${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${WEEKDAY_LABELS[now.getDay()]}이에요. 지금은 ${period} ${hours}시 ${minutes}분이에요.`,
+    suggestion: "천천히 확인해도 괜찮아요.",
+  };
+}
+
 function createPersonResponse(person, isUnknownPerson) {
   if (isUnknownPerson) {
     return {
@@ -95,6 +118,10 @@ export function createPatientQuestionResponse(
 
   if (intent === "person") {
     return createPersonResponse(person, isUnknownPerson);
+  }
+
+  if (intent === "time") {
+    return createTimeResponse();
   }
 
   return RESPONSES[intent] || RESPONSES.unknown;
