@@ -397,6 +397,17 @@
   cursor: pointer;
 }
 
+.patient-question-assistant__response-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.patient-question-assistant__response-primary-action {
+  border-color: #91e8d6 !important;
+  color: #18342c !important;
+  background: #91e8d6 !important;
+}
+
 .patient-question-assistant__response button:hover,
 .patient-question-assistant__response button:focus-visible {
   border-color: rgba(255, 255, 255, 0.7);

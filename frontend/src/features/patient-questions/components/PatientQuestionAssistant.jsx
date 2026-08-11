@@ -21,6 +21,8 @@ export default function PatientQuestionAssistant({
   recognizedPerson,
   isUnknownPersonDetected,
   onRequestPersonRecognition,
+  onRegisterUnknownPerson,
+  onDismissUnknownPersonRegistration,
 }) {
   const [question, setQuestion] = useState("");
   const [submittedQuestion, setSubmittedQuestion] = useState("");
@@ -178,7 +180,7 @@ export default function PatientQuestionAssistant({
     }
   };
 
-  const handleClose = () => {
+  const resetAssistantState = () => {
     setQuestion("");
     setSubmittedQuestion("");
     setResponse(null);
@@ -187,12 +189,38 @@ export default function PatientQuestionAssistant({
     setIsAnswerLoading(false);
     setIsTextInputOpen(false);
     setIsWaitingForPersonRecognition(false);
+  };
+
+  const handleClose = () => {
+    if (isUnknownPersonDetected) {
+      onDismissUnknownPersonRegistration?.();
+    }
+
+    resetAssistantState();
     onClose();
   };
 
   const handleTextInputClose = () => {
     setQuestion("");
     setIsTextInputOpen(false);
+  };
+
+  const handleOtherQuestion = () => {
+    if (response?.action === "register-unknown-person") {
+      onDismissUnknownPersonRegistration?.();
+    }
+
+    setSubmittedQuestion("");
+    setResponse(null);
+    setAnswerError("");
+    setRecordError("");
+    setQuestion("");
+    setIsWaitingForPersonRecognition(false);
+  };
+
+  const handleUnknownPersonRegistration = () => {
+    resetAssistantState();
+    onRegisterUnknownPerson?.();
   };
 
   return (
@@ -306,19 +334,20 @@ export default function PatientQuestionAssistant({
                 <h3>{response.title}</h3>
                 <p>{response.message}</p>
                 <p>{response.suggestion}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSubmittedQuestion("");
-                    setResponse(null);
-                    setAnswerError("");
-                    setRecordError("");
-                    setQuestion("");
-                    setIsWaitingForPersonRecognition(false);
-                  }}
-                >
-                  다른 질문하기
-                </button>
+                <div className="patient-question-assistant__response-actions">
+                  {response.action === "register-unknown-person" && (
+                    <button
+                      type="button"
+                      className="patient-question-assistant__response-primary-action"
+                      onClick={handleUnknownPersonRegistration}
+                    >
+                      {response.actionLabel}
+                    </button>
+                  )}
+                  <button type="button" onClick={handleOtherQuestion}>
+                    다른 질문하기
+                  </button>
+                </div>
               </div>
             )}
           </>

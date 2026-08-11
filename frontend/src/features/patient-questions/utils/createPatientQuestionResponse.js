@@ -26,7 +26,9 @@ function createPersonResponse(person, isUnknownPerson) {
     return {
       title: "등록되지 않은 분이에요",
       message: "앞에 계신 분의 정보가 아직 기억새록에 없어요.",
-      suggestion: "질문 도우미를 닫으면 이 분의 정보를 등록할 수 있어요.",
+      suggestion: "이 분의 정보를 기억새록에 등록해 둘까요?",
+      action: "register-unknown-person",
+      actionLabel: "등록할까요?",
     };
   }
 

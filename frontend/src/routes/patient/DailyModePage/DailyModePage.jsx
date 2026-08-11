@@ -452,6 +452,11 @@ export default function DailyModePage() {
         recognizedPerson={activeConversationPerson}
         isUnknownPersonDetected={isRegisterDialogOpen}
         onRequestPersonRecognition={startPersonRecognition}
+        onRegisterUnknownPerson={() => setIsQuestionAssistantOpen(false)}
+        onDismissUnknownPersonRegistration={() => {
+          closeUnknownPersonDialog();
+          clearRecognition();
+        }}
       />
 
       <DailyModeBottomActions
