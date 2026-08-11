@@ -5,9 +5,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(7, 16, 13, 0.48);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background: rgba(7, 16, 13, 0.1);
 }
 
 .patient-question-assistant__card {
@@ -19,10 +17,12 @@
   border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 22px;
   color: white;
-  background: rgba(30, 52, 44, 0.94);
+  background: rgba(30, 52, 44, 0.78);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 22px 60px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .patient-question-assistant__close {
@@ -53,12 +53,24 @@
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  border: 2px solid rgba(255, 209, 95, 0.82);
+  border: 2px solid rgba(145, 232, 214, 0.82);
   border-radius: 50%;
-  color: #ffd15f;
-  background: rgba(255, 209, 95, 0.16);
+  color: #b3f5e6;
+  background: rgba(145, 232, 214, 0.16);
   font-size: 27px;
   font-weight: 900;
+}
+
+.patient-question-assistant__heading.is-recording > span {
+  border-color: rgba(145, 232, 214, 0.92);
+  box-shadow: 0 0 0 9px rgba(145, 232, 214, 0.1);
+  animation: patient-question-assistant-listening 1.2s ease-in-out infinite;
+}
+
+@keyframes patient-question-assistant-listening {
+  50% {
+    box-shadow: 0 0 0 15px rgba(145, 232, 214, 0.03);
+  }
 }
 
 .patient-question-assistant h2,
@@ -110,6 +122,47 @@
   padding: 14px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.08);
+}
+
+.patient-question-assistant__voice-wave {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 2px 0;
+}
+
+.patient-question-assistant__voice-wave span {
+  width: 7px;
+  height: 18px;
+  border-radius: 999px;
+  background: #b3f5e6;
+  box-shadow: 0 0 12px rgba(145, 232, 214, 0.72);
+  animation: patient-question-assistant-wave 850ms ease-in-out infinite alternate;
+}
+
+.patient-question-assistant__voice-wave span:nth-child(2),
+.patient-question-assistant__voice-wave span:nth-child(4) {
+  height: 34px;
+  animation-delay: 140ms;
+}
+
+.patient-question-assistant__voice-wave span:nth-child(3) {
+  height: 48px;
+  animation-delay: 260ms;
+}
+
+@keyframes patient-question-assistant-wave {
+  from {
+    opacity: 0.58;
+    transform: scaleY(0.42);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
 }
 
 .patient-question-assistant__voice-actions {
@@ -242,9 +295,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(7, 16, 13, 0.56);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background: rgba(7, 16, 13, 0.16);
 }
 
 .patient-question-assistant__text-modal .patient-question-assistant__form {
@@ -253,10 +304,12 @@
   border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 22px;
   color: white;
-  background: rgba(30, 52, 44, 0.98);
+  background: rgba(30, 52, 44, 0.84);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 22px 60px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .patient-question-assistant__text-modal-heading {

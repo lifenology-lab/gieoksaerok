@@ -143,7 +143,21 @@ export default function PatientQuestionAssistant({
       ? "마이크를 켜고 있어요"
       : questionRecorder.recordingStatus === "transcribing"
         ? "말씀을 확인하고 있어요"
-        : "말로 물어보기";
+        : questionRecorder.recordingStatus === "error"
+          ? "다시 말하기"
+          : "말로 물어보기";
+  const assistantHeading = submittedQuestion
+    ? isAnswerLoading
+      ? "말씀을 확인하고 있어요"
+      : "이렇게 도와드릴게요"
+    : questionRecorder.recordingStatus === "preparing"
+      ? "마이크를 준비하고 있어요"
+      : "새록이가 듣고 있어요";
+  const assistantHeadingDescription = submittedQuestion
+    ? isAnswerLoading
+      ? "잠시만 기다려 주세요."
+      : "다시 물어보고 싶으면 아래 버튼을 눌러 주세요."
+    : "궁금한 점을 천천히 말씀해 주세요.";
 
   useEffect(() => {
     if (isTextInputOpen) {
@@ -278,19 +292,31 @@ export default function PatientQuestionAssistant({
           ×
         </button>
 
-        <div className="patient-question-assistant__heading">
-          <span aria-hidden="true">?</span>
+        <div
+          className={`patient-question-assistant__heading ${isRecording ? "is-recording" : ""}`}
+        >
+          <span aria-hidden="true">●</span>
           <div>
             <h2 id="patient-question-assistant-title">
-              무엇이 궁금하신가요?
+              {assistantHeading}
             </h2>
-            <p>말로 물어보거나 글자로 입력해 주세요.</p>
+            <p>{assistantHeadingDescription}</p>
           </div>
         </div>
 
         {!submittedQuestion && (
           <>
             <section className="patient-question-assistant__voice-input">
+          {isRecording && (
+            <div
+              className="patient-question-assistant__voice-wave"
+              aria-hidden="true"
+            >
+              {[0, 1, 2, 3, 4].map((barIndex) => (
+                <span key={barIndex} />
+              ))}
+            </div>
+          )}
           <div className="patient-question-assistant__voice-actions">
             <button
               type="button"
@@ -430,7 +456,7 @@ export default function PatientQuestionAssistant({
             {answerError && !response && (
               <div className="patient-question-assistant__response-actions">
                 <button type="button" onClick={handleRestartVoiceQuestion}>
-                  다시 말하기
+                  다시 물어보기
                 </button>
                 <button type="button" onClick={handleOpenTextQuestion}>
                   텍스트로 물어보기
