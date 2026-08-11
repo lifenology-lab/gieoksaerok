@@ -325,7 +325,8 @@ export default function PatientQuestionAssistant({
           </p>
           {isRecording && (
             <p className="patient-question-assistant__voice-tip">
-              말씀을 마치셨으면 ‘말하기 끝내기’를 눌러 주세요.
+              말씀을 마치고 잠시 기다리면 자동으로 끝나요. 바로 끝내려면
+              ‘말하기 끝내기’를 눌러 주세요.
             </p>
           )}
           {questionRecorder.errorMessage && (

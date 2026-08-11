@@ -8,6 +8,8 @@ const RECORDER_MIME_TYPES = [
   "audio/mp4",
 ];
 const MAX_RECORDING_MS = 15000;
+const VOICE_ACTIVITY_THRESHOLD = 0.025;
+const AUTO_STOP_SILENCE_MS = 2000;
 
 function getSupportedAudioMimeType() {
   if (!window.MediaRecorder) {
@@ -52,12 +54,34 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
   const timeoutRef = useRef(null);
   const stopRecordingRef = useRef(null);
   const recordingAttemptRef = useRef(0);
+  const voiceActivityResourcesRef = useRef(null);
+  const hasDetectedSpeechRef = useRef(false);
+  const lastVoiceDetectedAtRef = useRef(0);
+  const isAutoStoppingRef = useRef(false);
+
+  const cleanupVoiceActivityDetection = useCallback(() => {
+    const resources = voiceActivityResourcesRef.current;
+
+    if (resources) {
+      window.cancelAnimationFrame(resources.animationFrameId);
+      resources.source.disconnect();
+      resources.analyser.disconnect();
+      void resources.audioContext.close();
+      voiceActivityResourcesRef.current = null;
+    }
+
+    hasDetectedSpeechRef.current = false;
+    lastVoiceDetectedAtRef.current = 0;
+    isAutoStoppingRef.current = false;
+  }, []);
 
   const cleanupRecording = useCallback(() => {
     if (timeoutRef.current) {
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+
+    cleanupVoiceActivityDetection();
 
     if (streamRef.current) {
       stopStream(streamRef.current);
@@ -66,6 +90,74 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
 
     mediaRecorderRef.current = null;
     chunksRef.current = [];
+  }, [cleanupVoiceActivityDetection]);
+
+  const startVoiceActivityDetection = useCallback((stream) => {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContext) {
+      return;
+    }
+
+    try {
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(stream);
+
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.72;
+      source.connect(analyser);
+
+      const sampleData = new Uint8Array(analyser.fftSize);
+      const resources = {
+        analyser,
+        animationFrameId: 0,
+        audioContext,
+        source,
+      };
+
+      const observeVoiceActivity = () => {
+        if (mediaRecorderRef.current?.state !== "recording") {
+          return;
+        }
+
+        analyser.getByteTimeDomainData(sampleData);
+
+        let sumOfSquares = 0;
+        for (const sample of sampleData) {
+          const normalizedSample = (sample - 128) / 128;
+          sumOfSquares += normalizedSample * normalizedSample;
+        }
+
+        const volume = Math.sqrt(sumOfSquares / sampleData.length);
+        const now = Date.now();
+
+        if (volume >= VOICE_ACTIVITY_THRESHOLD) {
+          hasDetectedSpeechRef.current = true;
+          lastVoiceDetectedAtRef.current = now;
+        }
+
+        const hasReachedSilenceLimit =
+          hasDetectedSpeechRef.current &&
+          now - lastVoiceDetectedAtRef.current >= AUTO_STOP_SILENCE_MS;
+
+        if (hasReachedSilenceLimit && !isAutoStoppingRef.current) {
+          isAutoStoppingRef.current = true;
+          stopRecordingRef.current?.();
+          return;
+        }
+
+        resources.animationFrameId = window.requestAnimationFrame(
+          observeVoiceActivity,
+        );
+      };
+
+      voiceActivityResourcesRef.current = resources;
+      void audioContext.resume();
+      observeVoiceActivity();
+    } catch {
+      // VAD를 사용할 수 없더라도 수동 녹음은 계속 제공한다.
+    }
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -115,6 +207,9 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
       streamRef.current = stream;
       chunksRef.current = [];
       mediaRecorderRef.current = mediaRecorder;
+      hasDetectedSpeechRef.current = false;
+      lastVoiceDetectedAtRef.current = 0;
+      isAutoStoppingRef.current = false;
 
       mediaRecorder.addEventListener("dataavailable", (event) => {
         if (event.data.size > 0) {
@@ -128,6 +223,7 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
       });
 
       mediaRecorder.start();
+      startVoiceActivityDetection(stream);
       timeoutRef.current = window.setTimeout(() => {
         stopRecordingRef.current?.();
       }, MAX_RECORDING_MS);
@@ -143,7 +239,7 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
       setStatusMessage("");
       setErrorMessage(getMicrophoneErrorMessage(error));
     }
-  }, [cleanupRecording]);
+  }, [cleanupRecording, startVoiceActivityDetection]);
 
   const cancelRecording = useCallback(() => {
     const mediaRecorder = mediaRecorderRef.current;

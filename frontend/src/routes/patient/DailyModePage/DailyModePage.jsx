@@ -348,6 +348,7 @@ export default function DailyModePage() {
   };
 
   const handleOpenQuestionAssistant = () => {
+    setIsWakeWordModeEnabled(false);
     setIsQuestionAssistantOpen(true);
     setQuestionRecordingRequestId((requestId) => requestId + 1);
   };
