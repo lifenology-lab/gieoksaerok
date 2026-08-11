@@ -95,5 +95,5 @@ export function createPatientQuestionResponse(
     return createPersonResponse(person, isUnknownPerson);
   }
 
-  return RESPONSES[intent] || RESPONSES.other;
+  return RESPONSES[intent] || RESPONSES.unknown;
 }
