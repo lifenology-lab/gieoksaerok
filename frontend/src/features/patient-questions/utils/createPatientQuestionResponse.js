@@ -4,11 +4,6 @@ const RESPONSES = {
     message: "카메라에 얼굴이 잘 보이도록 잠시 기다려 주세요.",
     suggestion: "얼굴을 찾지 못하면 가까운 분에게 이름을 물어봐도 괜찮아요.",
   },
-  schedule: {
-    title: "오늘 해야 할 일을 확인해볼게요",
-    message: "한 번에 하나씩 떠올려 보면 괜찮아요.",
-    suggestion: "필요하면 보호자에게 오늘의 약속이나 할 일을 물어보세요.",
-  },
   place: {
     title: "지금 있는 곳을 함께 살펴볼까요?",
     message: "주변의 익숙한 물건이나 표지판을 천천히 확인해보세요.",
@@ -36,11 +31,12 @@ function createTimeResponse() {
   const period = now.getHours() < 12 ? "오전" : "오후";
   const hours = now.getHours() % 12 || 12;
   const minutes = String(now.getMinutes()).padStart(2, "0");
+  const timeOfDay = now.getHours() < 12 ? "오전" : now.getHours() < 18 ? "오후" : "저녁";
 
   return {
     title: "지금의 시간을 알려드릴게요",
     message: `오늘은 ${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${WEEKDAY_LABELS[now.getDay()]}이에요. 지금은 ${period} ${hours}시 ${minutes}분이에요.`,
-    suggestion: "천천히 확인해도 괜찮아요.",
+    suggestion: `지금은 ${timeOfDay}이에요. 천천히 확인해도 괜찮아요.`,
   };
 }
 
@@ -86,11 +82,54 @@ function formatMealRecordTime(eatenAt) {
   return `${date.getMonth() + 1}월 ${date.getDate()}일 ${period} ${hours}시 ${minutes}분`;
 }
 
-function createMealResponse(mealRecord) {
+const MEAL_TYPE_KEYWORDS = {
+  breakfast: "아침",
+  lunch: "점심",
+  dinner: "저녁",
+  snack: "간식",
+};
+
+function getQuestionedMealType(question) {
+  const normalizedQuestion = question?.replace(/\s/g, "") || "";
+
+  return Object.entries(MEAL_TYPE_KEYWORDS).find(([, keyword]) =>
+    normalizedQuestion.includes(keyword),
+  )?.[0] || null;
+}
+
+function isSameDay(leftDate, rightDate) {
+  return (
+    leftDate.getFullYear() === rightDate.getFullYear() &&
+    leftDate.getMonth() === rightDate.getMonth() &&
+    leftDate.getDate() === rightDate.getDate()
+  );
+}
+
+function getTodayMealRecords(mealRecords) {
+  const now = new Date();
+
+  return mealRecords.filter((mealRecord) => {
+    const eatenAt = new Date(mealRecord.eatenAt);
+
+    return !Number.isNaN(eatenAt.getTime()) && isSameDay(eatenAt, now);
+  });
+}
+
+function createMealResponse(mealRecords, question) {
+  const questionedMealType = getQuestionedMealType(question);
+  const mealRecord = questionedMealType
+    ? mealRecords.find((record) => record.mealType === questionedMealType)
+    : mealRecords[0] || null;
+  const mealLabel = questionedMealType
+    ? MEAL_TYPE_KEYWORDS[questionedMealType]
+    : "최근";
+
   if (!mealRecord) {
     return {
-      title: "최근 식사 기록이 없어요",
-      message: "아직 남겨진 식사 기록을 찾지 못했어요.",
+      title: `${mealLabel} 식사 기록이 없어요`,
+      message: questionedMealType
+        ? `오늘 기록에서 ${mealLabel} 식사를 찾지 못했어요.`
+        : "아직 남겨진 식사 기록을 찾지 못했어요.",
       suggestion: "식사를 하셨다면 다음에 식사 기록을 남겨둘 수 있어요.",
     };
   }
@@ -101,19 +140,118 @@ function createMealResponse(mealRecord) {
     mealDetails.push(mealRecord.menu);
   }
 
+  const todayMealRecords = getTodayMealRecords(mealRecords);
+  const todayRecordMessage = todayMealRecords.length
+    ? `오늘 식사 기록은 모두 ${todayMealRecords.length}개예요.`
+    : "오늘의 다른 식사 기록은 아직 없어요.";
+
   return {
-    title: "가장 최근 식사 기록이에요",
+    title: questionedMealType
+      ? `${mealLabel} 식사 기록이에요`
+      : "가장 최근 식사 기록이에요",
     message: `${formatMealRecordTime(mealRecord.eatenAt)}에 ${mealDetails.join(" · ")} 기록이 있어요.`,
-    suggestion: mealRecord.memo || "기록을 확인했어요. 천천히 생각해 봐도 괜찮아요.",
+    suggestion: mealRecord.memo || todayRecordMessage,
+  };
+}
+
+function getPromiseDate(promise) {
+  if (promise.scheduled_at) {
+    const scheduledAt = new Date(promise.scheduled_at);
+
+    if (!Number.isNaN(scheduledAt.getTime())) {
+      return scheduledAt;
+    }
+  }
+
+  if (promise.scheduled_date) {
+    const scheduledDate = new Date(`${promise.scheduled_date}T00:00:00`);
+
+    if (!Number.isNaN(scheduledDate.getTime())) {
+      return scheduledDate;
+    }
+  }
+
+  return null;
+}
+
+function formatPromiseSchedule(promise) {
+  const scheduledDate = getPromiseDate(promise);
+
+  if (!scheduledDate) {
+    return promise.time_label || "예정된 약속";
+  }
+
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const dayLabel = isSameDay(scheduledDate, now)
+    ? "오늘"
+    : isSameDay(scheduledDate, tomorrow)
+      ? "내일"
+      : `${scheduledDate.getMonth() + 1}월 ${scheduledDate.getDate()}일`;
+
+  if (!promise.scheduled_at) {
+    return promise.time_label ? `${dayLabel} ${promise.time_label}` : dayLabel;
+  }
+
+  const period = scheduledDate.getHours() < 12 ? "오전" : "오후";
+  const hours = scheduledDate.getHours() % 12 || 12;
+  const minutes = String(scheduledDate.getMinutes()).padStart(2, "0");
+
+  return `${dayLabel} ${period} ${hours}시 ${minutes}분`;
+}
+
+function createScheduleResponse(promises) {
+  const nextPromise = promises[0];
+
+  if (!nextPromise) {
+    return {
+      title: "예정된 약속이 없어요",
+      message: "지금 확인할 수 있는 약속이나 할 일이 없어요.",
+      suggestion: "새 약속이 생기면 기억새록에 남겨둘 수 있어요.",
+    };
+  }
+
+  const promiseTitle = nextPromise.title || "예정된 약속";
+  const promiseDescription = nextPromise.description?.trim();
+  const personLabel = nextPromise.person_name
+    ? nextPromise.person_relationship
+      ? `${nextPromise.person_relationship} ${nextPromise.person_name}님`
+      : `${nextPromise.person_name}님`
+    : "";
+  const appointmentWith = personLabel ? `${personLabel}과 ` : "";
+  const upcomingPromises = promises.slice(1, 3).map((promise) => {
+    const promisePersonLabel = promise.person_name
+      ? promise.person_relationship
+        ? `${promise.person_relationship} ${promise.person_name}님과 `
+        : `${promise.person_name}님과 `
+      : "";
+
+    return `${formatPromiseSchedule(promise)} · ${promisePersonLabel}${promise.title || "예정된 약속"}`;
+  });
+  const remainingPromiseCount = Math.max(promises.length - 3, 0);
+
+  return {
+    title: "가까운 약속을 알려드릴게요",
+    message: `${formatPromiseSchedule(nextPromise)}에 ${appointmentWith}${promiseTitle} 일정이 있어요.`,
+    suggestion: promiseDescription || "천천히 준비해도 괜찮아요.",
+    upcomingPromises,
+    remainingPromiseCount,
   };
 }
 
 export function createPatientQuestionResponse(
   intent,
-  { mealRecord, person, isUnknownPerson = false } = {},
+  {
+    mealRecords = [],
+    person,
+    isUnknownPerson = false,
+    promises = [],
+    question = "",
+  } = {},
 ) {
   if (intent === "meal") {
-    return createMealResponse(mealRecord);
+    return createMealResponse(mealRecords, question);
   }
 
   if (intent === "person") {
@@ -122,6 +260,10 @@ export function createPatientQuestionResponse(
 
   if (intent === "time") {
     return createTimeResponse();
+  }
+
+  if (intent === "schedule") {
+    return createScheduleResponse(promises);
   }
 
   return RESPONSES[intent] || RESPONSES.unknown;

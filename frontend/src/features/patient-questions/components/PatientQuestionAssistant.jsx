@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchRecentMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
 
-import { savePatientQuestionEvent } from "../api/patientQuestionApi";
+import {
+  fetchPatientQuestionSchedules,
+  savePatientQuestionEvent,
+} from "../api/patientQuestionApi";
 import usePatientQuestionRecorder from "../hooks/usePatientQuestionRecorder";
 import { classifyPatientQuestion } from "../utils/classifyPatientQuestion";
 import { createPatientQuestionResponse } from "../utils/createPatientQuestionResponse";
@@ -92,7 +95,7 @@ export default function PatientQuestionAssistant({
       return;
     }
 
-    if (result.intent !== "meal") {
+    if (result.intent !== "meal" && result.intent !== "schedule") {
       const patientResponse = createPatientQuestionResponse(result.intent);
       setResponse(patientResponse);
       void saveQuestionEvent({
@@ -106,9 +109,16 @@ export default function PatientQuestionAssistant({
 
     try {
       setIsAnswerLoading(true);
-      const mealRecords = await fetchRecentMealRecords();
+      const context = result.intent === "meal"
+        ? {
+            mealRecords: await fetchRecentMealRecords(),
+            question: normalizedQuestion,
+          }
+        : {
+            promises: await fetchPatientQuestionSchedules(),
+          };
       const patientResponse = createPatientQuestionResponse(result.intent, {
-        mealRecord: mealRecords[0] || null,
+        ...context,
       });
       setResponse(patientResponse);
       void saveQuestionEvent({
@@ -118,7 +128,11 @@ export default function PatientQuestionAssistant({
         patientResponse,
       });
     } catch {
-      setAnswerError("식사 기록을 확인하지 못했어요. 잠시 후 다시 물어봐 주세요.");
+      setAnswerError(
+        result.intent === "meal"
+          ? "식사 기록을 확인하지 못했어요. 잠시 후 다시 물어봐 주세요."
+          : "일정을 확인하지 못했어요. 잠시 후 다시 물어봐 주세요.",
+      );
     } finally {
       setIsAnswerLoading(false);
     }
@@ -433,6 +447,21 @@ export default function PatientQuestionAssistant({
                 <h3>{response.title}</h3>
                 <p>{response.message}</p>
                 <p>{response.suggestion}</p>
+                {response.upcomingPromises?.length > 0 && (
+                  <section className="patient-question-assistant__upcoming-promises">
+                    <strong>이후 약속</strong>
+                    <ul>
+                      {response.upcomingPromises.map((promise) => (
+                        <li key={promise}>{promise}</li>
+                      ))}
+                    </ul>
+                    {response.remainingPromiseCount > 0 && (
+                      <p>
+                        그 외 예정된 약속도 {response.remainingPromiseCount}개 더 있어요.
+                      </p>
+                    )}
+                  </section>
+                )}
                 <div className="patient-question-assistant__response-actions">
                   {response.action === "register-unknown-person" && (
                     <button

@@ -12,6 +12,10 @@ export function transcribePatientQuestion({ audioBlob }) {
   });
 }
 
+export function fetchPatientQuestionSchedules() {
+  return request("/api/patient-questions/schedules/");
+}
+
 export function savePatientQuestionEvent({
   transcript,
   inputMethod,

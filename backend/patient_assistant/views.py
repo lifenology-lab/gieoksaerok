@@ -6,6 +6,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from people.services import OpenAITranscriptionError, transcribe_audio_file
+from people.models import Promise
+from people.promise_cleanup import expire_stale_promises
+from people.promise_utils import promise_sort_key
+from people.serializers import PromiseSerializer
 from records.models import ConfusionEvent
 
 from .models import PatientQuestionEvent
@@ -100,4 +104,28 @@ class PatientQuestionEventView(APIView):
         return Response(
             PatientQuestionEventSerializer(event).data,
             status=status.HTTP_201_CREATED,
+        )
+
+
+class PatientQuestionScheduleContextView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        expire_stale_promises(user=request.user)
+        promises = list(
+            Promise.objects.filter(
+                user=request.user,
+                status=Promise.STATUS_ACTIVE,
+            ).select_related('person')
+        )
+        upcoming_promises = sorted(promises, key=promise_sort_key)[:5]
+        serialized_promises = PromiseSerializer(upcoming_promises, many=True).data
+
+        for promise_data, promise in zip(serialized_promises, upcoming_promises):
+            promise_data['person_name'] = promise.person.name
+            promise_data['person_relationship'] = promise.person.relationship
+
+        return Response(
+            serialized_promises,
+            status=status.HTTP_200_OK,
         )

@@ -463,6 +463,42 @@
   background: rgba(145, 232, 214, 0.12);
 }
 
+.patient-question-assistant__upcoming-promises {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.patient-question-assistant__upcoming-promises strong {
+  color: #d9f8ee;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.patient-question-assistant__upcoming-promises ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.patient-question-assistant__upcoming-promises li,
+.patient-question-assistant__upcoming-promises p {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.patient-question-assistant__upcoming-promises p {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
 .patient-question-assistant__response button {
   min-height: 44px;
   margin-top: 2px;
