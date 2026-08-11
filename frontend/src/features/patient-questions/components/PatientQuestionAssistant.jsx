@@ -238,17 +238,22 @@ export default function PatientQuestionAssistant({
     setIsTextInputOpen(true);
   };
 
-  const handleOtherQuestion = () => {
+  const handleRestartVoiceQuestion = () => {
     if (response?.action === "register-unknown-person") {
       onDismissUnknownPersonRegistration?.();
     }
 
-    setSubmittedQuestion("");
-    setResponse(null);
-    setAnswerError("");
-    setRecordError("");
-    setQuestion("");
-    setIsWaitingForPersonRecognition(false);
+    resetAssistantState();
+    questionRecorder.startRecording();
+  };
+
+  const handleOpenTextQuestion = () => {
+    if (response?.action === "register-unknown-person") {
+      onDismissUnknownPersonRegistration?.();
+    }
+
+    resetAssistantState();
+    setIsTextInputOpen(true);
   };
 
   const handleUnknownPersonRegistration = () => {
@@ -283,7 +288,9 @@ export default function PatientQuestionAssistant({
           </div>
         </div>
 
-        <section className="patient-question-assistant__voice-input">
+        {!submittedQuestion && (
+          <>
+            <section className="patient-question-assistant__voice-input">
           <div className="patient-question-assistant__voice-actions">
             <button
               type="button"
@@ -331,21 +338,23 @@ export default function PatientQuestionAssistant({
               주변이 시끄럽거나 마이크가 어렵다면 텍스트로 질문할 수 있어요.
             </p>
           )}
-        </section>
+            </section>
 
-        <button
-          type="button"
-          className="patient-question-assistant__text-action"
-          disabled={
-            isAnswerLoading ||
-            questionRecorder.recordingStatus === "preparing" ||
-            questionRecorder.recordingStatus === "transcribing"
-          }
-          aria-expanded={isTextInputOpen}
-          onClick={handleOpenTextInput}
-        >
-          텍스트로 입력하기
-        </button>
+            <button
+              type="button"
+              className="patient-question-assistant__text-action"
+              disabled={
+                isAnswerLoading ||
+                questionRecorder.recordingStatus === "preparing" ||
+                questionRecorder.recordingStatus === "transcribing"
+              }
+              aria-expanded={isTextInputOpen}
+              onClick={handleOpenTextInput}
+            >
+              텍스트로 입력하기
+            </button>
+          </>
+        )}
 
         {!submittedQuestion && (
           <div className="patient-question-assistant__examples">
@@ -407,10 +416,24 @@ export default function PatientQuestionAssistant({
                       {response.actionLabel}
                     </button>
                   )}
-                  <button type="button" onClick={handleOtherQuestion}>
-                    다른 질문하기
+                  <button type="button" onClick={handleRestartVoiceQuestion}>
+                    다시 말하기
+                  </button>
+                  <button type="button" onClick={handleOpenTextQuestion}>
+                    텍스트로 물어보기
                   </button>
                 </div>
+              </div>
+            )}
+
+            {answerError && !response && (
+              <div className="patient-question-assistant__response-actions">
+                <button type="button" onClick={handleRestartVoiceQuestion}>
+                  다시 말하기
+                </button>
+                <button type="button" onClick={handleOpenTextQuestion}>
+                  텍스트로 물어보기
+                </button>
               </div>
             )}
           </>
