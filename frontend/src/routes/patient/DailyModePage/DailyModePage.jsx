@@ -480,6 +480,18 @@ export default function DailyModePage() {
           closeUnknownPersonDialog();
           clearRecognition();
         }}
+        onOpenMealRecords={() => {
+          setIsQuestionAssistantOpen(false);
+          nav("/patient/meal-records");
+        }}
+        onOpenMemoryOverview={(activeTab) => {
+          setIsQuestionAssistantOpen(false);
+          nav("/patient/memories", { state: { activeTab } });
+        }}
+        onOpenMemoryAlbum={(person) => {
+          setIsQuestionAssistantOpen(false);
+          handleOpenMemoryAlbum(person);
+        }}
       />
 
       <DailyModeBottomActions

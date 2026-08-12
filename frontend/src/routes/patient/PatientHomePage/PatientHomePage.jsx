@@ -39,11 +39,11 @@ function HomeIcon() {
   );
 }
 
-function HelpIcon() {
+function MemoryIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="M9.4 9.1a3 3 0 1 1 4.9 2.3c-1.1.9-2.1 1.5-2.1 3.1" />
-      <path d="M12 18.2h.01" />
+      <path d="M5.2 5.4A2.4 2.4 0 0 1 7.6 3h8.8a2.4 2.4 0 0 1 2.4 2.4v13.2a2.4 2.4 0 0 1-2.4 2.4H7.6a2.4 2.4 0 0 1-2.4-2.4Z" />
+      <path d="M8.5 8.2h7M8.5 12h7M8.5 15.8h4.2" />
     </svg>
   );
 }
@@ -57,10 +57,10 @@ const ACTION_CARDS = [
     tone: "daily",
   },
   {
-    to: "/patient/confusion",
-    title: "잘 모르겠어요",
-    description: "헷갈리는 것을 도와드려요",
-    icon: <HelpIcon />,
+    to: "/patient/memories",
+    title: "기억 살펴보기",
+    description: "오늘의 기록과 추억을 함께 봐요",
+    icon: <MemoryIcon />,
     tone: "help",
   },
 ];

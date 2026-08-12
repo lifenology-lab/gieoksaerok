@@ -12,6 +12,7 @@ import ConfusionSelectPage from "./routes/patient/ConfusionSelectPage/ConfusionS
 import ConfusionReportPage from "./routes/patient/ConfusionReportPage/ConfusionReportPage";
 import MealRecordsPage from "./routes/patient/MealRecordsPage/MealRecordsPage";
 import MemoryAlbumPage from "./routes/patient/MemoryAlbumPage/MemoryAlbumPage";
+import MemoryOverviewPage from "./routes/patient/MemoryOverviewPage/MemoryOverviewPage";
 import LandingPage from "./routes/LandingPage/LandingPage";
 import InstallGuidePage from "./routes/InstallGuidePage/InstallGuidePage";
 import LandscapeGuard from "./shared/layout/LandScapeGuard";
@@ -49,12 +50,12 @@ function App() {
             element={protectedPage(<ConfusionSelectPage />)}
           ></Route>
           <Route
-            path="/patient/confusion/report"
-            element={protectedPage(<ConfusionReportPage />)}
-          ></Route>
-          <Route
             path="/patient/meal-records"
             element={protectedPage(<MealRecordsPage />)}
+          ></Route>
+          <Route
+            path="/patient/memories"
+            element={protectedPage(<MemoryOverviewPage />)}
           ></Route>
           <Route
             path="/patient/memory-album/:personId"

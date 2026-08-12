@@ -8,7 +8,11 @@ from rest_framework.views import APIView
 from people.services import OpenAITranscriptionError, transcribe_audio_file
 from people.models import Promise
 from people.promise_cleanup import expire_stale_promises
-from people.promise_utils import promise_sort_key
+from people.promise_utils import (
+    get_local_reference_date,
+    get_promise_local_datetime,
+    promise_sort_key,
+)
 from people.serializers import PromiseSerializer
 from records.models import ConfusionEvent
 
@@ -161,5 +165,58 @@ class PatientQuestionScheduleContextView(APIView):
 
         return Response(
             serialized_promises,
+            status=status.HTTP_200_OK,
+        )
+
+
+class PatientMemoryScheduleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        expire_stale_promises(user=user)
+        promises = list(
+            Promise.objects.filter(user=user).exclude(
+                status=Promise.STATUS_CANCELLED,
+            ).select_related('person'),
+        )
+        today = get_local_reference_date()
+        grouped_promises = {
+            'past': [],
+            'today': [],
+            'upcoming': [],
+        }
+
+        for promise in promises:
+            promise_datetime = get_promise_local_datetime(promise)
+
+            if not promise_datetime:
+                continue
+
+            if promise_datetime.date() < today:
+                grouped_promises['past'].append(promise)
+            elif promise_datetime.date() == today:
+                grouped_promises['today'].append(promise)
+            else:
+                grouped_promises['upcoming'].append(promise)
+
+        grouped_promises['past'].sort(key=promise_sort_key, reverse=True)
+        grouped_promises['today'].sort(key=promise_sort_key)
+        grouped_promises['upcoming'].sort(key=promise_sort_key)
+
+        def serialize_group(items):
+            serialized_items = PromiseSerializer(items, many=True).data
+
+            for promise_data, promise in zip(serialized_items, items):
+                promise_data['person_name'] = promise.person.name
+                promise_data['person_relationship'] = promise.person.relationship
+
+            return serialized_items
+
+        return Response(
+            {
+                group_name: serialize_group(items)
+                for group_name, items in grouped_promises.items()
+            },
             status=status.HTTP_200_OK,
         )
