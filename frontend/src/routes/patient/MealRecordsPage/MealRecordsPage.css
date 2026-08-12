@@ -173,6 +173,119 @@
   object-fit: cover;
 }
 
+.meal-records-page__scene-image-button {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.meal-records-page__scene-image-button:focus-visible {
+  outline: 3px solid #b3f5e6;
+  outline-offset: 3px;
+}
+
+.meal-records-page__scene-image-dialog {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 16, 13, 0.3);
+}
+
+.meal-records-page__scene-image-dialog-card {
+  position: relative;
+  width: min(520px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
+  color: white;
+  background: rgba(30, 52, 44, 0.84);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.meal-records-page__scene-image-dialog-card h2,
+.meal-records-page__scene-image-dialog-card p {
+  margin: 0;
+}
+
+.meal-records-page__scene-image-dialog-card h2 {
+  font-size: 23px;
+  font-weight: 900;
+  color: white;
+}
+
+.meal-records-page__scene-image-dialog-card > img {
+  width: 100%;
+  max-height: min(48dvh, 360px);
+  border-radius: 16px;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.meal-records-page__scene-image-dialog-card > p {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.meal-records-page__scene-image-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  color: white;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.meal-records-page__scene-image-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.meal-records-page__scene-image-actions button {
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 14px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.meal-records-page__scene-image-actions button:last-child {
+  border-color: rgba(255, 155, 165, 0.76);
+  color: #ffd4d9;
+  background: rgba(153, 39, 54, 0.3);
+}
+
+.meal-records-page__scene-image-actions button:disabled,
+.meal-records-page__scene-image-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.meal-records-page__scene-image-error {
+  color: #ffd4d9 !important;
+}
+
 .meal-records-page__list strong {
   color: white;
   font-size: 23px;

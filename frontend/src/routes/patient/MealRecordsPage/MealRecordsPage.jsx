@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { fetchMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
+import {
+  deleteMealRecordSceneImage,
+  fetchMealRecords,
+} from "@/features/meal-recognition/api/mealRecognitionApi";
 import { getApiMediaUrl } from "@/shared/api/client";
 
 import "./MealRecordsPage.css";
@@ -51,6 +54,9 @@ export default function MealRecordsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
+  const [selectedMealRecord, setSelectedMealRecord] = useState(null);
+  const [isDeletingSceneImage, setIsDeletingSceneImage] = useState(false);
+  const [sceneImageError, setSceneImageError] = useState("");
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -61,6 +67,31 @@ export default function MealRecordsPage() {
       window.clearInterval(intervalId);
     };
   }, []);
+
+  const handleDeleteSceneImage = async () => {
+    if (!selectedMealRecord || isDeletingSceneImage) {
+      return;
+    }
+
+    try {
+      setIsDeletingSceneImage(true);
+      setSceneImageError("");
+      const updatedMealRecord = await deleteMealRecordSceneImage(
+        selectedMealRecord.id,
+      );
+
+      setMealRecords((records) =>
+        records.map((record) =>
+          record.id === updatedMealRecord.id ? updatedMealRecord : record,
+        ),
+      );
+      setSelectedMealRecord(null);
+    } catch {
+      setSceneImageError("사진을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsDeletingSceneImage(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -130,11 +161,21 @@ export default function MealRecordsPage() {
             {mealRecords.map((mealRecord) => (
               <li key={mealRecord.id}>
                 {mealRecord.sceneImage && (
+                  <button
+                    type="button"
+                    className="meal-records-page__scene-image-button"
+                    onClick={() => {
+                      setSelectedMealRecord(mealRecord);
+                      setSceneImageError("");
+                    }}
+                    aria-label={`${mealRecord.mealLabel} 식사 사진 크게 보기`}
+                  >
                   <img
                     className="meal-records-page__scene-image"
                     src={getApiMediaUrl(mealRecord.sceneImage)}
-                    alt={`${mealRecord.mealLabel} 식사 당시 사진`}
+                    alt={`${mealRecord.mealLabel} 식사 사진`}
                   />
+                  </button>
                 )}
                 <div className="meal-records-page__record-details">
                   <strong>{mealRecord.mealLabel}</strong>
@@ -149,6 +190,37 @@ export default function MealRecordsPage() {
           </ul>
         )}
       </section>
+
+      {selectedMealRecord?.sceneImage && (
+        <section className="meal-records-page__scene-image-dialog" role="dialog" aria-modal="true" aria-labelledby="meal-scene-image-title">
+          <div className="meal-records-page__scene-image-dialog-card">
+            <button
+              type="button"
+              className="meal-records-page__scene-image-close"
+              aria-label="식사 사진 닫기"
+              onClick={() => setSelectedMealRecord(null)}
+              disabled={isDeletingSceneImage}
+            >
+              ×
+            </button>
+            <h2 id="meal-scene-image-title">식사 사진</h2>
+            <img
+              src={getApiMediaUrl(selectedMealRecord.sceneImage)}
+              alt={`${selectedMealRecord.mealLabel} 식사 사진`}
+            />
+            <p>사진만 삭제되고 식사 기록은 그대로 남아요.</p>
+            {sceneImageError && <p className="meal-records-page__scene-image-error" role="alert">{sceneImageError}</p>}
+            <div className="meal-records-page__scene-image-actions">
+              <button type="button" onClick={() => setSelectedMealRecord(null)} disabled={isDeletingSceneImage}>
+                닫기
+              </button>
+              <button type="button" onClick={handleDeleteSceneImage} disabled={isDeletingSceneImage}>
+                {isDeletingSceneImage ? "삭제 중" : "사진 삭제"}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       <nav className="meal-records-page__navigation" aria-label="페이지 이동">
         <button type="button" onClick={() => navigate("/patient/daily")}>

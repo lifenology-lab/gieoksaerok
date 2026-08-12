@@ -54,6 +54,15 @@ export async function createMealRecord({
   return mapMealRecordFromApi(mealRecord);
 }
 
+export async function deleteMealRecordSceneImage(mealRecordId) {
+  const mealRecord = await request(
+    `/api/meal-records/${mealRecordId}/scene-image/`,
+    { method: "DELETE" },
+  );
+
+  return mapMealRecordFromApi(mealRecord);
+}
+
 // 식사 상황이 보이는 source (video)와 식사 기록들을 받아서
 // 식사 상황인지 추론하고 최근 식사 기록 유무에 따른 object를 리턴
 export async function detectMealScene(srcElement, mealRecords = []) {
