@@ -1,0 +1,289 @@
+.caregiver-home-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #53655d;
+  color: white;
+  z-index: 100;
+}
+
+.caregiver-home-page__background {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #4c6159 0%, #63766b 52%, #44544f 100%);
+}
+
+.caregiver-home-page__background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 44%),
+    linear-gradient(0deg, rgba(36, 47, 43, 0.28), transparent 52%);
+}
+
+.caregiver-home-page__header {
+  position: absolute;
+  top: 42px;
+  left: 42px;
+  z-index: 12;
+  text-align: left;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.36);
+}
+
+.caregiver-home-page__header p {
+  margin: 0;
+  color: #91e8d6;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.caregiver-home-page__header h1 {
+  margin: 10px 0 0;
+  color: white;
+  font-size: 35px;
+  line-height: 1.08;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.caregiver-home-page__back-button {
+  position: absolute;
+  left: 42px;
+  bottom: 34px;
+  z-index: 12;
+  min-width: 132px;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  padding: 0 22px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 12px 30px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-decoration: none;
+}
+
+.caregiver-home-page__back-button:hover,
+.caregiver-home-page__back-button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.caregiver-home-page__actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 12;
+  width: min(644px, calc(100vw - 84px));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  transform: translate(-50%, -50%);
+}
+
+.caregiver-home-page__card {
+  min-height: clamp(128px, 22svh, 175px);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 22px;
+  padding: 22px 20px;
+  color: white;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 22px 60px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  text-align: center;
+  text-decoration: none;
+}
+
+.caregiver-home-page__card:hover,
+.caregiver-home-page__card:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.caregiver-home-page__card-icon {
+  width: 73px;
+  height: 73px;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgba(160, 235, 215, 0.82);
+  border-radius: 50%;
+  color: #a4f0df;
+  background: rgba(160, 235, 215, 0.18);
+  box-shadow: 0 0 30px rgba(160, 235, 215, 0.2);
+}
+
+.caregiver-home-page__card[data-tone="memory"] .caregiver-home-page__card-icon {
+  border-color: rgba(255, 209, 95, 0.86);
+  color: #ffd15f;
+  background: rgba(255, 209, 95, 0.16);
+  box-shadow: 0 0 30px rgba(255, 209, 95, 0.18);
+}
+
+.caregiver-home-page__card-icon svg {
+  width: 36px;
+  height: 36px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.caregiver-home-page__card strong {
+  color: white;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.caregiver-home-page__card > span:last-child {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+@media (max-width: 920px) {
+  .caregiver-home-page__header {
+    top: 24px;
+    left: 22px;
+  }
+
+  .caregiver-home-page__header p {
+    font-size: 16px;
+  }
+
+  .caregiver-home-page__header h1 {
+    font-size: 31px;
+  }
+
+  .caregiver-home-page__back-button {
+    left: 22px;
+    bottom: 24px;
+    min-width: 120px;
+    min-height: 48px;
+    padding: 0 18px;
+    font-size: 16px;
+  }
+
+  .caregiver-home-page__actions {
+    width: min(560px, calc(100vw - 44px));
+    gap: 14px;
+  }
+
+  .caregiver-home-page__card {
+    min-height: clamp(112px, 20svh, 153px);
+    border-radius: 18px;
+    padding: 18px 16px;
+  }
+
+  .caregiver-home-page__card-icon {
+    width: 59px;
+    height: 59px;
+  }
+
+  .caregiver-home-page__card-icon svg {
+    width: 29px;
+    height: 29px;
+  }
+
+  .caregiver-home-page__card strong {
+    font-size: 21px;
+  }
+
+  .caregiver-home-page__card > span:last-child {
+    font-size: 13px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .caregiver-home-page {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  .caregiver-home-page__header {
+    top: max(12px, env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+  }
+
+  .caregiver-home-page__header p {
+    font-size: 13px;
+  }
+
+  .caregiver-home-page__header h1 {
+    margin-top: 6px;
+    font-size: 24px;
+  }
+
+  .caregiver-home-page__actions {
+    width: min(46vw, 420px);
+    gap: 12px;
+  }
+
+  .caregiver-home-page__card {
+    min-height: min(34dvh, 122px);
+    gap: 6px;
+    border-radius: 16px;
+    padding: 12px;
+  }
+
+  .caregiver-home-page__card-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .caregiver-home-page__card-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .caregiver-home-page__card strong {
+    font-size: 17px;
+  }
+
+  .caregiver-home-page__card > span:last-child {
+    font-size: 12px;
+  }
+
+  .caregiver-home-page__back-button {
+    left: max(18px, env(safe-area-inset-left));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    min-width: 110px;
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) and (orientation: portrait) {
+  .caregiver-home-page__actions {
+    width: min(360px, calc(100vw - 32px));
+    grid-template-columns: 1fr;
+  }
+}
