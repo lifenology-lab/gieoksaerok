@@ -153,6 +153,7 @@ export default function DailyModePage() {
     window.sessionStorage.removeItem(DAILY_MODE_RETURN_RECOGNITION_KEY);
     startPersonRecognition();
   }, [startPersonRecognition]);
+
   const isMealRecognitionActive = activeRecognitionType === "meal";
 
   useEffect(() => {
@@ -479,6 +480,18 @@ export default function DailyModePage() {
         onDismissUnknownPersonRegistration={() => {
           closeUnknownPersonDialog();
           clearRecognition();
+        }}
+        onOpenMealRecords={() => {
+          setIsQuestionAssistantOpen(false);
+          nav("/patient/meal-records");
+        }}
+        onOpenMemoryOverview={(activeTab) => {
+          setIsQuestionAssistantOpen(false);
+          nav("/patient/memories", { state: { activeTab } });
+        }}
+        onOpenMemoryAlbum={(person) => {
+          setIsQuestionAssistantOpen(false);
+          handleOpenMemoryAlbum(person);
         }}
       />
 

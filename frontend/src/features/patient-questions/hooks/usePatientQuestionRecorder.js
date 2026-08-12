@@ -43,7 +43,10 @@ function getMicrophoneErrorMessage(error) {
   return '마이크를 시작하지 못했어요. 텍스트로 질문할 수도 있어요.';
 }
 
-export default function usePatientQuestionRecorder({ onTranscript }) {
+export default function usePatientQuestionRecorder({
+  onTranscript,
+  processAudio,
+}) {
   const [recordingStatus, setRecordingStatus] = useState("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -58,6 +61,16 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
   const hasDetectedSpeechRef = useRef(false);
   const lastVoiceDetectedAtRef = useRef(0);
   const isAutoStoppingRef = useRef(false);
+  const onTranscriptRef = useRef(onTranscript);
+  const processAudioRef = useRef(processAudio);
+
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript;
+  }, [onTranscript]);
+
+  useEffect(() => {
+    processAudioRef.current = processAudio;
+  }, [processAudio]);
 
   const cleanupVoiceActivityDetection = useCallback(() => {
     const resources = voiceActivityResourcesRef.current;
@@ -222,13 +235,27 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
         cleanupRecording();
       });
 
-      mediaRecorder.start();
+      await new Promise((resolve, reject) => {
+        mediaRecorder.addEventListener("start", resolve, { once: true });
+        mediaRecorder.addEventListener(
+          "error",
+          () => reject(new Error("녹음을 시작하지 못했어요.")),
+          { once: true },
+        );
+        mediaRecorder.start();
+      });
+
+      if (recordingAttemptRef.current !== recordingAttempt) {
+        mediaRecorder.stop();
+        return;
+      }
+
       startVoiceActivityDetection(stream);
       timeoutRef.current = window.setTimeout(() => {
         stopRecordingRef.current?.();
       }, MAX_RECORDING_MS);
       setRecordingStatus("recording");
-      setStatusMessage("듣고 있어요. 말씀해 주세요.");
+      setStatusMessage("마이크가 켜졌어요. 이제 말씀해 주세요.");
     } catch (error) {
       if (recordingAttemptRef.current !== recordingAttempt) {
         return;
@@ -294,14 +321,18 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
         throw new Error("녹음된 내용이 없어요. 다시 말씀해 주세요.");
       }
 
-      const result = await transcribePatientQuestion({ audioBlob });
-      const transcript = result?.transcript?.trim();
+      if (processAudioRef.current) {
+        await processAudioRef.current({ audioBlob });
+      } else {
+        const result = await transcribePatientQuestion({ audioBlob });
+        const transcript = result?.transcript?.trim();
 
-      if (!transcript) {
-        throw new Error("말씀하신 내용을 확인하지 못했어요. 다시 말씀해 주세요.");
+        if (!transcript) {
+          throw new Error("말씀하신 내용을 확인하지 못했어요. 다시 말씀해 주세요.");
+        }
+
+        await onTranscriptRef.current(transcript);
       }
-
-      await onTranscript(transcript);
       setRecordingStatus("idle");
       setStatusMessage("");
     } catch (error) {
@@ -309,7 +340,7 @@ export default function usePatientQuestionRecorder({ onTranscript }) {
       setRecordingStatus("error");
       setErrorMessage(error?.message || "음성 질문을 처리하지 못했어요.");
     }
-  }, [cleanupRecording, onTranscript]);
+  }, [cleanupRecording]);
 
   useEffect(() => {
     stopRecordingRef.current = stopRecording;

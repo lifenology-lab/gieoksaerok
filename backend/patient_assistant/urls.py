@@ -5,6 +5,8 @@ from .views import (
     PatientQuestionEventView,
     PatientQuestionScheduleContextView,
     PatientQuestionTranscriptionView,
+    PatientMemoryScheduleView,
+    MemoryReflectionAudioView,
 )
 
 
@@ -28,5 +30,15 @@ urlpatterns = [
         'patient-questions/schedules/',
         PatientQuestionScheduleContextView.as_view(),
         name='patient-question-schedule-context',
+    ),
+    path(
+        'patient-memory/schedules/',
+        PatientMemoryScheduleView.as_view(),
+        name='patient-memory-schedules',
+    ),
+    path(
+        'patient-memory/reflections/audio/',
+        MemoryReflectionAudioView.as_view(),
+        name='memory-reflection-audio',
     ),
 ]

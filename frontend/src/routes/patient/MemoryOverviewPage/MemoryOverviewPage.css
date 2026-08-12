@@ -1,0 +1,845 @@
+.memory-overview-page {
+  position: relative;
+  width: 100vw;
+  min-height: 100svh;
+  overflow-x: hidden;
+  color: white;
+  background: #53655d;
+  z-index: 100;
+}
+
+.memory-overview-page__background {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #4c6159 0%, #63766b 52%, #44544f 100%);
+}
+
+.memory-overview-page__background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 42%),
+    linear-gradient(0deg, rgba(36, 47, 43, 0.34), transparent 48%);
+}
+
+.memory-overview-page__header,
+.memory-overview-page__intro,
+.memory-overview-page__tabs,
+.memory-overview-page__content {
+  position: relative;
+  z-index: 1;
+  width: min(760px, calc(100vw - 84px));
+  margin: 0 auto;
+}
+
+.memory-overview-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-top: 42px;
+}
+
+.memory-overview-page__date-time {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.42);
+}
+
+.memory-overview-page__date-time p,
+.memory-overview-page__date-time strong,
+.memory-overview-page__intro h1,
+.memory-overview-page__intro p,
+.memory-overview-page__section-heading h2,
+.memory-overview-page__section-heading p,
+.memory-overview-page__today-time p,
+.memory-overview-page__reflection-list h3,
+.memory-overview-page__reflection-list p,
+.memory-overview-page__meal-list p,
+.memory-overview-page__schedule-list p,
+.memory-overview-page__people-list p {
+  margin: 0;
+}
+
+.memory-overview-page__date-time p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.memory-overview-page__date-time strong {
+  color: white;
+  font-size: 35px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.memory-overview-page__date-time span {
+  width: 47px;
+  height: 2px;
+  border-radius: 999px;
+  background: #91e8d6;
+  box-shadow: 0 0 16px rgba(145, 232, 214, 0.58);
+}
+
+.memory-overview-page__header > button,
+.memory-overview-page__view-all-button,
+.memory-overview-page__reflection-list button,
+.memory-overview-page__people-list button {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  color: white;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__header > button {
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+.memory-overview-page__intro {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  margin-top: 42px;
+  text-align: left;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.42);
+}
+
+.memory-overview-page__intro > span {
+  width: 4px;
+  min-height: 69px;
+  border-radius: 999px;
+  background: #91e8d6;
+  box-shadow: 0 0 18px rgba(145, 232, 214, 0.56);
+}
+
+.memory-overview-page__intro h1 {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.12;
+  color: white;
+}
+
+.memory-overview-page__intro p {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.memory-overview-page__tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 28px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.memory-overview-page__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.memory-overview-page__tabs button {
+  min-height: 43px;
+  flex: 0 0 auto;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(22, 39, 33, 0.22);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.memory-overview-page__tabs button.is-active {
+  border-color: #b8fff0;
+  color: #153e34;
+  background: #a4f0df;
+  box-shadow: 0 8px 22px rgba(9, 38, 29, 0.22);
+}
+
+.memory-overview-page__content {
+  margin-top: 20px;
+  padding-bottom: 42px;
+  box-sizing: border-box;
+}
+
+.memory-overview-page__panel,
+.memory-overview-page__calendar-panel,
+.memory-overview-page__timeline-panel,
+.memory-overview-page__notice {
+  box-sizing: border-box;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 22px 60px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.memory-overview-page__notice {
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.memory-overview-page__notice.is-warning {
+  border-color: rgba(255, 219, 142, 0.58);
+  color: #ffe4a8;
+}
+
+.memory-overview-page__panel {
+  display: grid;
+  gap: 20px;
+  text-align: left;
+}
+
+.memory-overview-page__calendar-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.memory-overview-page__calendar-panel,
+.memory-overview-page__timeline-panel {
+  box-sizing: border-box;
+}
+
+.memory-overview-page__calendar-panel {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.memory-overview-page__timeline-panel {
+  min-height: 172px;
+  padding: 20px;
+}
+
+.memory-overview-page__today-time {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 17px;
+  background: rgba(24, 64, 53, 0.48);
+}
+
+.memory-overview-page__today-time span,
+.memory-overview-page__today-time p,
+.memory-overview-page__section-heading p {
+  color: rgba(255, 255, 255, 0.83);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.memory-overview-page__today-time strong {
+  color: #d8fff5;
+  font-size: 23px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.memory-overview-page__section-heading h2 {
+  color: white;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.memory-overview-page__section-heading p {
+  margin-top: 7px;
+}
+
+.memory-overview-page__reflection-list,
+.memory-overview-page__meal-list,
+.memory-overview-page__schedule-list,
+.memory-overview-page__people-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-overview-page__summary-list {
+  display: grid;
+  gap: 8px;
+  margin: -8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-overview-page__summary-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: rgba(18, 52, 42, 0.24);
+}
+
+.memory-overview-page__summary-list strong {
+  color: white;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.memory-overview-page__summary-list span {
+  color: #c7f8ec;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.memory-overview-page__summary-empty {
+  margin: -8px 0 0;
+  padding: 13px 15px;
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(18, 52, 42, 0.18);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.memory-overview-page__summary-link {
+  justify-self: start;
+  min-height: 37px;
+  margin-top: -10px;
+  padding: 0 4px;
+  border: 0;
+  color: #b8fff0;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.memory-overview-page__today-memories {
+  display: grid;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.memory-overview-page__calendar-actions {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  gap: 8px;
+  align-items: center;
+}
+
+.memory-overview-page__calendar-actions button {
+  min-height: 39px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(18, 52, 42, 0.26);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__calendar-actions strong {
+  color: white;
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.memory-overview-page__calendar-actions button {
+  font-size: 27px;
+  line-height: 1;
+}
+
+.memory-overview-page__calendar-weekdays,
+.memory-overview-page__calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.memory-overview-page__calendar-weekdays {
+  gap: 6px;
+}
+
+.memory-overview-page__calendar-weekdays span {
+  color: rgba(255, 255, 255, 0.67);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.memory-overview-page__calendar-days {
+  gap: 6px;
+}
+
+.memory-overview-page__calendar-days button {
+  min-height: 43px;
+  padding: 4px 2px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 13px;
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(18, 52, 42, 0.22);
+  font: inherit;
+  cursor: pointer;
+}
+
+.memory-overview-page__calendar-days span {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.memory-overview-page__calendar-days button.is-selected {
+  border-color: #b8fff0;
+  color: #153e34;
+  background: #a4f0df;
+  box-shadow: 0 8px 18px rgba(6, 43, 32, 0.24);
+}
+
+.memory-overview-page__timeline {
+  display: grid;
+  gap: 12px;
+}
+
+.memory-overview-page__timeline h3 {
+  margin: 0;
+  color: #d8fff5;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.memory-overview-page__timeline ul {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-overview-page__timeline li {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 11px;
+  align-items: stretch;
+}
+
+.memory-overview-page__timeline li > time {
+  padding-top: 14px;
+  color: #bdf7ea;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.memory-overview-page__timeline li > div {
+  display: grid;
+  gap: 4px;
+  padding: 13px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 15px;
+  background: rgba(18, 52, 42, 0.26);
+}
+
+.memory-overview-page__timeline li > div > span {
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #d8fff5;
+  background: rgba(114, 222, 194, 0.18);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.memory-overview-page__timeline li[data-type="schedule"] > div > span {
+  color: #d7ecff;
+  background: rgba(102, 182, 232, 0.2);
+}
+
+.memory-overview-page__timeline li[data-type="memory"] > div > span {
+  color: #ffe9b2;
+  background: rgba(255, 192, 83, 0.18);
+}
+
+.memory-overview-page__timeline li strong {
+  color: white;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.memory-overview-page__timeline li p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.memory-overview-page__reflection-list article,
+.memory-overview-page__reflection-card,
+.memory-overview-page__meal-list li,
+.memory-overview-page__schedule-list li,
+.memory-overview-page__people-list li,
+.memory-overview-page__empty {
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 17px;
+  background: rgba(18, 52, 42, 0.28);
+}
+
+.memory-overview-page__reflection-list article {
+  display: grid;
+  gap: 9px;
+  padding: 18px;
+}
+
+.memory-overview-page__reflection-card {
+  display: grid;
+  gap: 9px;
+  padding: 18px;
+}
+
+.memory-overview-page__reflection-list h3 {
+  color: white;
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.32;
+}
+
+.memory-overview-page__reflection-card h3,
+.memory-overview-page__schedule-groups h3 {
+  margin: 0;
+  color: white;
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.32;
+}
+
+.memory-overview-page__reflection-list p,
+.memory-overview-page__reflection-card p,
+.memory-overview-page__meal-list p,
+.memory-overview-page__schedule-list p,
+.memory-overview-page__people-list p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.memory-overview-page__reflection-list button,
+.memory-overview-page__reflection-card button,
+.memory-overview-page__people-list button {
+  min-height: 39px;
+  justify-self: start;
+  padding: 0 14px;
+}
+
+.memory-overview-page__reflection-card button {
+  min-height: 39px;
+  justify-self: start;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  color: white;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__meal-list li {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding: 14px;
+}
+
+.memory-overview-page__meal-list img,
+.memory-overview-page__meal-list li > span {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 auto;
+  border-radius: 13px;
+  object-fit: cover;
+}
+
+.memory-overview-page__meal-list li > span {
+  display: grid;
+  place-items: center;
+  color: #d8fff5;
+  background: rgba(110, 205, 180, 0.2);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.memory-overview-page__meal-list li > div {
+  display: grid;
+  gap: 4px;
+}
+
+.memory-overview-page__meal-list strong,
+.memory-overview-page__schedule-list strong,
+.memory-overview-page__people-list strong {
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.memory-overview-page__meal-list time,
+.memory-overview-page__schedule-list time {
+  color: #bdf7ea;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.memory-overview-page__schedule-list li,
+.memory-overview-page__people-list li {
+  display: grid;
+  gap: 5px;
+  padding: 17px;
+}
+
+.memory-overview-page__schedule-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.memory-overview-page__schedule-groups > section {
+  display: grid;
+  gap: 10px;
+}
+
+.memory-overview-page__schedule-groups > section + section {
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.memory-overview-page__schedule-empty {
+  margin: 0;
+  padding: 14px;
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(18, 52, 42, 0.18);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.memory-overview-page__people-list li {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.memory-overview-page__people-list li > div {
+  display: grid;
+  gap: 5px;
+}
+
+.memory-overview-page__empty {
+  margin: 0;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.memory-overview-page__view-all-button {
+  min-height: 49px;
+  padding: 0 20px;
+  border-color: #b8fff0;
+  color: #153e34;
+  background: #a4f0df;
+}
+
+.memory-overview-page__reflection-photo-card {
+  display: grid;
+  gap: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 19px;
+  background: rgba(18, 52, 42, 0.28);
+}
+
+.memory-overview-page__reflection-photo-card > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: rgba(105, 198, 174, 0.2);
+}
+
+.memory-overview-page__reflection-photo-card > div:not(.memory-overview-page__reflection-actions) {
+  display: grid;
+  gap: 10px;
+  padding: 0 18px;
+}
+
+.memory-overview-page__reflection-photo-card h3,
+.memory-overview-page__people-shortcuts h3 {
+  margin: 0;
+  color: white;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.memory-overview-page__reflection-photo-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.memory-overview-page__hint-button {
+  justify-self: start;
+  min-height: 38px;
+  padding: 0 4px;
+  border: 0;
+  color: #b8fff0;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 9px;
+  padding: 0 18px 18px;
+}
+
+.memory-overview-page__reflection-actions button,
+.memory-overview-page__people-shortcuts button {
+  min-height: 45px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 13px;
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-actions button:first-child {
+  border-color: #b8fff0;
+  color: #153e34;
+  background: #a4f0df;
+}
+
+.memory-overview-page__people-shortcuts {
+  display: grid;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.memory-overview-page__people-shortcuts > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memory-overview-page__people-shortcuts button {
+  min-height: 39px;
+  padding: 0 13px;
+  border-radius: 999px;
+}
+
+.memory-overview-page__header > button:hover,
+.memory-overview-page__header > button:focus-visible,
+.memory-overview-page__reflection-list button:hover,
+.memory-overview-page__reflection-list button:focus-visible,
+.memory-overview-page__reflection-card button:hover,
+.memory-overview-page__reflection-card button:focus-visible,
+.memory-overview-page__people-list button:hover,
+.memory-overview-page__people-list button:focus-visible {
+  border-color: #b8fff0;
+  background: rgba(164, 240, 223, 0.28);
+  outline: none;
+}
+
+@media (max-width: 680px) {
+  .memory-overview-page__header,
+  .memory-overview-page__intro,
+  .memory-overview-page__tabs,
+  .memory-overview-page__content {
+    width: min(100% - 32px, 760px);
+  }
+
+  .memory-overview-page__header {
+    padding-top: 26px;
+  }
+
+  .memory-overview-page__date-time p {
+    font-size: 15px;
+  }
+
+  .memory-overview-page__date-time strong {
+    font-size: 27px;
+  }
+
+  .memory-overview-page__intro {
+    margin-top: 29px;
+    gap: 14px;
+  }
+
+  .memory-overview-page__intro h1 {
+    font-size: 28px;
+  }
+
+  .memory-overview-page__intro p {
+    font-size: 16px;
+  }
+
+  .memory-overview-page__panel {
+    padding: 16px;
+  }
+
+  .memory-overview-page__calendar-panel,
+  .memory-overview-page__timeline-panel {
+    padding: 16px;
+  }
+
+  .memory-overview-page__calendar-days {
+    gap: 4px;
+  }
+
+  .memory-overview-page__calendar-days button {
+    min-height: 40px;
+  }
+
+  .memory-overview-page__timeline li {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .memory-overview-page__reflection-actions {
+    grid-template-columns: 1fr;
+  }
+}

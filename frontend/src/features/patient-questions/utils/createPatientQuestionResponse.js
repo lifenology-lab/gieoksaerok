@@ -70,6 +70,9 @@ function createPersonResponse(person, isUnknownPerson) {
     title: "앞에 계신 분을 찾았어요",
     message: `앞에 계신 분은 ${personLabel}이에요.`,
     suggestion: memoryHint || "천천히 인사를 건네 보셔도 괜찮아요.",
+    action: "open-person-memory",
+    actionLabel: "추억 살펴보기",
+    person,
   };
 }
 
@@ -136,6 +139,9 @@ function createMealResponse(mealRecords, question) {
         ? `오늘 기록에서 ${mealLabel} 식사를 찾지 못했어요.`
         : "아직 남겨진 식사 기록을 찾지 못했어요.",
       suggestion: "식사를 하셨다면 다음에 식사 기록을 남겨둘 수 있어요.",
+      action: "open-memory-overview",
+      actionLabel: "기억 살펴보기",
+      overviewTab: "calendar",
     };
   }
 
@@ -156,6 +162,8 @@ function createMealResponse(mealRecords, question) {
       : "가장 최근 식사 기록이에요",
     message: `${formatMealRecordTime(mealRecord.eatenAt)}에 ${mealDetails.join(" · ")} 기록이 있어요.`,
     suggestion: mealRecord.memo || todayRecordMessage,
+    action: "open-meal-records",
+    actionLabel: "식사 기록 보기",
   };
 }
 
@@ -214,6 +222,9 @@ function createScheduleResponse(promises) {
       title: "예정된 약속이 없어요",
       message: "지금 확인할 수 있는 약속이나 할 일이 없어요.",
       suggestion: "새 약속이 생기면 기억새록에 남겨둘 수 있어요.",
+      action: "open-memory-overview",
+      actionLabel: "기억 살펴보기",
+      overviewTab: "calendar",
     };
   }
 
@@ -242,6 +253,9 @@ function createScheduleResponse(promises) {
     suggestion: promiseDescription || "천천히 준비해도 괜찮아요.",
     upcomingPromises,
     remainingPromiseCount,
+    action: "open-memory-overview",
+    actionLabel: "기억 살펴보기",
+    overviewTab: "calendar",
   };
 }
 

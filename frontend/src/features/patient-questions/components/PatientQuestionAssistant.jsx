@@ -28,6 +28,9 @@ export default function PatientQuestionAssistant({
   onRequestPersonRecognition,
   onRegisterUnknownPerson,
   onDismissUnknownPersonRegistration,
+  onOpenMealRecords,
+  onOpenMemoryOverview,
+  onOpenMemoryAlbum,
 }) {
   const [question, setQuestion] = useState("");
   const [submittedQuestion, setSubmittedQuestion] = useState("");
@@ -318,6 +321,32 @@ export default function PatientQuestionAssistant({
     onRegisterUnknownPerson?.();
   };
 
+  const handleResponseContextAction = () => {
+    if (!response?.action) {
+      return;
+    }
+
+    if (response.action === "open-meal-records") {
+      questionRecorder.cancelRecording();
+      resetAssistantState();
+      onOpenMealRecords?.();
+      return;
+    }
+
+    if (response.action === "open-memory-overview") {
+      questionRecorder.cancelRecording();
+      resetAssistantState();
+      onOpenMemoryOverview?.(response.overviewTab);
+      return;
+    }
+
+    if (response.action === "open-person-memory" && response.person?.id) {
+      questionRecorder.cancelRecording();
+      resetAssistantState();
+      onOpenMemoryAlbum?.(response.person);
+    }
+  };
+
   return (
     <section
       className="patient-question-assistant"
@@ -498,6 +527,15 @@ export default function PatientQuestionAssistant({
                       type="button"
                       className="patient-question-assistant__response-primary-action"
                       onClick={handleUnknownPersonRegistration}
+                    >
+                      {response.actionLabel}
+                    </button>
+                  )}
+                  {response.action && response.action !== "register-unknown-person" && (
+                    <button
+                      type="button"
+                      className="patient-question-assistant__response-primary-action"
+                      onClick={handleResponseContextAction}
                     >
                       {response.actionLabel}
                     </button>
