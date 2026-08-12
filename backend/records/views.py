@@ -92,6 +92,28 @@ class MealRecordSceneImageView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
+class MealRecordDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        operation_id="식사 기록 삭제",
+        description="현재 사용자의 식사 기록과 연결된 사진을 함께 삭제합니다.",
+        responses={204: None, 404: "Not Found", 401: "Unauthorized"},
+    )
+    def delete(self, request, meal_record_id):
+        meal_record = get_object_or_404(
+            MealRecord,
+            id=meal_record_id,
+            user=request.user,
+        )
+
+        if meal_record.scene_image:
+            meal_record.scene_image.delete(save=False)
+
+        meal_record.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class MealContextEventView(APIView):
     permission_classes = [IsAuthenticated]
 
