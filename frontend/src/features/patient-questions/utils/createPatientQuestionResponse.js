@@ -141,7 +141,7 @@ function createMealResponse(mealRecords, question) {
       suggestion: "식사를 하셨다면 다음에 식사 기록을 남겨둘 수 있어요.",
       action: "open-memory-overview",
       actionLabel: "기억 살펴보기",
-      overviewTab: "meals",
+      overviewTab: "calendar",
     };
   }
 
@@ -224,7 +224,7 @@ function createScheduleResponse(promises) {
       suggestion: "새 약속이 생기면 기억새록에 남겨둘 수 있어요.",
       action: "open-memory-overview",
       actionLabel: "기억 살펴보기",
-      overviewTab: "schedule",
+      overviewTab: "calendar",
     };
   }
 
@@ -255,7 +255,7 @@ function createScheduleResponse(promises) {
     remainingPromiseCount,
     action: "open-memory-overview",
     actionLabel: "기억 살펴보기",
-    overviewTab: "schedule",
+    overviewTab: "calendar",
   };
 }
 

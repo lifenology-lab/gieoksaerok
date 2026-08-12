@@ -7,22 +7,16 @@ import {
   fetchPatientMemories,
   fetchPatientMemorySchedules,
 } from "@/features/patient-memory/api/patientMemoryApi";
-import { getApiMediaUrl } from "@/shared/api/client";
 
 import "./MemoryOverviewPage.css";
 
 const TAB_ITEMS = [
   { id: "today", label: "오늘의 기억" },
-  { id: "meals", label: "식사 기록" },
-  { id: "schedule", label: "일정" },
+  { id: "calendar", label: "기억 달력" },
   { id: "memories", label: "추억 살펴보기" },
 ];
 
-const SCHEDULE_GROUPS = [
-  { id: "past", title: "이전 일정", emptyMessage: "최근에 지나간 일정이 없어요." },
-  { id: "today", title: "오늘 일정", emptyMessage: "오늘 예정된 일정이 없어요." },
-  { id: "upcoming", title: "다가오는 일정", emptyMessage: "앞으로 예정된 일정이 없어요." },
-];
+const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
 function isSameDay(leftDate, rightDate) {
   return (
@@ -77,6 +71,52 @@ function formatPromiseTime(promise) {
   return promise.time_label || "예정된 시간";
 }
 
+function getPromiseDate(promise) {
+  if (promise.scheduled_at) {
+    const scheduledAt = new Date(promise.scheduled_at);
+
+    if (!Number.isNaN(scheduledAt.getTime())) {
+      return scheduledAt;
+    }
+  }
+
+  if (promise.scheduled_date) {
+    const scheduledDate = new Date(`${promise.scheduled_date}T00:00:00`);
+
+    if (!Number.isNaN(scheduledDate.getTime())) {
+      return scheduledDate;
+    }
+  }
+
+  return null;
+}
+
+function formatCalendarDate(date) {
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${WEEKDAY_LABELS[(date.getDay() + 6) % 7]}요일`;
+}
+
+function getMonthDays(monthDate) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const mondayFirstOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  return [
+    ...Array(mondayFirstOffset).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, index) =>
+      new Date(year, month, index + 1),
+    ),
+  ];
+}
+
+function formatTimelineTime(date) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 function getPersonLabel(person) {
   if (person.relationship) {
     return `${person.relationship} ${person.name}님`;
@@ -107,7 +147,15 @@ export default function MemoryOverviewPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(
-    location.state?.activeTab || "today",
+    TAB_ITEMS.some((tab) => tab.id === location.state?.activeTab)
+      ? location.state.activeTab
+      : "today",
+  );
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(
+    () => new Date(),
+  );
+  const [calendarMonth, setCalendarMonth] = useState(
+    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   );
   const [mealRecords, setMealRecords] = useState([]);
   const [scheduleGroups, setScheduleGroups] = useState({
@@ -199,6 +247,48 @@ export default function MemoryOverviewPage() {
     () => new Map(people.map((person) => [person.id, person])),
     [people],
   );
+  const calendarDays = useMemo(() => getMonthDays(calendarMonth), [calendarMonth]);
+  const calendarItems = useMemo(() => {
+    const items = [
+      ...mealRecords.map((record) => ({
+        id: `meal-${record.id}`,
+        type: "meal",
+        date: new Date(record.eatenAt),
+        title: record.mealLabel,
+        description: record.menu || "남긴 식사 기록",
+      })),
+      ...Object.values(scheduleGroups).flat().map((promise) => ({
+        id: `schedule-${promise.id}`,
+        type: "schedule",
+        date: getPromiseDate(promise),
+        title: promise.title || "예정된 약속",
+        description: promise.person_name
+          ? `${promise.person_relationship ? `${promise.person_relationship} ` : ""}${promise.person_name}님과의 약속`
+          : promise.description,
+      })),
+      ...memories.map((memory) => ({
+        id: `memory-${memory.id}`,
+        type: "memory",
+        date: new Date(memory.memory_at || memory.created_at),
+        title: getMemoryTitle(memory),
+        description: peopleById.get(memory.person)
+          ? getPersonLabel(peopleById.get(memory.person))
+          : getMemoryDescription(memory),
+      })),
+    ];
+
+    return items
+      .filter((item) => item.date && !Number.isNaN(item.date.getTime()))
+      .filter((item) => isSameDay(item.date, selectedCalendarDate))
+      .sort((left, right) => left.date.getTime() - right.date.getTime());
+  }, [mealRecords, memories, peopleById, scheduleGroups, selectedCalendarDate]);
+
+  const openCalendarForToday = () => {
+    const today = new Date();
+    setSelectedCalendarDate(today);
+    setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+    setActiveTab("calendar");
+  };
 
   const handleOpenAlbum = (person) => {
     navigate(`/patient/memory-album/${person.id}`, { state: { person } });
@@ -267,7 +357,7 @@ export default function MemoryOverviewPage() {
                 ))}
               </ul>
             )}
-            <button className="memory-overview-page__summary-link" type="button" onClick={() => setActiveTab("meals")}>식사 기록 보기</button>
+            <button className="memory-overview-page__summary-link" type="button" onClick={openCalendarForToday}>오늘 기록 보기</button>
 
             <section className="memory-overview-page__section-heading">
               <h2>오늘의 일정</h2>
@@ -285,7 +375,7 @@ export default function MemoryOverviewPage() {
                 ))}
               </ul>
             )}
-            <button className="memory-overview-page__summary-link" type="button" onClick={() => setActiveTab("schedule")}>일정 모두 보기</button>
+            <button className="memory-overview-page__summary-link" type="button" onClick={openCalendarForToday}>오늘 기록 보기</button>
 
             {todayMemories.length > 0 && (
               <section className="memory-overview-page__today-memories">
@@ -310,58 +400,69 @@ export default function MemoryOverviewPage() {
           </div>
         )}
 
-        {!isLoading && activeTab === "meals" && (
-          <div className="memory-overview-page__panel">
-            <section className="memory-overview-page__section-heading">
-              <h2>오늘의 식사</h2>
-              <p>오늘 남긴 식사 기록을 살펴볼 수 있어요.</p>
+        {!isLoading && activeTab === "calendar" && (
+          <div className="memory-overview-page__calendar-layout">
+            <section className="memory-overview-page__calendar-panel">
+              <div className="memory-overview-page__section-heading">
+                <h2>기억 달력</h2>
+                <p>날짜를 고르면 그날의 식사, 일정, 추억을 함께 볼 수 있어요.</p>
+              </div>
+              <div className="memory-overview-page__calendar-actions">
+                <button
+                  type="button"
+                  aria-label="이전 달 보기"
+                  onClick={() => setCalendarMonth((date) => new Date(date.getFullYear(), date.getMonth() - 1, 1))}
+                >
+                  ‹
+                </button>
+                <strong>{`${calendarMonth.getFullYear()}년 ${calendarMonth.getMonth() + 1}월`}</strong>
+                <button
+                  type="button"
+                  aria-label="다음 달 보기"
+                  onClick={() => setCalendarMonth((date) => new Date(date.getFullYear(), date.getMonth() + 1, 1))}
+                >
+                  ›
+                </button>
+              </div>
+              <div className="memory-overview-page__calendar-weekdays" aria-hidden="true">
+                {WEEKDAY_LABELS.map((label) => <span key={label}>{label}</span>)}
+              </div>
+              <div className="memory-overview-page__calendar-days" role="grid" aria-label="날짜 선택">
+                {calendarDays.map((date, index) => date ? (
+                  <button
+                    key={date.toISOString()}
+                    type="button"
+                    role="gridcell"
+                    className={isSameDay(date, selectedCalendarDate) ? "is-selected" : ""}
+                    aria-pressed={isSameDay(date, selectedCalendarDate)}
+                    onClick={() => setSelectedCalendarDate(date)}
+                  >
+                    {date.getDate()}
+                  </button>
+                ) : <span key={`blank-${index}`} aria-hidden="true" />)}
+              </div>
             </section>
-            {todayMealRecords.length === 0 ? (
-              <p className="memory-overview-page__empty">오늘 남긴 식사 기록이 아직 없어요.</p>
-            ) : (
-              <ul className="memory-overview-page__meal-list">
-                {todayMealRecords.map((record) => (
-                  <li key={record.id}>
-                    {record.sceneImage ? <img src={getApiMediaUrl(record.sceneImage)} alt={`${record.mealLabel} 식사 사진`} /> : <span aria-hidden="true">식사</span>}
-                    <div>
-                      <strong>{record.mealLabel}</strong>
-                      <time dateTime={record.eatenAt}>{formatMealTime(record.eatenAt)}</time>
-                      {record.menu && <p>{record.menu}</p>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button className="memory-overview-page__view-all-button" type="button" onClick={() => navigate("/patient/meal-records")}>식사 기록 모두 보기</button>
-          </div>
-        )}
-
-        {!isLoading && activeTab === "schedule" && (
-          <div className="memory-overview-page__panel">
-            <section className="memory-overview-page__section-heading">
-              <h2>가까운 일정</h2>
-              <p>예정된 약속을 하나씩 확인해 볼 수 있어요.</p>
+            <section className="memory-overview-page__timeline-panel">
+              <div className="memory-overview-page__timeline" aria-live="polite">
+                <h3>{formatCalendarDate(selectedCalendarDate)}</h3>
+                {calendarItems.length === 0 ? (
+                  <p className="memory-overview-page__empty">이날 남겨진 기록이 아직 없어요.</p>
+                ) : (
+                  <ul>
+                    {calendarItems.map((item) => (
+                      <li key={item.id} data-type={item.type}>
+                        <time>{formatTimelineTime(item.date)}</time>
+                        <div>
+                          <span>{item.type === "meal" ? "식사" : item.type === "schedule" ? "일정" : "추억"}</span>
+                          <strong>{item.title}</strong>
+                          {item.description && <p>{item.description}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </section>
-            <div className="memory-overview-page__schedule-groups">
-              {SCHEDULE_GROUPS.map((group) => (
-                <section key={group.id}>
-                  <h3>{group.title}</h3>
-                  {scheduleGroups[group.id].length === 0 ? (
-                    <p className="memory-overview-page__schedule-empty">{group.emptyMessage}</p>
-                  ) : (
-                    <ul className="memory-overview-page__schedule-list">
-                      {scheduleGroups[group.id].map((promise) => (
-                        <li key={promise.id}>
-                          <time>{formatPromiseTime(promise)}</time>
-                          <strong>{promise.title || "예정된 약속"}</strong>
-                          <p>{promise.person_name ? `${promise.person_relationship ? `${promise.person_relationship} ` : ""}${promise.person_name}님과의 약속이에요.` : promise.description}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              ))}
-            </div>
           </div>
         )}
 
