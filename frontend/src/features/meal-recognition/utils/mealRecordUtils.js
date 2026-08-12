@@ -63,6 +63,7 @@ export function mapMealRecordFromApi(mealRecord) {
     eatenAt: mealRecord.eaten_at || null,
     menu: mealRecord.menu || null,
     memo: mealRecord.memo || null,
+    sceneImage: mealRecord.scene_image || null,
     source: mealRecord.source || null,
   };
 }

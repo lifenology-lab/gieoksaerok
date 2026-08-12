@@ -151,10 +151,258 @@
 }
 
 .meal-records-page__list li {
-  display: grid;
+  display: flex;
+  align-items: center;
   gap: 7px;
   padding: 20px;
   text-align: left;
+}
+
+.meal-records-page__record-details {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.meal-records-page__scene-image {
+  width: 104px;
+  height: 104px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.meal-records-page__scene-image-button {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.meal-records-page__scene-image-button:focus-visible {
+  outline: 3px solid #b3f5e6;
+  outline-offset: 3px;
+}
+
+.meal-records-page__scene-image-dialog {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 16, 13, 0.3);
+}
+
+.meal-records-page__scene-image-dialog-card {
+  position: relative;
+  width: min(520px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
+  color: white;
+  background: rgba(30, 52, 44, 0.84);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.meal-records-page__scene-image-dialog-card h2,
+.meal-records-page__scene-image-dialog-card p {
+  margin: 0;
+}
+
+.meal-records-page__scene-image-dialog-card h2 {
+  font-size: 23px;
+  font-weight: 900;
+  color: white;
+}
+
+.meal-records-page__scene-image-dialog-card > img {
+  width: 100%;
+  max-height: min(48dvh, 360px);
+  border-radius: 16px;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.meal-records-page__scene-image-dialog-card > p {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.meal-records-page__scene-image-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  color: white;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.meal-records-page__scene-image-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.meal-records-page__scene-image-actions button {
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 14px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.meal-records-page__scene-image-actions button:last-child {
+  border-color: rgba(255, 155, 165, 0.76);
+  color: #ffd4d9;
+  background: rgba(153, 39, 54, 0.3);
+}
+
+.meal-records-page__scene-image-actions button:disabled,
+.meal-records-page__scene-image-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.meal-records-page__scene-image-error {
+  color: #ffd4d9 !important;
+}
+
+.meal-records-page__delete-record-button {
+  justify-self: start;
+  border: 0;
+  padding: 3px 0;
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.meal-records-page__delete-record-confirm {
+  display: grid;
+  gap: 13px;
+  padding: 20px;
+  border: 1px solid rgba(255, 155, 165, 0.56);
+  border-radius: 14px;
+  background: rgba(104, 33, 42, 0.56);
+}
+
+.meal-records-page__delete-record-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 32;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 16, 13, 0.38);
+}
+
+.meal-records-page__delete-record-overlay .meal-records-page__delete-record-confirm {
+  width: min(460px, 100%);
+  box-sizing: border-box;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.meal-records-page__delete-record-confirm h3,
+.meal-records-page__delete-record-confirm p {
+  margin: 0;
+}
+
+.meal-records-page__delete-record-confirm h3 {
+  color: #fff0f2;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.meal-records-page__delete-record-warning,
+.meal-records-page__delete-record-confirm > p {
+  color: #ffd4d9 !important;
+}
+
+.meal-records-page__delete-record-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.meal-records-page__delete-record-summary > img {
+  width: 92px;
+  height: 92px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.meal-records-page__delete-record-summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.meal-records-page__delete-record-summary strong {
+  color: white;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.meal-records-page__delete-record-summary time,
+.meal-records-page__delete-record-summary p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 15px;
+  line-height: 1.42;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.meal-records-page__delete-record-confirm > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.meal-records-page__delete-record-confirm button {
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 12px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.meal-records-page__delete-record-confirm button:last-child {
+  border-color: rgba(255, 155, 165, 0.78);
+  color: #ffd4d9;
+  background: rgba(153, 39, 54, 0.4);
 }
 
 .meal-records-page__list strong {
@@ -301,6 +549,12 @@
 
   .meal-records-page__list strong {
     font-size: 20px;
+  }
+
+  .meal-records-page__scene-image {
+    width: 82px;
+    height: 82px;
+    border-radius: 13px;
   }
 
   .meal-records-page__navigation {

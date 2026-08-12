@@ -26,19 +26,47 @@ export async function createMealRecord({
   source,
   menu = null,
   memo = null,
+  sceneImage = null,
 }) {
+  const formData = new FormData();
+
+  formData.append("meal_type", mealType);
+  formData.append("eaten_at", eatenAt);
+  formData.append("source", source);
+
+  if (menu) {
+    formData.append("menu", menu);
+  }
+
+  if (memo) {
+    formData.append("memo", memo);
+  }
+
+  if (sceneImage) {
+    formData.append("scene_image", sceneImage, "meal-scene.jpg");
+  }
+
   const mealRecord = await request("/api/meal-records/", {
     method: "POST",
-    body: JSON.stringify({
-      meal_type: mealType,
-      eaten_at: eatenAt,
-      source,
-      menu,
-      memo,
-    }),
+    body: formData,
   });
 
   return mapMealRecordFromApi(mealRecord);
+}
+
+export async function deleteMealRecordSceneImage(mealRecordId) {
+  const mealRecord = await request(
+    `/api/meal-records/${mealRecordId}/scene-image/`,
+    { method: "DELETE" },
+  );
+
+  return mapMealRecordFromApi(mealRecord);
+}
+
+export function deleteMealRecord(mealRecordId) {
+  return request(`/api/meal-records/${mealRecordId}/`, {
+    method: "DELETE",
+  });
 }
 
 // 식사 상황이 보이는 source (video)와 식사 기록들을 받아서
