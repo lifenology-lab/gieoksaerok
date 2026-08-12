@@ -1,60 +1,77 @@
 .role-select-page {
-  min-height: 100svh;
+  min-height: 100dvh;
   display: grid;
   grid-template-rows: auto 1fr;
-  padding: 28px;
   box-sizing: border-box;
-  background: #fbfcfb;
-  color: #201d26;
+  padding: 38px 42px;
+  color: white;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(145, 232, 214, 0.2), transparent 26%),
+    radial-gradient(circle at 12% 88%, rgba(118, 178, 150, 0.18), transparent 30%),
+    linear-gradient(135deg, #4c6159 0%, #63766b 52%, #44544f 100%);
   text-align: left;
 }
 
 .role-select-page__header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  align-items: center;
 }
 
 .role-select-page__header p {
-  color: #2f725d;
-  font-size: 14px;
+  margin: 0;
+  color: #a4f0df;
+  font-size: 15px;
   font-weight: 900;
 }
 
 .role-select-page__header h1 {
-  margin: 4px 0 0;
-  color: #17141d;
-  font-size: 34px;
+  margin: 5px 0 0;
+  color: white;
+  font-size: clamp(30px, 4vw, 42px);
   line-height: 1.15;
-  letter-spacing: 0;
+  font-weight: 900;
+  letter-spacing: -0.04em;
 }
 
 .role-select-page__header button {
-  min-height: 40px;
-  border: 1px solid #d7dfda;
-  border-radius: 8px;
-  padding: 0 14px;
-  color: #3d3944;
-  background: #ffffff;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 14px;
+  padding: 0 16px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.12);
   font: inherit;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
 }
 
 .role-select-page__content {
-  width: min(560px, 100%);
+  width: min(640px, 100%);
   align-self: center;
   justify-self: center;
   display: grid;
-  gap: 22px;
+  gap: 24px;
+  padding: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 28px;
+  background: rgba(30, 52, 44, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 22px 60px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .role-select-page__welcome {
-  color: #5e6670;
-  font-size: 18px;
-  line-height: 1.45;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 19px;
+  line-height: 1.5;
+  font-weight: 700;
   text-align: center;
+  word-break: keep-all;
 }
 
 .role-select-page__actions {
@@ -64,27 +81,42 @@
 }
 
 .role-select-page__actions a {
-  min-height: 120px;
+  min-height: 132px;
   display: grid;
   place-items: center;
-  border: 1px solid #dce5df;
-  border-radius: 8px;
-  color: #17211d;
-  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 18px;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.1);
   font-size: 22px;
   font-weight: 900;
   text-decoration: none;
-  box-shadow: 0 14px 38px rgba(38, 55, 45, 0.1);
 }
 
 .role-select-page__actions a:first-child {
-  color: #ffffff;
-  background: #2f725d;
+  border-color: #91e8d6;
+  color: #18342c;
+  background: #91e8d6;
+}
+
+.role-select-page__header button:hover,
+.role-select-page__header button:focus-visible,
+.role-select-page__actions a:hover,
+.role-select-page__actions a:focus-visible {
+  border-color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.role-select-page__actions a:first-child:hover,
+.role-select-page__actions a:first-child:focus-visible {
+  border-color: #b3f5e6;
+  background: #b3f5e6;
 }
 
 @media (max-width: 640px) {
   .role-select-page {
-    padding: 20px;
+    padding: 28px 20px;
   }
 
   .role-select-page__header {
@@ -92,10 +124,20 @@
   }
 
   .role-select-page__header h1 {
-    font-size: 28px;
+    font-size: 29px;
+  }
+
+  .role-select-page__content {
+    padding: 26px 22px;
+    border-radius: 22px;
   }
 
   .role-select-page__actions {
     grid-template-columns: 1fr;
+  }
+
+  .role-select-page__actions a {
+    min-height: 86px;
+    font-size: 20px;
   }
 }
