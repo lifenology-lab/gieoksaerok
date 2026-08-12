@@ -153,6 +153,7 @@ export default function DailyModePage() {
     window.sessionStorage.removeItem(DAILY_MODE_RETURN_RECOGNITION_KEY);
     startPersonRecognition();
   }, [startPersonRecognition]);
+
   const isMealRecognitionActive = activeRecognitionType === "meal";
 
   useEffect(() => {

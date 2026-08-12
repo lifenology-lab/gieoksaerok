@@ -2,21 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { fetchPeople } from "@/features/face-recognition/api/peopleApi";
+import {
+  fetchMemoryAlbumItems,
+  getMemoryAlbumPhotoUrl,
+} from "@/features/memory-album/api/memoryAlbumApi";
 import { fetchMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
 import {
   fetchPatientMemories,
   fetchPatientMemorySchedules,
 } from "@/features/patient-memory/api/patientMemoryApi";
+import MemoryReflectionAssistant from "@/features/patient-memory/components/MemoryReflectionAssistant";
 
 import "./MemoryOverviewPage.css";
 
 const TAB_ITEMS = [
   { id: "today", label: "오늘의 기억" },
   { id: "calendar", label: "기억 달력" },
-  { id: "memories", label: "추억 살펴보기" },
+  { id: "memories", label: "기억 회상하기" },
 ];
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+const REFLECTION_SESSION_IDLE_MS = 30 * 60 * 1000;
 
 function isSameDay(leftDate, rightDate) {
   return (
@@ -125,12 +131,6 @@ function getPersonLabel(person) {
   return `${person.name}님`;
 }
 
-function getPersonSummary(person) {
-  const card = person.latest_summary?.card;
-
-  return card?.body || card?.title || "함께한 추억을 살펴볼 수 있어요.";
-}
-
 function getMemoryTitle(memory) {
   const recap = memory.recap || {};
 
@@ -165,6 +165,13 @@ export default function MemoryOverviewPage() {
   });
   const [people, setPeople] = useState([]);
   const [memories, setMemories] = useState([]);
+  const [albumItems, setAlbumItems] = useState([]);
+  const [isAlbumLoading, setIsAlbumLoading] = useState(false);
+  const [albumLoadMessage, setAlbumLoadMessage] = useState("");
+  const [reflectionIndex, setReflectionIndex] = useState(0);
+  const [isHintVisible, setIsHintVisible] = useState(false);
+  const [isReflectionAssistantOpen, setIsReflectionAssistantOpen] = useState(false);
+  const [reflectionSessions, setReflectionSessions] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [loadMessage, setLoadMessage] = useState("");
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
@@ -174,6 +181,70 @@ export default function MemoryOverviewPage() {
 
     return () => window.clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      const expirationTime = Date.now() - REFLECTION_SESSION_IDLE_MS;
+
+      setReflectionSessions((sessions) => Object.fromEntries(
+        Object.entries(sessions).filter(([, session]) => (
+          session.lastActiveAt > expirationTime
+        )),
+      ));
+    }, 60 * 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== "memories" || people.length === 0 || albumItems.length) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadAlbumItems() {
+      setIsAlbumLoading(true);
+      setAlbumLoadMessage("");
+      const results = await Promise.allSettled(
+        people.map(async (person) => ({
+          person,
+          items: await fetchMemoryAlbumItems(person.id),
+        })),
+      );
+
+      if (!isMounted) {
+        return;
+      }
+
+      const nextAlbumItems = results.flatMap((result) => {
+        if (result.status !== "fulfilled") {
+          return [];
+        }
+
+        return result.value.items.map((item) => ({
+          ...item,
+          person: result.value.person,
+        }));
+      });
+
+      setAlbumItems(nextAlbumItems);
+
+      if (results.every((result) => result.status === "rejected")) {
+        setAlbumLoadMessage("추억 사진을 불러오지 못했어요. 잠시 후 다시 열어 주세요.");
+      } else if (results.some((result) => result.status === "rejected")) {
+        setAlbumLoadMessage("일부 추억 사진을 불러오지 못했어요.");
+      }
+
+      setIsAlbumLoading(false);
+    }
+
+    loadAlbumItems();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, albumItems.length, people]);
 
   useEffect(() => {
     let isMounted = true;
@@ -247,6 +318,9 @@ export default function MemoryOverviewPage() {
     () => new Map(people.map((person) => [person.id, person])),
     [people],
   );
+  const reflectionItem = albumItems.length
+    ? albumItems[reflectionIndex % albumItems.length]
+    : null;
   const calendarDays = useMemo(() => getMonthDays(calendarMonth), [calendarMonth]);
   const calendarItems = useMemo(() => {
     const items = [
@@ -292,6 +366,27 @@ export default function MemoryOverviewPage() {
 
   const handleOpenAlbum = (person) => {
     navigate(`/patient/memory-album/${person.id}`, { state: { person } });
+  };
+
+  const handleNextReflection = () => {
+    if (!albumItems.length) {
+      return;
+    }
+
+    setReflectionIndex((index) => (index + 1) % albumItems.length);
+    setIsHintVisible(false);
+    setIsReflectionAssistantOpen(false);
+  };
+
+  const handleTalkAboutReflection = () => {
+    setIsReflectionAssistantOpen(true);
+  };
+
+  const handleReflectionSessionChange = (albumItemId, nextSession) => {
+    setReflectionSessions((sessions) => ({
+      ...sessions,
+      [albumItemId]: nextSession,
+    }));
   };
 
   return (
@@ -469,23 +564,54 @@ export default function MemoryOverviewPage() {
         {!isLoading && activeTab === "memories" && (
           <div className="memory-overview-page__panel">
             <section className="memory-overview-page__section-heading">
-              <h2>소중한 사람들</h2>
-              <p>사람을 누르면 함께한 추억 카드를 볼 수 있어요.</p>
+              <h2>기억 회상하기</h2>
+              <p>사진을 보며 떠오르는 이야기를 천천히 말해 보세요.</p>
             </section>
-            {people.length === 0 ? (
-              <p className="memory-overview-page__empty">아직 등록된 소중한 사람이 없어요.</p>
-            ) : (
-              <ul className="memory-overview-page__people-list">
-                {people.map((person) => (
-                  <li key={person.id}>
-                    <div>
-                      <strong>{getPersonLabel(person)}</strong>
-                      <p>{getPersonSummary(person)}</p>
-                    </div>
-                    <button type="button" onClick={() => handleOpenAlbum(person)}>추억 보기</button>
-                  </li>
-                ))}
-              </ul>
+            {isAlbumLoading && <p className="memory-overview-page__empty">추억 사진을 준비하고 있어요.</p>}
+            {!isAlbumLoading && albumLoadMessage && <p className="memory-overview-page__notice is-warning">{albumLoadMessage}</p>}
+            {!isAlbumLoading && !reflectionItem && !albumLoadMessage && (
+              <p className="memory-overview-page__empty">아직 함께 볼 추억 사진이 없어요.</p>
+            )}
+            {!isAlbumLoading && reflectionItem && (
+              <section className="memory-overview-page__reflection-photo-card">
+                <img
+                  src={getMemoryAlbumPhotoUrl(reflectionItem.photo_url)}
+                  alt="함께 떠올려 볼 추억 사진"
+                  style={{ objectPosition: `${reflectionItem.crop_x ?? 50}% ${reflectionItem.crop_y ?? 50}%` }}
+                />
+                <div>
+                  <h3>이 사진을 보며 어떤 일이 떠오르세요?</h3>
+                  {isHintVisible ? (
+                    <p>{`${getPersonLabel(reflectionItem.person)}과 함께한 추억이에요. ${reflectionItem.description}`}</p>
+                  ) : (
+                    <button type="button" className="memory-overview-page__hint-button" onClick={() => setIsHintVisible(true)}>힌트 보기</button>
+                  )}
+                </div>
+                <div className="memory-overview-page__reflection-actions">
+                  <button type="button" onClick={handleTalkAboutReflection}>새록이에게 이야기하기</button>
+                  {albumItems.length > 1 && <button type="button" onClick={handleNextReflection}>다른 추억 보기</button>}
+                </div>
+              </section>
+            )}
+            {isReflectionAssistantOpen && reflectionItem && (
+              <MemoryReflectionAssistant
+                reflectionItem={reflectionItem}
+                session={reflectionSessions[reflectionItem.id]}
+                onSessionChange={(nextSession) => (
+                  handleReflectionSessionChange(reflectionItem.id, nextSession)
+                )}
+                onClose={() => setIsReflectionAssistantOpen(false)}
+              />
+            )}
+            {people.length > 0 && (
+              <section className="memory-overview-page__people-shortcuts">
+                <h3>사람별 추억 보기</h3>
+                <div>
+                  {people.map((person) => (
+                    <button key={person.id} type="button" onClick={() => handleOpenAlbum(person)}>{getPersonLabel(person)}</button>
+                  ))}
+                </div>
+              </section>
             )}
           </div>
         )}

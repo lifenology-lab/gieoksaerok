@@ -672,6 +672,106 @@
   background: #a4f0df;
 }
 
+.memory-overview-page__reflection-photo-card {
+  display: grid;
+  gap: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 19px;
+  background: rgba(18, 52, 42, 0.28);
+}
+
+.memory-overview-page__reflection-photo-card > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: rgba(105, 198, 174, 0.2);
+}
+
+.memory-overview-page__reflection-photo-card > div:not(.memory-overview-page__reflection-actions) {
+  display: grid;
+  gap: 10px;
+  padding: 0 18px;
+}
+
+.memory-overview-page__reflection-photo-card h3,
+.memory-overview-page__people-shortcuts h3 {
+  margin: 0;
+  color: white;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.memory-overview-page__reflection-photo-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.memory-overview-page__hint-button {
+  justify-self: start;
+  min-height: 38px;
+  padding: 0 4px;
+  border: 0;
+  color: #b8fff0;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 9px;
+  padding: 0 18px 18px;
+}
+
+.memory-overview-page__reflection-actions button,
+.memory-overview-page__people-shortcuts button {
+  min-height: 45px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 13px;
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-actions button:first-child {
+  border-color: #b8fff0;
+  color: #153e34;
+  background: #a4f0df;
+}
+
+.memory-overview-page__people-shortcuts {
+  display: grid;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.memory-overview-page__people-shortcuts > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memory-overview-page__people-shortcuts button {
+  min-height: 39px;
+  padding: 0 13px;
+  border-radius: 999px;
+}
+
 .memory-overview-page__header > button:hover,
 .memory-overview-page__header > button:focus-visible,
 .memory-overview-page__reflection-list button:hover,
@@ -737,5 +837,9 @@
 
   .memory-overview-page__timeline li {
     grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .memory-overview-page__reflection-actions {
+    grid-template-columns: 1fr;
   }
 }
