@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,7 +15,7 @@ from .serializers import (
 
 class MealRecordView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     @extend_schema(
         operation_id="식사 기록 목록 조회",
