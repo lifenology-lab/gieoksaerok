@@ -28,10 +28,11 @@ export default function RecognitionToggleGroup({
       <button
         className={`daily-mode-page__glass-button ${
           activeRecognitionType === "person"
-            ? "daily-mode-page__glass-button--active"
+            ? "daily-mode-page__glass-button--active daily-mode-page__glass-button--person-active"
             : ""
         }`}
         type="button"
+        aria-pressed={activeRecognitionType === "person"}
         onClick={onPersonRecognition}
       >
         <span className="daily-mode-page__glass-icon">
@@ -42,10 +43,11 @@ export default function RecognitionToggleGroup({
       <button
         className={`daily-mode-page__glass-button ${
           activeRecognitionType === "meal"
-            ? "daily-mode-page__glass-button--active"
+            ? "daily-mode-page__glass-button--active daily-mode-page__glass-button--meal-active"
             : ""
         }`}
         type="button"
+        aria-pressed={activeRecognitionType === "meal"}
         onClick={onMealRecognition}
       >
         <span className="daily-mode-page__glass-icon daily-mode-page__glass-icon--meal">

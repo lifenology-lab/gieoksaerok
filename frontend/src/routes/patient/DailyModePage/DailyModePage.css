@@ -123,6 +123,58 @@
   opacity: 0.56;
 }
 
+.daily-mode-page__glass-button--active {
+  position: relative;
+  border-width: 2px;
+  color: white;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 0 0 3px rgba(255, 255, 255, 0.12),
+    0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+.daily-mode-page__glass-button--active::after {
+  content: "사용 중";
+  position: absolute;
+  top: -9px;
+  right: -8px;
+  padding: 3px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: white;
+  background: #214f44;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.daily-mode-page__glass-button--person-active {
+  border-color: #a4f0df;
+  background: rgba(32, 132, 109, 0.78);
+}
+
+.daily-mode-page__glass-button--person-active .daily-mode-page__glass-icon {
+  border-color: #d9fff5;
+  color: #d9fff5;
+  background: rgba(255, 255, 255, 0.17);
+}
+
+.daily-mode-page__glass-button--meal-active {
+  border-color: #9ae3ff;
+  background: rgba(25, 111, 156, 0.8);
+}
+
+.daily-mode-page__glass-button--meal-active::after {
+  background: #165578;
+}
+
+.daily-mode-page__glass-button--meal-active .daily-mode-page__glass-icon {
+  border-color: #d9f6ff;
+  color: #d9f6ff;
+  background: rgba(255, 255, 255, 0.17);
+}
+
 .daily-mode-page__glass-icon {
   width: 32px;
   height: 32px;
