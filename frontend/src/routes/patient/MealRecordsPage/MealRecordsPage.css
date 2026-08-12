@@ -151,10 +151,26 @@
 }
 
 .meal-records-page__list li {
-  display: grid;
+  display: flex;
+  align-items: center;
   gap: 7px;
   padding: 20px;
   text-align: left;
+}
+
+.meal-records-page__record-details {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.meal-records-page__scene-image {
+  width: 104px;
+  height: 104px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 16px;
+  object-fit: cover;
 }
 
 .meal-records-page__list strong {
@@ -301,6 +317,12 @@
 
   .meal-records-page__list strong {
     font-size: 20px;
+  }
+
+  .meal-records-page__scene-image {
+    width: 82px;
+    height: 82px;
+    border-radius: 13px;
   }
 
   .meal-records-page__navigation {

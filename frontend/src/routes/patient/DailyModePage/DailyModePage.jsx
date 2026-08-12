@@ -38,6 +38,8 @@ import {
 import "./DailyModePage.css";
 
 const MEAL_RECOGNITION_INTERVAL_MS = 5000;
+const MEAL_IMAGE_MAX_WIDTH = 640;
+const MEAL_IMAGE_QUALITY = 0.78;
 
 const WEEKDAY_LABELS = [
   "일요일",
@@ -60,6 +62,22 @@ function formatDailyModeTime(date) {
   const minutes = String(date.getMinutes()).padStart(2, "0");
 
   return `${period} ${String(displayHours).padStart(2, "0")}:${minutes}`;
+}
+
+function captureMealSceneImage(videoElement) {
+  if (!videoElement?.videoWidth || !videoElement?.videoHeight) {
+    return Promise.resolve(null);
+  }
+
+  const scale = Math.min(1, MEAL_IMAGE_MAX_WIDTH / videoElement.videoWidth);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(videoElement.videoWidth * scale);
+  canvas.height = Math.round(videoElement.videoHeight * scale);
+  canvas.getContext("2d")?.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+  return new Promise((resolve) => {
+    canvas.toBlob(resolve, "image/jpeg", MEAL_IMAGE_QUALITY);
+  });
 }
 
 export default function DailyModePage() {
@@ -292,10 +310,12 @@ export default function DailyModePage() {
       setMealRecordError("");
 
       const eatenAt = new Date().toISOString();
+      const sceneImage = await captureMealSceneImage(cameraVideoElementRef.current);
       const createdMealRecord = await createMealRecord({
         mealType: getSuggestedMealType(eatenAt),
         eatenAt,
         source: "patient_confirmed",
+        sceneImage,
       });
 
       mealRecordsRef.current = [createdMealRecord, ...mealRecordsRef.current];

@@ -15,11 +15,20 @@ class MealRecordSerializer(serializers.ModelSerializer):
             "eaten_at",
             "menu",
             "memo",
+            "scene_image",
             "source",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["id", "user_id", "created_at", "updated_at"]
+
+    def validate_scene_image(self, image):
+        if image and image.size > 3 * 1024 * 1024:
+            raise serializers.ValidationError(
+                "식사 사진은 3MB 이하로 올려주세요."
+            )
+
+        return image
 
 
 class MealContextEventSerializer(serializers.ModelSerializer):

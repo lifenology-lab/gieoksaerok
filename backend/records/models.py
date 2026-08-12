@@ -26,6 +26,11 @@ class MealRecord(models.Model):
     eaten_at = models.DateTimeField()
     menu = models.CharField(max_length=255, blank=True, null=True)
     memo = models.TextField(blank=True, null=True)
+    scene_image = models.ImageField(
+        upload_to='meal-records/%Y/%m/%d/',
+        blank=True,
+        null=True,
+    )
     source = models.CharField(max_length=30, choices=SOURCE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -26,16 +26,29 @@ export async function createMealRecord({
   source,
   menu = null,
   memo = null,
+  sceneImage = null,
 }) {
+  const formData = new FormData();
+
+  formData.append("meal_type", mealType);
+  formData.append("eaten_at", eatenAt);
+  formData.append("source", source);
+
+  if (menu) {
+    formData.append("menu", menu);
+  }
+
+  if (memo) {
+    formData.append("memo", memo);
+  }
+
+  if (sceneImage) {
+    formData.append("scene_image", sceneImage, "meal-scene.jpg");
+  }
+
   const mealRecord = await request("/api/meal-records/", {
     method: "POST",
-    body: JSON.stringify({
-      meal_type: mealType,
-      eaten_at: eatenAt,
-      source,
-      menu,
-      memo,
-    }),
+    body: formData,
   });
 
   return mapMealRecordFromApi(mealRecord);

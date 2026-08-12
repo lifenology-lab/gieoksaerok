@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { fetchMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
+import { getApiMediaUrl } from "@/shared/api/client";
 
 import "./MealRecordsPage.css";
 
@@ -128,12 +129,21 @@ export default function MealRecordsPage() {
           <ul className="meal-records-page__list">
             {mealRecords.map((mealRecord) => (
               <li key={mealRecord.id}>
-                <strong>{mealRecord.mealLabel}</strong>
-                <time dateTime={mealRecord.eatenAt}>
-                  {formatMealDateTime(mealRecord.eatenAt)}
-                </time>
-                {mealRecord.menu && <p>{mealRecord.menu}</p>}
-                {mealRecord.memo && <p>{mealRecord.memo}</p>}
+                {mealRecord.sceneImage && (
+                  <img
+                    className="meal-records-page__scene-image"
+                    src={getApiMediaUrl(mealRecord.sceneImage)}
+                    alt={`${mealRecord.mealLabel} 식사 당시 사진`}
+                  />
+                )}
+                <div className="meal-records-page__record-details">
+                  <strong>{mealRecord.mealLabel}</strong>
+                  <time dateTime={mealRecord.eatenAt}>
+                    {formatMealDateTime(mealRecord.eatenAt)}
+                  </time>
+                  {mealRecord.menu && <p>{mealRecord.menu}</p>}
+                  {mealRecord.memo && <p>{mealRecord.memo}</p>}
+                </div>
               </li>
             ))}
           </ul>
