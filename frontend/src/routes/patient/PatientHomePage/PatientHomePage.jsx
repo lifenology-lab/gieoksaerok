@@ -81,7 +81,7 @@ export default function PatientHomePage() {
 
   return (
     <main className="patient-home-page">
-      <CameraPreview {...camera} />
+      <CameraPreview {...camera} showPermissionNotice={false} />
 
       <section className="patient-home-page__date-time" aria-live="polite">
         <p>{formatDate(currentDateTime)}</p>

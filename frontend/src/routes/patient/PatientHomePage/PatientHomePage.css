@@ -18,6 +18,13 @@
   background: #111;
 }
 
+.patient-home-page .daily-mode-page__camera-area--unavailable {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(145, 232, 214, 0.2), transparent 26%),
+    radial-gradient(circle at 12% 88%, rgba(118, 178, 150, 0.18), transparent 30%),
+    linear-gradient(135deg, #4c6159 0%, #63766b 52%, #44544f 100%);
+}
+
 .patient-home-page .daily-mode-page__camera-video {
   width: 100%;
   height: 100%;

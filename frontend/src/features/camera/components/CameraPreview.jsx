@@ -8,6 +8,7 @@ export default function CameraPreview({
   cameraError,
   startCamera,
   onVideoElementReady,
+  showPermissionNotice = true,
   children,
 }) {
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function CameraPreview({
     onVideoElementReady(videoRef.current);
   }, [isCameraReady, onVideoElementReady, videoRef]);
 
-  if (cameraError) {
+  if (cameraError && showPermissionNotice) {
     return (
       <section className="daily-mode-page__camera-area">
         <CameraPermissionNotice message={cameraError} onRetry={startCamera} />
@@ -27,8 +28,12 @@ export default function CameraPreview({
   }
 
   return (
-    <section className="daily-mode-page__camera-area">
-      {!isCameraReady && <p>카메라를 준비하고 있어요.</p>}
+    <section
+      className={`daily-mode-page__camera-area ${
+        cameraError ? "daily-mode-page__camera-area--unavailable" : ""
+      }`}
+    >
+      {!isCameraReady && !cameraError && <p>카메라를 준비하고 있어요.</p>}
 
       <video
         ref={videoRef}

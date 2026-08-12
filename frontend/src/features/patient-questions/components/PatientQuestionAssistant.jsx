@@ -399,9 +399,10 @@ export default function PatientQuestionAssistant({
             </p>
           )}
           {questionRecorder.errorMessage && (
-            <p className="patient-question-assistant__error" role="alert">
-              {questionRecorder.errorMessage}
-            </p>
+            <section className="patient-question-assistant__permission-error" role="alert">
+              <strong>마이크를 사용할 수 없어요</strong>
+              <p>{questionRecorder.errorMessage}</p>
+            </section>
           )}
           {!isRecordingBusy && (
             <p className="patient-question-assistant__voice-tip">

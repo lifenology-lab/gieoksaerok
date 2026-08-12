@@ -418,6 +418,36 @@
   background: rgba(153, 39, 54, 0.28);
 }
 
+.patient-question-assistant__permission-error {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 155, 165, 0.52);
+  border-radius: 13px;
+  color: #ffd4d9;
+  background: rgba(153, 39, 54, 0.3);
+}
+
+.patient-question-assistant__permission-error strong,
+.patient-question-assistant__permission-error p {
+  margin: 0;
+}
+
+.patient-question-assistant__permission-error strong {
+  color: #fff0f2;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.patient-question-assistant__permission-error p {
+  color: #ffd4d9;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
 .patient-question-assistant__record-error {
   margin: 0;
   color: rgba(255, 255, 255, 0.72);

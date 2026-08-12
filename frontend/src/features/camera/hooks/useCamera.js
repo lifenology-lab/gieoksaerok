@@ -1,5 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+function getCameraErrorMessage(error) {
+  if (error?.name === "NotAllowedError" || error?.name === "SecurityError") {
+    return "카메라 사용을 허용해 주세요.";
+  }
+
+  if (error?.name === "NotFoundError") {
+    return "사용할 수 있는 카메라를 찾지 못했어요.";
+  }
+
+  if (error?.name === "NotReadableError") {
+    return "다른 앱에서 카메라를 사용하고 있을 수 있어요.";
+  }
+
+  return error?.message || "카메라를 불러오는 중 문제가 발생했어요.";
+}
+
 export default function useCamera() {
   // video 태그에 접근하기 위한 ref
   const videoRef = useRef(null);
@@ -94,12 +110,8 @@ export default function useCamera() {
         setIsCameraReady(true);
       }
     } catch (error) {
-      console.error("Camera error:", error);
-
       if (isMountedRef.current) {
-        setCameraError(
-          error?.message || "카메라를 불러오는 중 문제가 발생했어요.",
-        );
+        setCameraError(getCameraErrorMessage(error));
         setIsCameraReady(false);
       }
     } finally {
