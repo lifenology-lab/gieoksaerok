@@ -18,6 +18,12 @@
   background: #111;
 }
 
+.daily-mode-page__camera-area--unavailable {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(145, 232, 214, 0.18), transparent 26%),
+    linear-gradient(135deg, #31483f, #4d665c 55%, #31453d);
+}
+
 .daily-mode-page__camera-video {
   width: 100%;
   height: 100%;

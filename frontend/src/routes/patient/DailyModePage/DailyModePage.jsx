@@ -423,7 +423,11 @@ export default function DailyModePage() {
 
   return (
     <main className="daily-mode-page">
-      <CameraPreview {...camera} onVideoElementReady={handleVideoElementReady}>
+      <CameraPreview
+        {...camera}
+        showPermissionNotice={!isQuestionAssistantOpen}
+        onVideoElementReady={handleVideoElementReady}
+      >
         <FaceLabelsOverlay
           faces={recognizedFaces}
           onOpenMemoryAlbum={handleOpenMemoryAlbum}
