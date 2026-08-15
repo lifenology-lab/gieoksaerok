@@ -15,6 +15,14 @@ PATIENT_QUESTION_INTENTS = {
 
 MAX_MEMORY_REFLECTION_HISTORY_MESSAGES = 6
 
+MEMORY_REFLECTION_UNNATURAL_PHRASES = {
+    '괜찮으세요?': '사진을 천천히 함께 살펴볼까요?',
+    '기억나세요?': '사진을 보며 떠오르는 이야기가 있으면 들려주세요.',
+    '맞으세요?': '사진을 보며 떠오르는 이야기가 있으면 들려주세요.',
+    '괜찮으세요': '괜찮아요',
+    '맞으세요': '맞아요',
+}
+
 MEMORY_REFLECTION_SYSTEM_PROMPT = '''
 당신은 기억새록의 회상 대화 도우미입니다. 치매 환자가 한 장의 추억 사진을
 보며 자신의 경험과 느낌을 편안하게 이야기하도록 곁에서 돕습니다. 시험을
@@ -34,11 +42,19 @@ MEMORY_REFLECTION_SYSTEM_PROMPT = '''
    함께 천천히 살펴보자는 식으로 부담을 덜어 주세요.
 
 말투와 안전:
-- 따뜻하고 쉬운 한국어 존댓말로 1~3문장만 답하세요.
+- 답변은 반드시 2~3개의 짧은 문장으로만 작성하고, 공백을 포함해 180자 이내로
+  끝내세요. 직접적인 사실 질문에만 한 문장으로 짧게 답할 수 있습니다.
+- 어려운 표현, 긴 설명, 목록, 괄호 속 부연 설명은 쓰지 마세요. 사진에 대한 말과
+  환자의 이야기를 한 번에 많이 설명하지 말고, 가장 중요한 한 가지에만 반응하세요.
+- 질문을 덧붙일 때는 마지막에 쉬운 질문 하나만 두세요. 질문을 두 개 이상 하거나
+  대답을 재촉하지 마세요.
 - "괜찮으세요", "기억나세요", "맞으세요"처럼 환자의 상태나 기억을
   평가·확인하는 어색한 질문형 표현은 쓰지 마세요. 막연한 위로가 필요할 때도
   "괜찮아요"를 반복하지 말고, 환자가 방금 말한 내용이나 사진을 함께 살피는
   자연스러운 문장으로 답하세요.
+- 특히 "괜찮으세요?", "기억나세요?", "맞으세요?"는 절대 사용하지 마세요.
+  환자의 상태를 확인하려 하지 말고 "사진을 천천히 살펴볼까요?" 또는
+  "떠오르는 이야기가 있으면 들려주세요."처럼 부담 없는 제안으로 말하세요.
 - 환자의 말이 사실인지 평가·정정하지 말고, 의료 조언·혼동 통계·진단을
   언급하지 마세요.
 - 사진 설명을 기계적으로 반복하거나, 근거 없는 위로나 과장된 칭찬을 하지
@@ -96,7 +112,14 @@ def generate_memory_reflection_reply(
                     'schema': {
                         'type': 'object',
                         'properties': {
-                            'reply': {'type': 'string'},
+                            'reply': {
+                                'type': 'string',
+                                'maxLength': 180,
+                                'description': (
+                                    '환자를 위한 180자 이하의 쉬운 한국어 답변. '
+                                    '원칙적으로 짧은 2~3문장과 질문 한 개 이하로 작성한다.'
+                                ),
+                            },
                             'summary': {
                                 'type': 'string',
                                 'description': (
@@ -122,6 +145,9 @@ def generate_memory_reflection_reply(
 
     if not reply:
         raise OpenAIMemoryReflectionError('회상 이야기에 답하지 못했어요.')
+
+    for unnatural_phrase, replacement in MEMORY_REFLECTION_UNNATURAL_PHRASES.items():
+        reply = reply.replace(unnatural_phrase, replacement)
 
     return {'reply': reply, 'summary': summary[:200]}
 
