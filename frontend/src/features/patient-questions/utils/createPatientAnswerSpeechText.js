@@ -8,6 +8,7 @@ export function createPatientAnswerSpeechText(response) {
     response.title,
     response.message,
     response.suggestion,
+    ...(response.upcomingPromises || []),
   ]
     .filter((value) => typeof value === "string" && value.trim())
     .map((value) => value.trim());

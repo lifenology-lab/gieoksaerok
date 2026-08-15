@@ -205,18 +205,42 @@ export default function PatientQuestionAssistant({
         : questionRecorder.recordingStatus === "error"
           ? "다시 말하기"
           : "말로 물어보기";
-  const assistantHeading = submittedQuestion
-    ? isAnswerLoading
-      ? "말씀을 확인하고 있어요"
-      : "이렇게 도와드릴게요"
-    : questionRecorder.recordingStatus === "preparing"
-      ? "마이크를 준비하고 있어요"
-      : "새록이가 듣고 있어요";
-  const assistantHeadingDescription = submittedQuestion
-    ? isAnswerLoading
-      ? "잠시만 기다려 주세요."
-      : "다시 물어보고 싶으면 아래 버튼을 눌러 주세요."
-    : "궁금한 점을 천천히 말씀해 주세요.";
+  const isMicrophoneUnavailable =
+    questionRecorder.recordingStatus === "error" &&
+    Boolean(questionRecorder.errorMessage);
+  const panelView = isTextInputOpen
+    ? "text-input"
+    : isAnswerLoading || ["preparing", "transcribing"].includes(
+            questionRecorder.recordingStatus,
+          )
+        ? "processing"
+        : response
+          ? "answer"
+          : answerError
+            ? "answer-error"
+            : isMicrophoneUnavailable
+              ? "microphone-permission"
+              : isRecording
+                ? "recording"
+                : "start";
+  const panelHeading = {
+    start: "새록이에게 물어보세요",
+    recording: "말씀해 주세요",
+    processing: "말씀을 확인하고 있어요",
+    "answer-error": "답변을 확인하지 못했어요",
+    answer: "새록이가 알려드릴게요",
+    "text-input": "글자로 질문하기",
+    "microphone-permission": "마이크를 사용할 수 없어요",
+  }[panelView];
+  const panelDescription = {
+    start: "궁금한 점을 천천히 말씀해 주세요.",
+    recording: "말씀을 마치면 잠시 기다려 주세요.",
+    processing: answerLoadingMessage || questionRecorder.statusMessage,
+    "answer-error": answerError,
+    answer: "필요하면 안내를 다시 들을 수 있어요.",
+    "text-input": "궁금한 내용을 천천히 입력해 주세요.",
+    "microphone-permission": "설정에서 마이크를 허용하면 말로 물어볼 수 있어요.",
+  }[panelView];
 
   useEffect(() => {
     if (isTextInputOpen) {
@@ -273,6 +297,7 @@ export default function PatientQuestionAssistant({
   ]);
 
   const responseSpeechText = createPatientAnswerSpeechText(response);
+  const hasPrimaryResponseAction = Boolean(response?.action);
 
   useEffect(() => {
     if (!open || !responseSpeechText) {
@@ -289,11 +314,12 @@ export default function PatientQuestionAssistant({
   const handleTextSubmit = async (event) => {
     event.preventDefault();
 
-    await handleQuestion(question);
-
-    if (question.trim()) {
-      setIsTextInputOpen(false);
+    if (!question.trim()) {
+      return;
     }
+
+    setIsTextInputOpen(false);
+    await handleQuestion(question);
   };
 
   const resetAssistantState = () => {
@@ -404,7 +430,7 @@ export default function PatientQuestionAssistant({
       aria-modal="true"
       aria-labelledby="patient-question-assistant-title"
     >
-      <article className="patient-question-assistant__card">
+      <article className={`patient-question-assistant__card is-${panelView}`}>
         <button
           className="patient-question-assistant__close"
           type="button"
@@ -414,19 +440,17 @@ export default function PatientQuestionAssistant({
           ×
         </button>
 
-        <div
-          className={`patient-question-assistant__heading ${isRecording ? "is-recording" : ""}`}
-        >
-          <span aria-hidden="true">●</span>
-          <div>
-            <h2 id="patient-question-assistant-title">
-              {assistantHeading}
-            </h2>
-            <p>{assistantHeadingDescription}</p>
+        {panelView !== "answer" && (
+          <div className={`patient-question-assistant__heading ${isRecording ? "is-recording" : ""}`}>
+            <span aria-hidden="true">●</span>
+            <div>
+              <h2 id="patient-question-assistant-title">{panelHeading}</h2>
+              <p>{panelDescription}</p>
+            </div>
           </div>
-        </div>
+        )}
 
-        {!submittedQuestion && (
+        {["start", "recording"].includes(panelView) && (
           <>
             <section className="patient-question-assistant__voice-input">
           {isRecording && (
@@ -477,12 +501,6 @@ export default function PatientQuestionAssistant({
               ‘말하기 끝내기’를 눌러 주세요.
             </p>
           )}
-          {questionRecorder.errorMessage && (
-            <section className="patient-question-assistant__permission-error" role="alert">
-              <strong>마이크를 사용할 수 없어요</strong>
-              <p>{questionRecorder.errorMessage}</p>
-            </section>
-          )}
           {!isRecordingBusy && (
             <p className="patient-question-assistant__voice-tip">
               주변이 시끄럽거나 마이크가 어렵다면 텍스트로 질문할 수 있어요.
@@ -506,7 +524,7 @@ export default function PatientQuestionAssistant({
           </>
         )}
 
-        {!submittedQuestion && (
+        {panelView === "start" && (
           <div className="patient-question-assistant__examples">
             <p>이렇게 물어볼 수 있어요</p>
             <div>
@@ -526,172 +544,131 @@ export default function PatientQuestionAssistant({
           </div>
         )}
 
-        {submittedQuestion && (
+        {panelView === "processing" && (
+          <div className="patient-question-assistant__processing" role="status">
+            <div className="patient-question-assistant__voice-wave" aria-hidden="true">
+              {[0, 1, 2, 3, 4].map((barIndex) => (
+                <span key={barIndex} />
+              ))}
+            </div>
+            {submittedQuestion && <p>“{submittedQuestion}”</p>}
+          </div>
+        )}
+
+        {panelView === "answer" && response && (
           <>
             <div className="patient-question-assistant__transcript">
-              <span>이렇게 들었어요</span>
+              <span id="patient-question-assistant-title">이렇게 들었어요</span>
               <strong>“{submittedQuestion}”</strong>
             </div>
-
-            {isAnswerLoading && (
-              <p className="patient-question-assistant__loading" role="status">
-                {answerLoadingMessage}
-              </p>
-            )}
-
-            {answerError && (
-              <p className="patient-question-assistant__error" role="alert">
-                {answerError}
-              </p>
-            )}
-
             {recordError && (
               <p className="patient-question-assistant__record-error" role="status">
                 {recordError}
               </p>
             )}
-
-            {response && (
-              <div className="patient-question-assistant__response" role="status">
-                <h3>{response.title}</h3>
-                <p>{response.message}</p>
-                <p>{response.suggestion}</p>
-                {responseSpeechText && (
-                  <button
-                    type="button"
-                    className={`patient-question-assistant__speech-action ${speechStatus === "playing" ? "is-playing" : ""}`}
-                    disabled={speechStatus === "loading"}
-                    aria-pressed={speechStatus === "playing"}
-                    onClick={handleResponseSpeech}
-                  >
-                    <span aria-hidden="true">
-                      {speechStatus === "playing" ? "■" : "◖"}
-                    </span>
-                    {speechActionLabel}
-                  </button>
-                )}
-                {speechErrorMessage && (
-                  <p className="patient-question-assistant__speech-error" role="alert">
-                    {speechErrorMessage}
-                  </p>
-                )}
-                {(["playing", "ready"].includes(speechStatus)) && (
-                  <p className="patient-question-assistant__audio-notice">
-                    소리가 들리지 않으면 기기의 미디어 음량과 무음 모드를 확인해
-                    주세요.
-                  </p>
-                )}
-                {response.upcomingPromises?.length > 0 && (
-                  <section className="patient-question-assistant__upcoming-promises">
-                    <strong>이후 약속</strong>
-                    <ul>
-                      {response.upcomingPromises.map((promise) => (
-                        <li key={promise}>{promise}</li>
-                      ))}
-                    </ul>
-                    {response.remainingPromiseCount > 0 && (
-                      <p>
-                        그 외 예정된 약속도 {response.remainingPromiseCount}개 더 있어요.
-                      </p>
-                    )}
-                  </section>
-                )}
-                <div className="patient-question-assistant__response-actions">
-                  {response.action === "register-unknown-person" && (
-                    <button
-                      type="button"
-                      className="patient-question-assistant__response-primary-action"
-                      onClick={handleUnknownPersonRegistration}
-                    >
-                      {response.actionLabel}
-                    </button>
-                  )}
-                  {response.action && response.action !== "register-unknown-person" && (
-                    <button
-                      type="button"
-                      className="patient-question-assistant__response-primary-action"
-                      onClick={handleResponseContextAction}
-                    >
-                      {response.actionLabel}
-                    </button>
-                  )}
-                  <button type="button" onClick={handleRestartVoiceQuestion}>
-                    다시 말하기
-                  </button>
-                  <button type="button" onClick={handleOpenTextQuestion}>
-                    텍스트로 물어보기
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {answerError && !response && (
+            <div className="patient-question-assistant__response" role="status">
+              <h3>{response.title}</h3>
+              <p className="patient-question-assistant__response-message">
+                {response.message}
+              </p>
+              {responseSpeechText && (
+                <button
+                  type="button"
+                  className={`patient-question-assistant__speech-action ${speechStatus === "playing" ? "is-playing" : ""}`}
+                  disabled={speechStatus === "loading"}
+                  aria-pressed={speechStatus === "playing"}
+                  onClick={handleResponseSpeech}
+                >
+                  <span className="patient-question-assistant__speech-wave" aria-hidden="true">
+                    {[0, 1, 2, 3].map((barIndex) => <i key={barIndex} />)}
+                  </span>
+                  {speechActionLabel}
+                </button>
+              )}
+              {speechErrorMessage && (
+                <p className="patient-question-assistant__speech-error" role="alert">
+                  {speechErrorMessage}
+                </p>
+              )}
+              {speechStatus === "ready" && (
+                <p className="patient-question-assistant__audio-notice">
+                  소리가 들리지 않으면 기기의 미디어 음량과 무음 모드를 확인해 주세요.
+                </p>
+              )}
               <div className="patient-question-assistant__response-actions">
-                <button type="button" onClick={handleRestartVoiceQuestion}>
-                  다시 물어보기
-                </button>
-                <button type="button" onClick={handleOpenTextQuestion}>
-                  텍스트로 물어보기
+                {response.action === "register-unknown-person" && (
+                  <button type="button" className="patient-question-assistant__response-primary-action" onClick={handleUnknownPersonRegistration}>
+                    {response.actionLabel}
+                  </button>
+                )}
+                {response.action && response.action !== "register-unknown-person" && (
+                  <button type="button" className="patient-question-assistant__response-primary-action" onClick={handleResponseContextAction}>
+                    {response.actionLabel}
+                  </button>
+                )}
+                <button type="button" className={!hasPrimaryResponseAction ? "is-only-action" : ""} onClick={handleRestartVoiceQuestion}>
+                  다시 말하기
                 </button>
               </div>
-            )}
+            </div>
           </>
         )}
 
-        {isTextInputOpen && (
-          <section
-            className="patient-question-assistant__text-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="patient-question-text-title"
-          >
-            <form
-              className="patient-question-assistant__form"
-              onSubmit={handleTextSubmit}
-            >
-              <div className="patient-question-assistant__text-modal-heading">
-                <div>
-                  <h3 id="patient-question-text-title">글자로 질문하기</h3>
-                  <p>궁금한 내용을 천천히 입력해 주세요.</p>
-                </div>
-                <button
-                  type="button"
-                  aria-label="텍스트 입력 닫기"
-                  onClick={handleTextInputClose}
-                >
-                  ×
-                </button>
-              </div>
+        {panelView === "microphone-permission" && (
+          <div className="patient-question-assistant__permission-panel" role="alert">
+            <p>{questionRecorder.errorMessage}</p>
+            <div className="patient-question-assistant__response-actions">
+              <button type="button" className="patient-question-assistant__response-primary-action" onClick={handleOpenTextQuestion}>
+                텍스트로 물어보기
+              </button>
+              <button type="button" onClick={handleClose}>닫기</button>
+            </div>
+          </div>
+        )}
 
-              <label htmlFor="patient-question-input">궁금한 내용</label>
-              <textarea
-                ref={textInputRef}
-                id="patient-question-input"
-                value={question}
-                rows="4"
-                placeholder="예: 나 아까 점심 뭐 먹었더라?"
-                onChange={(event) => setQuestion(event.target.value)}
-              />
-              <button type="submit" disabled={!question.trim() || isAnswerLoading}>
+        {panelView === "answer-error" && (
+          <div className="patient-question-assistant__permission-panel" role="alert">
+            <div className="patient-question-assistant__response-actions">
+              <button type="button" className="patient-question-assistant__response-primary-action" onClick={handleRestartVoiceQuestion}>
+                다시 물어보기
+              </button>
+              <button type="button" onClick={handleOpenTextQuestion}>
+                텍스트로 물어보기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {panelView === "text-input" && (
+          <form className="patient-question-assistant__form" onSubmit={handleTextSubmit}>
+            <label htmlFor="patient-question-input">궁금한 내용</label>
+            <textarea
+              ref={textInputRef}
+              id="patient-question-input"
+              value={question}
+              rows="3"
+              enterKeyHint="send"
+              placeholder="예: 나 아까 점심 뭐 먹었더라?"
+              onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" &&
+                  !event.shiftKey &&
+                  question.trim() &&
+                  !isAnswerLoading
+                ) {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}
+            />
+            <div className="patient-question-assistant__response-actions">
+              <button type="submit" className="patient-question-assistant__response-primary-action" disabled={!question.trim() || isAnswerLoading}>
                 질문하기
               </button>
-
-              <div className="patient-question-assistant__examples">
-                <p>이렇게 물어볼 수 있어요</p>
-                <div>
-                  {EXAMPLE_QUESTIONS.map((exampleQuestion) => (
-                    <button
-                      key={exampleQuestion}
-                      type="button"
-                      onClick={() => setQuestion(exampleQuestion)}
-                    >
-                      {exampleQuestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </form>
-          </section>
+              <button type="button" onClick={handleTextInputClose}>돌아가기</button>
+            </div>
+          </form>
         )}
       </article>
     </section>
