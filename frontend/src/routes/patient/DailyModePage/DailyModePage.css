@@ -654,14 +654,14 @@
 }
 
 .camera-permission-notice__card {
-  width: min(410px, 100%);
+  width: min(380px, 100%);
   display: grid;
   justify-items: center;
-  gap: 13px;
+  gap: 10px;
   box-sizing: border-box;
-  padding: 30px;
+  padding: 22px;
   border: 1px solid rgba(255, 255, 255, 0.38);
-  border-radius: 24px;
+  border-radius: 20px;
   background: rgba(30, 52, 44, 0.7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
@@ -672,15 +672,15 @@
 }
 
 .camera-permission-notice__icon {
-  width: 56px;
-  height: 56px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
   border: 2px solid rgba(145, 232, 214, 0.86);
   border-radius: 50%;
   color: #b3f5e6;
   background: rgba(145, 232, 214, 0.14);
-  font-size: 25px;
+  font-size: 21px;
 }
 
 .camera-permission-notice h2,
@@ -697,15 +697,15 @@
 }
 
 .camera-permission-notice h2 {
-  font-size: 25px;
+  font-size: 22px;
   line-height: 1.3;
   font-weight: 900;
 }
 
 .camera-permission-notice p {
   color: rgba(255, 255, 255, 0.86);
-  font-size: 15px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.45;
   font-weight: 700;
   word-break: keep-all;
 }
@@ -721,9 +721,9 @@
 
 .camera-permission-notice button {
   width: 100%;
-  min-height: 50px;
+  min-height: 46px;
   border: 1px solid #91e8d6;
-  border-radius: 14px;
+  border-radius: 999px;
   color: #18342c;
   background: #91e8d6;
   font: inherit;
@@ -743,25 +743,27 @@
   z-index: 32;
 
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  padding: 24px;
+  padding: 16px max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 
-  background: rgba(7, 16, 13, 0.38);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(7, 16, 13, 0.12);
 }
 
 .meal-recognition-overlay__content {
-  width: min(390px, 100%);
+  width: min(400px, 100%);
 }
 
 .meal-recognition-card {
   display: grid;
-  gap: 14px;
-  padding: 24px;
+  gap: 11px;
+  max-height: min(56svh, 400px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 22px;
+  border-radius: 20px;
   color: white;
   background: rgba(30, 52, 44, 0.88);
   box-shadow:
@@ -777,14 +779,14 @@
 }
 
 .meal-recognition-card h3 {
-  font-size: 23px;
+  font-size: 21px;
   font-weight: 900;
   line-height: 1.25;
 }
 
 .meal-recognition-card p {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1.5;
   word-break: keep-all;
@@ -792,8 +794,8 @@
 }
 
 .meal-recognition-card p + p {
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: 9px 11px;
+  border-radius: 12px;
   color: #d9f8ee;
   background: rgba(145, 232, 214, 0.12);
 }
@@ -806,9 +808,9 @@
 }
 
 .meal-recognition-card__actions button {
-  min-height: 48px;
+  min-height: 44px;
   border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 14px;
+  border-radius: 999px;
   padding: 0 14px;
   color: rgba(255, 255, 255, 0.94);
   background: rgba(255, 255, 255, 0.12);
@@ -856,18 +858,32 @@
     padding: 16px;
   }
 
+  .meal-recognition-card__actions {
+    gap: 8px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
   .meal-recognition-card {
-    gap: 12px;
-    padding: 20px;
-    border-radius: 18px;
+    width: min(380px, 48vw);
+    max-height: calc(100dvh - 20px);
+    gap: 8px;
+    padding: 14px;
+    border-radius: 16px;
   }
 
   .meal-recognition-card h3 {
-    font-size: 21px;
+    font-size: 18px;
   }
 
   .meal-recognition-card p {
-    font-size: 15px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .meal-recognition-card__actions button {
+    min-height: 38px;
+    font-size: 13px;
   }
 }
 

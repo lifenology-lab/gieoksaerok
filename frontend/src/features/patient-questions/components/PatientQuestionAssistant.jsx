@@ -23,6 +23,7 @@ export default function PatientQuestionAssistant({
   open,
   onClose,
   recordingRequestId,
+  microphonePermissionState = "unknown",
   recognizedPerson,
   isUnknownPersonDetected,
   onRequestPersonRecognition,
@@ -43,6 +44,7 @@ export default function PatientQuestionAssistant({
   const [isWaitingForPersonRecognition, setIsWaitingForPersonRecognition] =
     useState(false);
   const textInputRef = useRef(null);
+  const handledRecordingRequestIdRef = useRef(0);
 
   const saveQuestionEvent = useCallback(
     async ({ transcript, inputMethod, intentType, patientResponse }) => {
@@ -182,6 +184,21 @@ export default function PatientQuestionAssistant({
   const isRecordingBusy = ["preparing", "recording", "transcribing"].includes(
     questionRecorder.recordingStatus,
   );
+  const isMicrophonePermissionDenied = microphonePermissionState === "denied";
+  const isMicrophoneUnavailable =
+    isMicrophonePermissionDenied ||
+    (questionRecorder.recordingStatus === "error" && !isRecording);
+  const microphonePermissionMessage = isMicrophonePermissionDenied
+    ? "마이크 사용을 허용해 주세요. 브라우저 설정에서 마이크 접근을 켠 뒤 다시 말해 보세요."
+    : questionRecorder.errorMessage;
+  const isMicrophonePreparing =
+    !isMicrophonePermissionDenied &&
+    (questionRecorder.recordingStatus === "preparing" ||
+    Boolean(
+      open &&
+        recordingRequestId &&
+        handledRecordingRequestIdRef.current !== recordingRequestId,
+    ));
   const voiceActionLabel = isRecording
     ? "말하기 끝내기"
     : questionRecorder.recordingStatus === "preparing"
@@ -195,13 +212,19 @@ export default function PatientQuestionAssistant({
     ? isAnswerLoading
       ? "말씀을 확인하고 있어요"
       : "이렇게 도와드릴게요"
-    : questionRecorder.recordingStatus === "preparing"
+    : isMicrophoneUnavailable
+      ? "마이크를 사용할 수 없어요"
+    : isMicrophonePreparing
       ? "마이크를 준비하고 있어요"
       : "새록이가 듣고 있어요";
   const assistantHeadingDescription = submittedQuestion
     ? isAnswerLoading
       ? "잠시만 기다려 주세요."
       : "다시 물어보고 싶으면 아래 버튼을 눌러 주세요."
+    : isMicrophoneUnavailable
+      ? "텍스트로 질문하면 바로 도와드릴게요."
+    : isMicrophonePreparing
+      ? "잠시만 기다려 주세요."
     : "궁금한 점을 천천히 말씀해 주세요.";
 
   useEffect(() => {
@@ -210,12 +233,11 @@ export default function PatientQuestionAssistant({
     }
   }, [isTextInputOpen]);
 
-  const handledRecordingRequestIdRef = useRef(0);
-
   useEffect(() => {
     if (
       !open ||
       !recordingRequestId ||
+      isMicrophonePermissionDenied ||
       handledRecordingRequestIdRef.current === recordingRequestId
     ) {
       return;
@@ -223,7 +245,12 @@ export default function PatientQuestionAssistant({
 
     handledRecordingRequestIdRef.current = recordingRequestId;
     startQuestionRecording();
-  }, [open, recordingRequestId, startQuestionRecording]);
+  }, [
+    isMicrophonePermissionDenied,
+    open,
+    recordingRequestId,
+    startQuestionRecording,
+  ]);
 
   useEffect(() => {
     if (!isWaitingForPersonRecognition) {
@@ -364,19 +391,21 @@ export default function PatientQuestionAssistant({
           ×
         </button>
 
-        <div
-          className={`patient-question-assistant__heading ${isRecording ? "is-recording" : ""}`}
-        >
-          <span aria-hidden="true">●</span>
-          <div>
-            <h2 id="patient-question-assistant-title">
-              {assistantHeading}
-            </h2>
-            <p>{assistantHeadingDescription}</p>
+        {!isTextInputOpen && (
+          <div
+            className={`patient-question-assistant__heading ${isRecording ? "is-recording" : ""}`}
+          >
+            <span aria-hidden="true">●</span>
+            <div>
+              <h2 id="patient-question-assistant-title">
+                {assistantHeading}
+              </h2>
+              <p>{assistantHeadingDescription}</p>
+            </div>
           </div>
-        </div>
+        )}
 
-        {!submittedQuestion && (
+        {!submittedQuestion && !isTextInputOpen && !isMicrophoneUnavailable && !isMicrophonePreparing && (
           <>
             <section className="patient-question-assistant__voice-input">
           {isRecording && (
@@ -427,12 +456,6 @@ export default function PatientQuestionAssistant({
               ‘말하기 끝내기’를 눌러 주세요.
             </p>
           )}
-          {questionRecorder.errorMessage && (
-            <section className="patient-question-assistant__permission-error" role="alert">
-              <strong>마이크를 사용할 수 없어요</strong>
-              <p>{questionRecorder.errorMessage}</p>
-            </section>
-          )}
           {!isRecordingBusy && (
             <p className="patient-question-assistant__voice-tip">
               주변이 시끄럽거나 마이크가 어렵다면 텍스트로 질문할 수 있어요.
@@ -456,7 +479,7 @@ export default function PatientQuestionAssistant({
           </>
         )}
 
-        {!submittedQuestion && (
+        {!submittedQuestion && !isTextInputOpen && !isMicrophoneUnavailable && !isMicrophonePreparing && (
           <div className="patient-question-assistant__examples">
             <p>이렇게 물어볼 수 있어요</p>
             <div>
@@ -474,6 +497,35 @@ export default function PatientQuestionAssistant({
               ))}
             </div>
           </div>
+        )}
+
+        {!submittedQuestion && !isTextInputOpen && isMicrophonePreparing && (
+          <section className="patient-question-assistant__preparing-panel" role="status">
+            <div className="patient-question-assistant__voice-wave" aria-hidden="true">
+              {[0, 1, 2, 3, 4].map((barIndex) => (
+                <span key={barIndex} />
+              ))}
+            </div>
+            <p>마이크 연결을 확인하고 있어요.</p>
+          </section>
+        )}
+
+        {!submittedQuestion && !isTextInputOpen && isMicrophoneUnavailable && (
+          <section className="patient-question-assistant__permission-panel" role="alert">
+            <p>{microphonePermissionMessage}</p>
+            <div className="patient-question-assistant__response-actions">
+              <button
+                type="button"
+                className="patient-question-assistant__response-primary-action"
+                onClick={handleOpenTextInput}
+              >
+                텍스트로 물어보기
+              </button>
+              <button type="button" onClick={handleClose}>
+                닫기
+              </button>
+            </div>
+          </section>
         )}
 
         {submittedQuestion && (
@@ -505,22 +557,6 @@ export default function PatientQuestionAssistant({
               <div className="patient-question-assistant__response" role="status">
                 <h3>{response.title}</h3>
                 <p>{response.message}</p>
-                <p>{response.suggestion}</p>
-                {response.upcomingPromises?.length > 0 && (
-                  <section className="patient-question-assistant__upcoming-promises">
-                    <strong>이후 약속</strong>
-                    <ul>
-                      {response.upcomingPromises.map((promise) => (
-                        <li key={promise}>{promise}</li>
-                      ))}
-                    </ul>
-                    {response.remainingPromiseCount > 0 && (
-                      <p>
-                        그 외 예정된 약속도 {response.remainingPromiseCount}개 더 있어요.
-                      </p>
-                    )}
-                  </section>
-                )}
                 <div className="patient-question-assistant__response-actions">
                   {response.action === "register-unknown-person" && (
                     <button
@@ -541,10 +577,7 @@ export default function PatientQuestionAssistant({
                     </button>
                   )}
                   <button type="button" onClick={handleRestartVoiceQuestion}>
-                    다시 말하기
-                  </button>
-                  <button type="button" onClick={handleOpenTextQuestion}>
-                    텍스트로 물어보기
+                    다시 물어보기
                   </button>
                 </div>
               </div>
@@ -596,6 +629,12 @@ export default function PatientQuestionAssistant({
                 rows="4"
                 placeholder="예: 나 아까 점심 뭐 먹었더라?"
                 onChange={(event) => setQuestion(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }
+                }}
               />
               <button type="submit" disabled={!question.trim() || isAnswerLoading}>
                 질문하기

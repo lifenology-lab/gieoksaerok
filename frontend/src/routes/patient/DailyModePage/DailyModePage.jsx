@@ -80,6 +80,20 @@ function captureMealSceneImage(videoElement) {
   });
 }
 
+async function getMicrophonePermissionState() {
+  if (!navigator.permissions?.query) {
+    return "unknown";
+  }
+
+  try {
+    const permission = await navigator.permissions.query({ name: "microphone" });
+
+    return permission.state;
+  } catch {
+    return "unknown";
+  }
+}
+
 export default function DailyModePage() {
   const nav = useNavigate();
   const camera = useCamera();
@@ -95,6 +109,8 @@ export default function DailyModePage() {
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
   const [isQuestionAssistantOpen, setIsQuestionAssistantOpen] = useState(false);
   const [questionRecordingRequestId, setQuestionRecordingRequestId] = useState(0);
+  const [microphonePermissionState, setMicrophonePermissionState] =
+    useState("unknown");
 
   const mealRecordsRef = useRef(mealRecords);
   const mealRecognitionResultRef = useRef(mealRecognitionResult);
@@ -365,7 +381,10 @@ export default function DailyModePage() {
     }
   };
 
-  const handleOpenQuestionAssistant = () => {
+  const handleOpenQuestionAssistant = async () => {
+    const permissionState = await getMicrophonePermissionState();
+
+    setMicrophonePermissionState(permissionState);
     setIsQuestionAssistantOpen(true);
     setQuestionRecordingRequestId((requestId) => requestId + 1);
   };
@@ -475,8 +494,12 @@ export default function DailyModePage() {
 
       <PatientQuestionAssistant
         open={isQuestionAssistantOpen}
-        onClose={() => setIsQuestionAssistantOpen(false)}
+        onClose={() => {
+          setIsQuestionAssistantOpen(false);
+          setMicrophonePermissionState("unknown");
+        }}
         recordingRequestId={questionRecordingRequestId}
+        microphonePermissionState={microphonePermissionState}
         recognizedPerson={activeConversationPerson}
         isUnknownPersonDetected={isRegisterDialogOpen}
         onRequestPersonRecognition={startPersonRecognition}
