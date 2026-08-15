@@ -476,7 +476,9 @@ export default function DailyModePage() {
         onSubmit={saveUnknownPerson}
       />
 
-      <MealRecognitionOverlay isOpen={Boolean(mealRecognitionResult)}>
+      <MealRecognitionOverlay
+        isOpen={Boolean(mealRecognitionResult) && !isQuestionAssistantOpen && !isRegisterDialogOpen}
+      >
         {mealRecognitionResult && (
           <MealRecognitionCard
             title={mealRecognitionResult.title}

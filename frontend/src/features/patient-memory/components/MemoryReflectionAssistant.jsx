@@ -236,7 +236,7 @@ export default function MemoryReflectionAssistant({
       )}
 
       {hasConversation && !isMicrophoneUnavailable && (
-        <div className="memory-reflection-assistant__conversation">
+        <div className={`memory-reflection-assistant__conversation${isProcessing ? " is-processing" : ""}`}>
           {isProcessing && (
             <div className="memory-reflection-assistant__status" aria-live="polite">
               말씀을 확인하고 있어요

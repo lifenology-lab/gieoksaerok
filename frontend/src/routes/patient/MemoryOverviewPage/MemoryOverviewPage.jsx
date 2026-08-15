@@ -24,6 +24,7 @@ const TAB_ITEMS = [
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 const REFLECTION_SESSION_IDLE_MS = 30 * 60 * 1000;
+const INITIAL_PEOPLE_CHOOSER_COUNT = 5;
 const MEAL_TYPE_ORDER = {
   breakfast: 0,
   lunch: 1,
@@ -138,6 +139,7 @@ export default function MemoryOverviewPage() {
   const [reflectionIndex, setReflectionIndex] = useState(0);
   const [isHintVisible, setIsHintVisible] = useState(false);
   const [isPeopleChooserOpen, setIsPeopleChooserOpen] = useState(false);
+  const [isPeopleChooserExpanded, setIsPeopleChooserExpanded] = useState(false);
   const [isReflectionAssistantOpen, setIsReflectionAssistantOpen] = useState(false);
   const [reflectionSessions, setReflectionSessions] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -381,7 +383,20 @@ export default function MemoryOverviewPage() {
   };
 
   const handleTalkAboutReflection = () => {
+    setIsHintVisible(false);
+    setIsPeopleChooserOpen(false);
+    setIsPeopleChooserExpanded(false);
+    setSelectedCalendarItem(null);
     setIsReflectionAssistantOpen(true);
+  };
+
+  const handleMemoryTabChange = (nextTab) => {
+    setSelectedCalendarItem(null);
+    setIsHintVisible(false);
+    setIsPeopleChooserOpen(false);
+    setIsPeopleChooserExpanded(false);
+    setIsReflectionAssistantOpen(false);
+    setActiveTab(nextTab);
   };
 
   const handleReflectionSessionChange = (albumItemId, nextSession) => {
@@ -420,7 +435,7 @@ export default function MemoryOverviewPage() {
             role="tab"
             aria-selected={activeTab === tab.id}
             className={activeTab === tab.id ? "is-active" : ""}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleMemoryTabChange(tab.id)}
           >
             {tab.label}
           </button>
@@ -613,9 +628,28 @@ export default function MemoryOverviewPage() {
                       </div>
                       <div className="memory-overview-page__reflection-actions">
                         <button type="button" onClick={handleTalkAboutReflection}>새록이에게 이야기하기</button>
-                        <button type="button" onClick={() => setIsHintVisible(true)}>힌트 보기</button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPeopleChooserOpen(false);
+                            setSelectedCalendarItem(null);
+                            setIsHintVisible(true);
+                          }}
+                        >
+                          힌트 보기
+                        </button>
                         {people.length > 0 && (
-                          <button type="button" onClick={() => setIsPeopleChooserOpen(true)}>사람 선택</button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                            setIsHintVisible(false);
+                            setSelectedCalendarItem(null);
+                            setIsPeopleChooserExpanded(false);
+                            setIsPeopleChooserOpen(true);
+                            }}
+                          >
+                            사람 선택
+                          </button>
                         )}
                       </div>
                     </>
@@ -674,13 +708,25 @@ export default function MemoryOverviewPage() {
       {isPeopleChooserOpen && (
         <div className="memory-overview-page__reflection-overlay" role="presentation" onClick={() => setIsPeopleChooserOpen(false)}>
           <section className="memory-overview-page__reflection-dialog" role="dialog" aria-modal="true" aria-labelledby="reflection-people-title" onClick={(event) => event.stopPropagation()}>
-            <button type="button" aria-label="사람 선택 닫기" onClick={() => setIsPeopleChooserOpen(false)}>×</button>
+            <button type="button" aria-label="사람 선택 닫기" onClick={() => {
+              setIsPeopleChooserOpen(false);
+              setIsPeopleChooserExpanded(false);
+            }}>×</button>
             <span>사람별 추억</span>
             <h2 id="reflection-people-title">누구와의 추억을 살펴볼까요?</h2>
             <div className="memory-overview-page__reflection-person-list">
-              {people.map((person) => (
+              {people.slice(0, isPeopleChooserExpanded ? people.length : INITIAL_PEOPLE_CHOOSER_COUNT).map((person) => (
                 <button key={person.id} type="button" onClick={() => handleOpenAlbum(person)}>{getPersonLabel(person)}</button>
               ))}
+              {people.length > INITIAL_PEOPLE_CHOOSER_COUNT && (
+                <button
+                  type="button"
+                  className="memory-overview-page__reflection-people-more"
+                  onClick={() => setIsPeopleChooserExpanded((expanded) => !expanded)}
+                >
+                  {isPeopleChooserExpanded ? "접기" : `${people.length - INITIAL_PEOPLE_CHOOSER_COUNT}명 더 보기`}
+                </button>
+              )}
             </div>
           </section>
         </div>
