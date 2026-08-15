@@ -24,6 +24,7 @@ export default function MemoryReflectionAssistant({
   const [errorMessage, setErrorMessage] = useState("");
   const [isTextMode, setIsTextMode] = useState(false);
   const [textDraft, setTextDraft] = useState("");
+  const [pendingTranscript, setPendingTranscript] = useState("");
   const messages = session?.messages || [];
   const summary = session?.summary || "";
 
@@ -78,6 +79,7 @@ export default function MemoryReflectionAssistant({
   const isMicrophoneUnavailable =
     recorder.recordingStatus === "error" && !isRecording;
   const hasConversation = messages.length > 0;
+  const hasConversationView = hasConversation || Boolean(pendingTranscript);
   const latestUserMessage = [...messages]
     .reverse()
     .find((message) => message.role === "user");
@@ -134,6 +136,8 @@ export default function MemoryReflectionAssistant({
     }
 
     setErrorMessage("");
+    setPendingTranscript(transcript);
+    setIsTextMode(false);
     setIsReplyLoading(true);
 
     try {
@@ -146,7 +150,7 @@ export default function MemoryReflectionAssistant({
       });
       updateConversation(result, "text");
       setTextDraft("");
-      setIsTextMode(false);
+      setPendingTranscript("");
     } catch (error) {
       setErrorMessage(error.message || "이야기에 답하지 못했어요.");
     } finally {
@@ -156,7 +160,7 @@ export default function MemoryReflectionAssistant({
 
   return (
     <VoiceAssistantCard
-      className={`patient-question-assistant memory-reflection-assistant-shell${hasConversation ? " is-conversation" : ""}`}
+      className={`patient-question-assistant memory-reflection-assistant-shell${hasConversationView ? " is-conversation" : ""}`}
       ariaLabelledBy="memory-reflection-assistant-title"
       closeLabel="회상 대화 닫기"
       onClose={handleClose}
@@ -166,7 +170,7 @@ export default function MemoryReflectionAssistant({
         className={`memory-reflection-assistant ${isRecording ? "is-recording" : ""}`}
         aria-live="polite"
       >
-      {(!hasConversation || isMicrophoneUnavailable) && !isTextMode && (
+      {(!hasConversationView || isMicrophoneUnavailable) && !isTextMode && (
         <div className={`patient-question-assistant__heading ${isRecording ? "is-recording" : ""}`}>
           <span aria-hidden="true">●</span>
           <div>
@@ -176,7 +180,7 @@ export default function MemoryReflectionAssistant({
         </div>
       )}
 
-      {!hasConversation && !isMicrophoneUnavailable && (
+      {!hasConversationView && !isMicrophoneUnavailable && (
         <div className="memory-reflection-assistant__recording">
           {isRecording && (
             <div className="patient-question-assistant__voice-wave" aria-hidden="true">
@@ -235,7 +239,7 @@ export default function MemoryReflectionAssistant({
         </div>
       )}
 
-      {hasConversation && !isMicrophoneUnavailable && (
+      {hasConversationView && !isMicrophoneUnavailable && (
         <div className={`memory-reflection-assistant__conversation${isProcessing ? " is-processing" : ""}`}>
           {isProcessing && (
             <div className="memory-reflection-assistant__status" aria-live="polite">
@@ -244,11 +248,11 @@ export default function MemoryReflectionAssistant({
           )}
           <div className={`memory-reflection-assistant__agent-layout${isProcessing ? " is-processing" : ""}`}>
             <div className="memory-reflection-assistant__response" aria-label="새록이의 회상 안내">
-              {latestUserMessage && (
+              {(pendingTranscript || latestUserMessage) && (
                 <div className="memory-reflection-assistant__transcript">
-                  <span>{latestUserMessage.source === "text" ? "이렇게 남겼어요" : "이렇게 들었어요"}</span>
-                  <p>“{latestUserMessage.content}”</p>
-                  {latestUserMessage.source !== "text" && !isProcessing && !isRecording && (
+                  <span>{(pendingTranscript || latestUserMessage?.source === "text") ? "이렇게 남겼어요" : "이렇게 들었어요"}</span>
+                  <p>“{pendingTranscript || latestUserMessage?.content}”</p>
+                  {!pendingTranscript && latestUserMessage?.source !== "text" && !isProcessing && !isRecording && (
                     <button type="button" onClick={handleContinue}>다시 말하기</button>
                   )}
                 </div>
@@ -282,7 +286,7 @@ export default function MemoryReflectionAssistant({
                     />
                     <div>
                       <button type="button" onClick={() => setIsTextMode(false)}>취소</button>
-                      <button type="submit" disabled={!textDraft.trim() || isProcessing}>질문하기</button>
+                      <button type="submit" disabled={!textDraft.trim() || isProcessing}>이야기 나누기</button>
                     </div>
                   </form>
                 ) : (
@@ -296,7 +300,7 @@ export default function MemoryReflectionAssistant({
                     className={isRecording ? "patient-question-assistant__voice-cancel-button" : "patient-question-assistant__text-action"}
                     onClick={isRecording ? recorder.cancelRecording : () => setIsTextMode(true)}
                   >
-                    {isRecording ? "취소" : <>텍스트로<br />질문하기</>}
+                    {isRecording ? "취소" : <>텍스트로<br />이야기하기</>}
                   </button>
                   </>
                 )}
@@ -307,7 +311,7 @@ export default function MemoryReflectionAssistant({
         </div>
       )}
 
-      {isTextMode && (!hasConversation || isMicrophoneUnavailable) && (
+      {isTextMode && (!hasConversationView || isMicrophoneUnavailable) && (
         <form className="patient-question-assistant__form memory-reflection-assistant__text-form" onSubmit={handleTextSubmit}>
           <textarea
             autoFocus
@@ -323,7 +327,7 @@ export default function MemoryReflectionAssistant({
           />
           <div>
             <button type="button" onClick={() => setIsTextMode(false)}>취소</button>
-            <button type="submit" disabled={!textDraft.trim() || isProcessing}>질문하기</button>
+            <button type="submit" disabled={!textDraft.trim() || isProcessing}>이야기 나누기</button>
           </div>
         </form>
       )}
