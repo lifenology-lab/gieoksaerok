@@ -140,6 +140,15 @@ class PersonDisplaySummaryCard(BaseModel):
     )
 
 
+class PatientMemoryAlbumDescription(BaseModel):
+    description: str = Field(
+        description=(
+            '보호자가 쓴 추억 원문을 환자가 바로 이해할 수 있게 바꾼 '
+            '따뜻한 한국어 한 문장'
+        ),
+    )
+
+
 class OpenAITranscriptionError(Exception):
     pass
 
@@ -152,6 +161,7 @@ RECENT_MEMORY_LIMIT = 3
 DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT = 3
 CONVERSATION_MEMORY_RETENTION_LIMIT = 5
 PATIENT_SPEAKER_NAME = '환자'
+MEMORY_ALBUM_DESCRIPTION_MAX_LENGTH = 160
 
 
 @dataclass
@@ -597,6 +607,72 @@ def _extract_parsed_memory(response):
                 return parsed
 
     raise OpenAIMemorySummaryError('요약 결과를 JSON으로 해석하지 못했습니다.')
+
+
+def _normalize_memory_album_description(description):
+    normalized = ' '.join((description or '').split()).strip(' "\'')
+
+    if len(normalized) <= MEMORY_ALBUM_DESCRIPTION_MAX_LENGTH:
+        return normalized
+
+    return f'{normalized[:MEMORY_ALBUM_DESCRIPTION_MAX_LENGTH - 3].rstrip()}...'
+
+
+def generate_patient_memory_album_description(
+    person,
+    caregiver_description,
+    patient_name=None,
+):
+    client = _get_openai_client(OpenAIMemorySummaryError)
+    patient_label = (patient_name or '환자').strip() or '환자'
+    caregiver_label = f'{person.relationship} {person.name}'
+
+    instructions = (
+        'You are an expert AI assistant specializing in cognitive support for '
+        "patients with Alzheimer's disease and dementia. Convert a caregiver's "
+        'memory note into one clear, warm Korean sentence that can be shown '
+        'under a photo in the patient memory album. '
+        'Write from the patient-facing perspective, so the patient can read it '
+        'as their own reassuring memory. Use explicit relationship and name '
+        f'like "{caregiver_label}" when that helps. Do not use pronouns such as '
+        '"그녀", "그분", or "상대방". Preserve only facts present in the input. '
+        'Do not invent dates, places, emotions, or family members. Avoid medical '
+        'advice. Use polite, simple Korean. Output exactly one sentence, no '
+        'emoji, no markdown, no quotation marks, and keep it within 80 Korean '
+        'characters when possible. You MUST respond strictly using the provided '
+        'JSON schema.'
+    )
+
+    try:
+        response = client.responses.parse(
+            model=settings.OPENAI_MEMORY_SUMMARY_MODEL,
+            instructions=instructions,
+            input=(
+                '[배경 정보]\n'
+                f'환자 이름: {patient_label}\n'
+                f'보호자/인물: {caregiver_label}\n\n'
+                '[보호자가 쓴 추억 원문]\n'
+                f'{caregiver_description}\n\n'
+                '[지시사항]\n'
+                '위 원문을 환자의 추억 앨범 사진 아래에 표시할 한 문장으로 바꾸세요.'
+            ),
+            text_format=PatientMemoryAlbumDescription,
+            max_output_tokens=180,
+            temperature=0.2,
+        )
+    except Exception as exc:
+        raise OpenAIMemorySummaryError(
+            'OpenAI 추억 글귀 변환 요청에 실패했습니다.',
+        ) from exc
+
+    parsed = _extract_parsed_memory(response)
+    data = parsed.model_dump() if hasattr(parsed, 'model_dump') else dict(parsed)
+    description = _normalize_memory_album_description(data.get('description'))
+
+    if not description:
+        raise OpenAIMemorySummaryError('추억 글귀 변환 결과가 비어 있습니다.')
+
+    return description
 
 
 def generate_memory_recap(

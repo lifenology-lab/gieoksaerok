@@ -50,6 +50,7 @@ from .services import (
     build_transcription_prompt,
     extract_initial_long_term_memories,
     extract_long_term_memories,
+    generate_patient_memory_album_description,
     generate_person_display_summary,
     generate_memory_recap,
     merge_long_term_memory_candidate,
@@ -716,7 +717,26 @@ class MemoryAlbumItemListCreateView(PatientOwnedAPIView):
     def post(self, request, person_id):
         user = get_request_patient_user(request)
         person = get_object_or_404(Person, pk=person_id, user=user)
-        serializer = MemoryAlbumItemSerializer(data=request.data)
+        data = request.data.copy()
+        source = (data.get('source') or '').strip().lower()
+        description = (data.get('description') or '').strip()
+
+        if source == 'caregiver' and description:
+            patient_name = (getattr(user, 'name', '') or user.username).strip()
+
+            try:
+                data['description'] = generate_patient_memory_album_description(
+                    person=person,
+                    caregiver_description=description,
+                    patient_name=patient_name,
+                )
+            except OpenAIMemorySummaryError as exc:
+                return Response(
+                    {'detail': str(exc)},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+
+        serializer = MemoryAlbumItemSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=user, person=person)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -7,7 +7,7 @@ import { createMemoryAlbumItem } from "@/features/memory-album/api/memoryAlbumAp
 
 import "./CaregiverMemoryRegisterPage.css";
 
-const DESCRIPTION_MAX_LENGTH = 160;
+const DESCRIPTION_MAX_LENGTH = 700;
 const DEFAULT_CROP_POSITION = { x: 50, y: 50 };
 
 function clampCropValue(value) {
@@ -194,6 +194,7 @@ export default function CaregiverMemoryRegisterPage() {
         description: description.trim(),
         cropX: cropPosition.x,
         cropY: cropPosition.y,
+        source: "caregiver",
       });
 
       resetPhotoForm();
@@ -250,7 +251,7 @@ export default function CaregiverMemoryRegisterPage() {
 
           <p>
             선택한 이름의 인물이 환자 일상 모드에서 인식되면, 등록한 사진과
-            글귀가 같은 추억 카드 앨범에 표시됩니다.
+            글귀가 환자에게 읽기 쉬운 한 문장으로 정리되어 표시됩니다.
           </p>
         </section>
 
@@ -310,7 +311,7 @@ export default function CaregiverMemoryRegisterPage() {
               maxLength={DESCRIPTION_MAX_LENGTH}
               placeholder={
                 selectedPersonLabel
-                  ? `${selectedPersonLabel}님과의 추억을 짧게 적어주세요.`
+                  ? `${selectedPersonLabel}님과의 추억을 보호자 입장에서 적어주세요.`
                   : `${patientName}님께 보여줄 따뜻한 글귀를 적어주세요.`
               }
               rows="5"

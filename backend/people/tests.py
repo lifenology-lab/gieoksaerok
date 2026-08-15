@@ -1708,6 +1708,90 @@ class MemoryAlbumItemListCreateViewTests(TestCase):
                 self.assertEqual(list_response.json()[0]['id'], str(item.id))
                 self.assertEqual(list_response.json()[0]['crop_x'], 24.5)
 
+    @mock.patch('people.views.generate_patient_memory_album_description')
+    def test_caregiver_memory_album_description_is_rewritten_for_patient(
+        self,
+        mock_generate_description,
+    ):
+        rewritten_description = (
+            '딸 지민과 제주도 억새밭을 걸으며 사진도 찍고 활짝 웃었던 즐거운 날입니다.'
+        )
+        mock_generate_description.return_value = rewritten_description
+        caregiver_description = (
+            '작년 가을에 엄마 모시고 제주도 갔을 때, 억새밭 보면서 엄마가 '
+            '소녀처럼 엄청 좋아하셨어. 바람이 많이 불었는데도 계속 사진 '
+            '찍어달라고 하시면서 활짝 웃으셨던 게 제일 기억에 남아. '
+            '그날 사진을 볼 때마다 엄마 웃는 모습이 떠올라서 마음이 따뜻해져.'
+        )
+
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                photo = SimpleUploadedFile(
+                    'jeju.png',
+                    b'fake-image-bytes',
+                    content_type='image/png',
+                )
+
+                response = self.client.post(
+                    reverse(
+                        'memory-album-item-list-create',
+                        kwargs={'person_id': self.person.id},
+                    ),
+                    {
+                        'photo': photo,
+                        'description': caregiver_description,
+                        'crop_x': '50',
+                        'crop_y': '50',
+                        'source': 'caregiver',
+                    },
+                )
+
+        self.assertEqual(response.status_code, 201)
+        item = MemoryAlbumItem.objects.get()
+        self.assertEqual(item.description, rewritten_description)
+        self.assertEqual(response.json()['description'], rewritten_description)
+        self.assertNotEqual(item.description, caregiver_description)
+
+        mock_generate_description.assert_called_once()
+        call_kwargs = mock_generate_description.call_args.kwargs
+        self.assertEqual(call_kwargs['person'], self.person)
+        self.assertEqual(call_kwargs['caregiver_description'], caregiver_description)
+        self.assertEqual(call_kwargs['patient_name'], '테스트 환자')
+
+    @mock.patch('people.views.generate_patient_memory_album_description')
+    def test_caregiver_memory_album_openai_error_returns_503(
+        self,
+        mock_generate_description,
+    ):
+        mock_generate_description.side_effect = OpenAIMemorySummaryError(
+            'OpenAI 추억 글귀 변환 요청에 실패했습니다.',
+        )
+
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                photo = SimpleUploadedFile(
+                    'jeju.png',
+                    b'fake-image-bytes',
+                    content_type='image/png',
+                )
+
+                response = self.client.post(
+                    reverse(
+                        'memory-album-item-list-create',
+                        kwargs={'person_id': self.person.id},
+                    ),
+                    {
+                        'photo': photo,
+                        'description': '제주도에서 함께한 즐거운 추억',
+                        'crop_x': '50',
+                        'crop_y': '50',
+                        'source': 'caregiver',
+                    },
+                )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(MemoryAlbumItem.objects.count(), 0)
+
     def test_delete_memory_album_item(self):
         with tempfile.TemporaryDirectory() as media_root:
             with override_settings(MEDIA_ROOT=media_root):
