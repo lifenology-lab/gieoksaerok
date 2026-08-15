@@ -7,8 +7,10 @@ import {
   fetchPatientQuestionSchedules,
   savePatientQuestionEvent,
 } from "../api/patientQuestionApi";
+import usePatientAnswerSpeech from "../hooks/usePatientAnswerSpeech";
 import usePatientQuestionRecorder from "../hooks/usePatientQuestionRecorder";
 import { classifyPatientQuestion } from "../utils/classifyPatientQuestion";
+import { createPatientAnswerSpeechText } from "../utils/createPatientAnswerSpeechText";
 import { createPatientQuestionResponse } from "../utils/createPatientQuestionResponse";
 
 import "./PatientQuestionAssistant.css";
@@ -18,6 +20,8 @@ const EXAMPLE_QUESTIONS = [
   "나 밥 먹었나?",
   "여기가 어디야?",
 ];
+
+const DAILY_MODE_AUDIO_WARMUP_TEXT = "안녕하세요. 기억새록이에요.";
 
 export default function PatientQuestionAssistant({
   open,
@@ -43,6 +47,14 @@ export default function PatientQuestionAssistant({
   const [isWaitingForPersonRecognition, setIsWaitingForPersonRecognition] =
     useState(false);
   const textInputRef = useRef(null);
+  const {
+    errorMessage: speechErrorMessage,
+    play: playAnswerSpeech,
+    preload: preloadAnswerSpeech,
+    status: speechStatus,
+    stop: stopAnswerSpeech,
+  } = usePatientAnswerSpeech();
+  const warmedAudioRef = useRef(false);
 
   const saveQuestionEvent = useCallback(
     async ({ transcript, inputMethod, intentType, patientResponse }) => {
@@ -70,6 +82,7 @@ export default function PatientQuestionAssistant({
 
     setQuestion(normalizedQuestion);
     setSubmittedQuestion(normalizedQuestion);
+    stopAnswerSpeech();
     let result = classifyPatientQuestion(normalizedQuestion);
     setResponse(null);
     setAnswerError("");
@@ -168,6 +181,7 @@ export default function PatientQuestionAssistant({
       setAnswerLoadingMessage("");
     }
   }, [
+    stopAnswerSpeech,
     isUnknownPersonDetected,
     onRequestPersonRecognition,
     recognizedPerson,
@@ -210,6 +224,15 @@ export default function PatientQuestionAssistant({
     }
   }, [isTextInputOpen]);
 
+  useEffect(() => {
+    if (warmedAudioRef.current) {
+      return;
+    }
+
+    warmedAudioRef.current = true;
+    void preloadAnswerSpeech(DAILY_MODE_AUDIO_WARMUP_TEXT);
+  }, [preloadAnswerSpeech]);
+
   const handledRecordingRequestIdRef = useRef(0);
 
   useEffect(() => {
@@ -249,6 +272,16 @@ export default function PatientQuestionAssistant({
     recognizedPerson,
   ]);
 
+  const responseSpeechText = createPatientAnswerSpeechText(response);
+
+  useEffect(() => {
+    if (!open || !responseSpeechText) {
+      return;
+    }
+
+    void playAnswerSpeech(responseSpeechText, { autoplay: true });
+  }, [open, playAnswerSpeech, responseSpeechText]);
+
   if (!open) {
     return null;
   }
@@ -264,6 +297,7 @@ export default function PatientQuestionAssistant({
   };
 
   const resetAssistantState = () => {
+    stopAnswerSpeech();
     setQuestion("");
     setSubmittedQuestion("");
     setResponse(null);
@@ -345,6 +379,22 @@ export default function PatientQuestionAssistant({
       resetAssistantState();
       onOpenMemoryAlbum?.(response.person);
     }
+  };
+
+  const speechActionLabel =
+    speechStatus === "loading"
+      ? "안내를 준비하고 있어요"
+        : speechStatus === "playing"
+          ? "안내 멈추기"
+          : "새록이의 안내 듣기";
+
+  const handleResponseSpeech = () => {
+    if (speechStatus === "playing") {
+      stopAnswerSpeech();
+      return;
+    }
+
+    void playAnswerSpeech(responseSpeechText);
   };
 
   return (
@@ -506,6 +556,31 @@ export default function PatientQuestionAssistant({
                 <h3>{response.title}</h3>
                 <p>{response.message}</p>
                 <p>{response.suggestion}</p>
+                {responseSpeechText && (
+                  <button
+                    type="button"
+                    className={`patient-question-assistant__speech-action ${speechStatus === "playing" ? "is-playing" : ""}`}
+                    disabled={speechStatus === "loading"}
+                    aria-pressed={speechStatus === "playing"}
+                    onClick={handleResponseSpeech}
+                  >
+                    <span aria-hidden="true">
+                      {speechStatus === "playing" ? "■" : "◖"}
+                    </span>
+                    {speechActionLabel}
+                  </button>
+                )}
+                {speechErrorMessage && (
+                  <p className="patient-question-assistant__speech-error" role="alert">
+                    {speechErrorMessage}
+                  </p>
+                )}
+                {(["playing", "ready"].includes(speechStatus)) && (
+                  <p className="patient-question-assistant__audio-notice">
+                    소리가 들리지 않으면 기기의 미디어 음량과 무음 모드를 확인해
+                    주세요.
+                  </p>
+                )}
                 {response.upcomingPromises?.length > 0 && (
                   <section className="patient-question-assistant__upcoming-promises">
                     <strong>이후 약속</strong>

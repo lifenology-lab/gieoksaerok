@@ -114,6 +114,54 @@ export async function request(path, options = {}) {
   return JSON.parse(text);
 }
 
+export async function requestBlob(path, options = {}) {
+  const {
+    headers: optionHeaders,
+    retryOnUnauthorized = true,
+    skipAuth = false,
+    ...fetchOptions
+  } = options;
+  const headers = new Headers(optionHeaders || {});
+  const body = fetchOptions.body;
+
+  if (body && !(body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const accessToken = getAccessToken();
+
+  if (!skipAuth && accessToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...fetchOptions,
+    headers,
+  });
+
+  if (
+    response.status === 401 &&
+    !skipAuth &&
+    retryOnUnauthorized &&
+    getRefreshToken()
+  ) {
+    const nextAccessToken = await refreshAccessToken();
+
+    if (nextAccessToken) {
+      return requestBlob(path, {
+        ...options,
+        retryOnUnauthorized: false,
+      });
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response));
+  }
+
+  return response.blob();
+}
+
 export function getApiMediaUrl(pathOrUrl) {
   if (!pathOrUrl) {
     return "";

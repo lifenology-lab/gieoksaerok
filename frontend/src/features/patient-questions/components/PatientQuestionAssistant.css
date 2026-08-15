@@ -553,6 +553,45 @@
   background: #91e8d6 !important;
 }
 
+.patient-question-assistant__speech-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-color: rgba(145, 232, 214, 0.62) !important;
+  color: #d9f8ee !important;
+  background: rgba(145, 232, 214, 0.12) !important;
+}
+
+.patient-question-assistant__speech-action span {
+  color: #91e8d6;
+  font-size: 17px;
+}
+
+.patient-question-assistant__speech-action.is-playing {
+  border-color: rgba(255, 209, 95, 0.72) !important;
+  color: #fff1c6 !important;
+  background: rgba(255, 209, 95, 0.14) !important;
+}
+
+.patient-question-assistant__speech-action.is-playing span {
+  color: #ffd15f;
+}
+
+.patient-question-assistant__speech-error {
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #ffd4d9 !important;
+  background: rgba(153, 39, 54, 0.28) !important;
+}
+
+.patient-question-assistant__audio-notice {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  text-align: center;
+}
+
 .patient-question-assistant__response button:hover,
 .patient-question-assistant__response button:focus-visible {
   border-color: rgba(255, 255, 255, 0.7);
