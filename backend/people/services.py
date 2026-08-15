@@ -7,7 +7,10 @@ from tempfile import NamedTemporaryFile
 from django.conf import settings
 from pydantic import BaseModel, Field
 
-from .display_summary import select_face_card_body
+from .display_summary import (
+    select_face_card_body,
+    strip_repeated_relationship_label,
+)
 from .promise_utils import (
     format_person_summary_promise_display,
     format_promise_display,
@@ -448,6 +451,11 @@ def build_transcription_prompt(
     parts = [
         '다음 오디오는 한국어 일상 대화입니다.',
         f'화자는 환자와 {person.relationship} {person.name}입니다.',
+        f'이미 인식된 상대방의 이름은 "{person.name}"입니다.',
+        (
+            f'STT가 비슷하게 들리는 다른 이름을 만들더라도 문맥상 같은 사람이면 '
+            f'반드시 인식된 이름({person.name})을 사용해 전사하세요.'
+        ),
         '사람 이름, 가족 호칭, 장소, 날짜, 시간, 약속 표현을 가능한 한 정확하게 전사하세요.',
     ]
 
@@ -719,7 +727,14 @@ def generate_memory_recap(
         'STT Noise Reduction Rules: Ignore filler words such as "어", "음", '
         '"그니까", repetitions, and minor speech recognition errors. Focus '
         'strictly on factual information, explicit commitments or promises, and '
-        'warm interactions. '
+        'warm interactions. STT Name Normalization Rules: The recognized person '
+        f'is "{person.relationship} {person.name}". If current_transcript '
+        f'contains a similar-sounding Korean name that likely refers to this '
+        f'person, normalize it to "{person.name}". Do not introduce a second '
+        'person with a similar name unless the transcript clearly says they are '
+        'different people. For example, if the recognized person is "민호" and '
+        'the STT text says "민구" in the same speaker/context, summarize it as '
+        '"민호". '
         'Patient Readability & Cognitive Rules: Write in a clear, warm, polite '
         'Korean tone ending like "~했습니다" or "~입니다". Never use pronouns '
         'such as "그녀", "그분", or "상대방"; always explicitly write the '
@@ -1009,7 +1024,10 @@ def generate_person_display_summary(
 
     card = {
         'display_name': f'{person.relationship} {person.name}'.strip(),
-        'title': _recap_value(latest_memory, 'title', 'headline'),
+        'title': strip_repeated_relationship_label(
+            _recap_value(latest_memory, 'title', 'headline'),
+            person=person,
+        ),
         'body': select_face_card_body(
             latest_recap,
             promise=nearest_promise,

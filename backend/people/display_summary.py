@@ -42,6 +42,24 @@ def _person_display_name(person):
     return f'{relationship} {name}'.strip()
 
 
+def _person_name(person):
+    if not person:
+        return ''
+
+    return _normalize_text(getattr(person, 'name', ''))
+
+
+def strip_repeated_relationship_label(text, person=None):
+    text = _normalize_text(text)
+    display_name = _person_display_name(person)
+    name = _person_name(person)
+
+    if not text or not display_name or not name or display_name == name:
+        return text
+
+    return text.replace(display_name, name)
+
+
 def _append_sentence_period(text):
     text = _normalize_text(text)
 
@@ -112,18 +130,14 @@ def is_promise_like_display_text(text, promise=None, person=None):
 
 def ensure_explicit_person_reference(text, person=None):
     text = _normalize_text(text)
-    display_name = _person_display_name(person)
+    text = strip_repeated_relationship_label(text, person=person)
+    name = _person_name(person)
 
-    if not text or not display_name or display_name in text:
+    if not text or not name or name in text:
         return text
 
-    name = _normalize_text(getattr(person, 'name', ''))
-
-    if name and name in text:
-        return text.replace(name, display_name, 1)
-
-    particle = '과' if _has_final_consonant(display_name) else '와'
-    return f'{display_name}{particle} {text}'
+    particle = '과' if _has_final_consonant(name) else '와'
+    return f'{name}{particle} {text}'
 
 
 def select_face_card_body(recap, promise=None, person=None, fallback=''):

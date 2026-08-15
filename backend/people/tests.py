@@ -31,6 +31,7 @@ from .promise_cleanup import cleanup_expired_promises
 from .services import (
     OpenAIMemorySummaryError,
     TranscriptionResult,
+    build_transcription_prompt,
     generate_memory_recap,
     generate_person_display_summary,
     prune_conversation_and_memory_history,
@@ -132,6 +133,16 @@ def count_korean_display_sentences(text):
 
 
 class TranscribeAudioFileTests(TestCase):
+    def test_transcription_prompt_prioritizes_recognized_person_name(self):
+        person = create_person(name='민호', relationship='아들')
+
+        prompt = build_transcription_prompt(person)
+
+        self.assertIn('화자는 환자와 아들 민호입니다.', prompt)
+        self.assertIn('이미 인식된 상대방의 이름은 "민호"입니다.', prompt)
+        self.assertIn('반드시 인식된 이름(민호)을 사용해 전사하세요.', prompt)
+        self.assertIn('가족 호칭', prompt)
+
     @override_settings(
         OPENAI_TRANSCRIPTION_DIARIZATION_ENABLED=True,
         OPENAI_TRANSCRIPTION_DIARIZATION_MODEL='gpt-4o-transcribe-diarize',
@@ -297,6 +308,46 @@ class GenerateMemoryRecapTests(TestCase):
         instructions = fake_client.responses.parse.call_args.kwargs['instructions']
         self.assertIn('Do not convert broad time', instructions)
         self.assertNotIn('do not rewrite it as "치킨집"', instructions)
+
+    @mock.patch('people.services._get_openai_client')
+    def test_prompt_normalizes_similar_stt_names_to_recognized_person(
+        self,
+        mock_get_client,
+    ):
+        user = create_patient_user()
+        person = create_person(user=user, name='민호', relationship='아들')
+        parsed_recap = mock.Mock()
+        parsed_recap.model_dump.return_value = {
+            'title': '민호 생일',
+            'summary': '아들 민호가 생일날 미역국을 맛있게 먹었습니다.',
+            'upcoming_promise': None,
+            'promise': None,
+            'key_points': ['민호가 생일날 미역국을 두 그릇 먹었습니다.'],
+        }
+        fake_client = mock.Mock()
+        fake_client.responses.parse.return_value = mock.Mock(
+            output_parsed=parsed_recap,
+        )
+        mock_get_client.return_value = fake_client
+
+        result = generate_memory_recap(
+            person=person,
+            transcript='엄마, 민구예요. 생일날 미역국을 두 그릇 먹었어요.',
+            recorded_at=datetime(2026, 8, 6, tzinfo=timezone.utc),
+            promise_timezone='Asia/Seoul',
+        )
+
+        self.assertEqual(result['title'], '민호 생일')
+        self.assertIn('민호', result['summary'])
+        self.assertNotIn('민구', result['summary'])
+
+        request_kwargs = fake_client.responses.parse.call_args.kwargs
+        instructions = request_kwargs['instructions']
+        self.assertIn('STT Name Normalization Rules', instructions)
+        self.assertIn('아들 민호', instructions)
+        self.assertIn('normalize it to "민호"', instructions)
+        self.assertIn('"민구"', instructions)
+        self.assertIn('엄마, 민구예요.', request_kwargs['input'])
 
 
 class ConversationTranscriptionCreateViewTests(TestCase):
@@ -653,7 +704,7 @@ class ConversationTranscriptionCreateViewTests(TestCase):
         self.assertEqual(card['title'], '병원 이야기')
         self.assertEqual(
             card['body'],
-            '아들 지훈과 병원 검사 결과가 좋다는 이야기를 나눴습니다.',
+            '지훈과 병원 검사 결과가 좋다는 이야기를 나눴습니다.',
         )
         self.assertEqual(
             card['upcoming_promise'],
@@ -677,7 +728,7 @@ class ConversationTranscriptionCreateViewTests(TestCase):
         self.assertEqual(latest_summary_card['title'], '병원 이야기')
         self.assertEqual(
             latest_summary_card['body'],
-            '아들 지훈과 병원 검사 결과가 좋다는 이야기를 나눴습니다.',
+            '지훈과 병원 검사 결과가 좋다는 이야기를 나눴습니다.',
         )
         self.assertEqual(
             latest_summary_card['upcoming_promise'],
@@ -1232,6 +1283,37 @@ class LongTermMemoryCategoryTests(TestCase):
 
 
 class GeneratePersonDisplaySummaryTests(TestCase):
+    def test_card_title_removes_relationship_repeated_in_header(self):
+        user = create_patient_user()
+        person = create_person(user=user, name='지민', relationship='딸')
+        conversation = Conversation.objects.create(
+            user=user,
+            person=person,
+            transcript='결혼 소식을 이야기했다.',
+        )
+        memory = Memory.objects.create(
+            user=user,
+            person=person,
+            conversation=conversation,
+            recap={
+                'title': '딸 지민 결혼',
+                'summary': '딸 지민이 다음 달에 결혼한다고 했습니다.',
+                'upcoming_promise': None,
+                'key_points': [],
+            },
+        )
+
+        result = generate_person_display_summary(
+            person=person,
+            recent_memories=[memory],
+            long_term_memories=[],
+            active_promises=[],
+        )
+
+        self.assertEqual(result['display_name'], '딸 지민')
+        self.assertEqual(result['title'], '지민 결혼')
+        self.assertEqual(result['body'], '지민이 다음 달에 결혼한다고 했습니다.')
+
     def test_card_uses_latest_memory_and_nearest_active_promise(self):
         user = create_patient_user()
         person = create_person(user=user, name='지민', relationship='딸')
@@ -1313,7 +1395,7 @@ class GeneratePersonDisplaySummaryTests(TestCase):
         )
         self.assertEqual(
             result['body'],
-            '딸 지민과 병원에 다녀왔습니다.',
+            '지민과 병원에 다녀왔습니다.',
         )
         self.assertEqual(
             result['upcoming_promise'],
@@ -1369,7 +1451,7 @@ class GeneratePersonDisplaySummaryTests(TestCase):
 
         self.assertEqual(
             result['body'],
-            '딸 지민과 병원에 함께 다녀왔습니다. 혈압 수치가 좋다고 들었습니다.',
+            '지민과 병원에 함께 다녀왔습니다. 혈압 수치가 좋다고 들었습니다.',
         )
         self.assertEqual(
             result['upcoming_promise'],
@@ -1511,7 +1593,7 @@ class PersonListCreateViewTests(TestCase):
         )
         self.assertEqual(
             response.json()[0]['latest_summary']['card']['body'],
-            '손녀 민서와 최근 요약',
+            '민서와 최근 요약',
         )
         self.assertEqual(
             response.json()[0]['latest_summary']['card']['upcoming_promise'],
@@ -1586,7 +1668,7 @@ class PersonListCreateViewTests(TestCase):
         card = response.json()[0]['latest_summary']['card']
         self.assertEqual(
             card['body'],
-            '딸 지민과 병원에 함께 다녀왔습니다. 혈압 수치가 좋다고 들었습니다.',
+            '지민과 병원에 함께 다녀왔습니다. 혈압 수치가 좋다고 들었습니다.',
         )
         self.assertIn('저녁 식사 예정', card['upcoming_promise'])
 
