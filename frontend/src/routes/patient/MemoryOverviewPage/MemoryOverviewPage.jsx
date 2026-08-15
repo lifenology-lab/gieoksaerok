@@ -79,11 +79,14 @@ function getMonthDays(monthDate) {
   ];
 }
 
-function formatTimelineTime(date) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+function getCalendarDateKey(date) {
+  const normalizedDate = new Date(date);
+
+  if (Number.isNaN(normalizedDate.getTime())) {
+    return "";
+  }
+
+  return `${normalizedDate.getFullYear()}-${String(normalizedDate.getMonth() + 1).padStart(2, "0")}-${String(normalizedDate.getDate()).padStart(2, "0")}`;
 }
 
 function getPersonLabel(person) {
@@ -117,6 +120,7 @@ export default function MemoryOverviewPage() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(
     () => new Date(),
   );
+  const [selectedCalendarItem, setSelectedCalendarItem] = useState(null);
   const [calendarMonth, setCalendarMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   );
@@ -296,6 +300,28 @@ export default function MemoryOverviewPage() {
     ? albumItems[reflectionIndex % albumItems.length]
     : null;
   const calendarDays = useMemo(() => getMonthDays(calendarMonth), [calendarMonth]);
+  const calendarRecordTypesByDate = useMemo(() => {
+    const recordTypesByDate = new Map();
+    const addRecordType = (date, type) => {
+      const dateKey = getCalendarDateKey(date);
+
+      if (!dateKey) {
+        return;
+      }
+
+      const types = recordTypesByDate.get(dateKey) || new Set();
+      types.add(type);
+      recordTypesByDate.set(dateKey, types);
+    };
+
+    mealRecords.forEach((record) => addRecordType(record.eatenAt, "meal"));
+    Object.values(scheduleGroups)
+      .flat()
+      .forEach((promise) => addRecordType(getPromiseDate(promise), "schedule"));
+    memories.forEach((memory) => addRecordType(memory.memory_at || memory.created_at, "memory"));
+
+    return recordTypesByDate;
+  }, [mealRecords, memories, scheduleGroups]);
   const calendarItems = useMemo(() => {
     const items = [
       ...mealRecords.map((record) => ({
@@ -303,7 +329,8 @@ export default function MemoryOverviewPage() {
         type: "meal",
         date: new Date(record.eatenAt),
         title: record.mealLabel,
-        description: record.menu || "남긴 식사 기록",
+        description: record.menu || "",
+        imageUrl: record.sceneImage ? getApiMediaUrl(record.sceneImage) : "",
       })),
       ...Object.values(scheduleGroups).flat().map((promise) => ({
         id: `schedule-${promise.id}`,
@@ -364,7 +391,7 @@ export default function MemoryOverviewPage() {
   };
 
   return (
-    <main className="memory-overview-page">
+    <main className={`memory-overview-page${activeTab === "calendar" ? " is-calendar-active" : ""}`}>
       <div className="memory-overview-page__background" aria-hidden="true" />
 
       <header className="memory-overview-page__header">
@@ -376,7 +403,7 @@ export default function MemoryOverviewPage() {
         <button type="button" onClick={() => navigate("/patient")}>홈으로</button>
       </header>
 
-      <section className="memory-overview-page__intro">
+      <section className={`memory-overview-page__intro${activeTab === "calendar" ? " is-compact" : ""}`}>
         <span aria-hidden="true" />
         <div>
           <h1>기억 살펴보기</h1>
@@ -456,10 +483,6 @@ export default function MemoryOverviewPage() {
         {!isLoading && activeTab === "calendar" && (
           <div className="memory-overview-page__calendar-layout">
             <section className="memory-overview-page__calendar-panel">
-              <div className="memory-overview-page__section-heading">
-                <h2>기억 달력</h2>
-                <p>날짜를 고르면 그날의 식사, 일정, 추억을 함께 볼 수 있어요.</p>
-              </div>
               <div className="memory-overview-page__calendar-actions">
                 <button
                   type="button"
@@ -482,16 +505,37 @@ export default function MemoryOverviewPage() {
               </div>
               <div className="memory-overview-page__calendar-days" role="grid" aria-label="날짜 선택">
                 {calendarDays.map((date, index) => date ? (
-                  <button
-                    key={date.toISOString()}
-                    type="button"
-                    role="gridcell"
-                    className={isSameDay(date, selectedCalendarDate) ? "is-selected" : ""}
-                    aria-pressed={isSameDay(date, selectedCalendarDate)}
-                    onClick={() => setSelectedCalendarDate(date)}
-                  >
-                    {date.getDate()}
-                  </button>
+                  (() => {
+                    const recordTypes = calendarRecordTypesByDate.get(getCalendarDateKey(date)) || new Set();
+                    const hasRecords = recordTypes.size > 0;
+                    const isSelected = isSameDay(date, selectedCalendarDate);
+                    const isToday = isSameDay(date, new Date());
+                    const recordSummary = [...recordTypes]
+                      .map((type) => (type === "meal" ? "식사" : type === "schedule" ? "일정" : "추억"))
+                      .join(", ");
+
+                    return (
+                      <button
+                        key={date.toISOString()}
+                        type="button"
+                        role="gridcell"
+                        className={`${isSelected ? "is-selected" : ""}${isToday ? " is-today" : ""}`.trim()}
+                        aria-label={`${formatCalendarDate(date)}${hasRecords ? `, ${recordSummary} 기록 있음` : ""}`}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          setSelectedCalendarDate(date);
+                          setSelectedCalendarItem(null);
+                        }}
+                      >
+                        <span>{date.getDate()}</span>
+                        {hasRecords && (
+                          <span className="memory-overview-page__calendar-dots" aria-hidden="true">
+                            {[...recordTypes].map((type) => <i key={type} className={`is-${type}`} />)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })()
                 ) : <span key={`blank-${index}`} aria-hidden="true" />)}
               </div>
             </section>
@@ -504,12 +548,19 @@ export default function MemoryOverviewPage() {
                   <ul>
                     {calendarItems.map((item) => (
                       <li key={item.id} data-type={item.type}>
-                        <time>{formatTimelineTime(item.date)}</time>
-                        <div>
-                          <span>{item.type === "meal" ? "식사" : item.type === "schedule" ? "일정" : "추억"}</span>
-                          <strong>{item.title}</strong>
-                          {item.description && <p>{item.description}</p>}
-                        </div>
+                        <button
+                          type="button"
+                          className={`memory-overview-page__timeline-card${item.imageUrl ? " has-image" : ""}`}
+                          aria-label={`${item.title} 상세 보기`}
+                          onClick={() => setSelectedCalendarItem(item)}
+                        >
+                          {item.imageUrl && <img src={item.imageUrl} alt={`${item.title} 사진`} />}
+                          <div className="memory-overview-page__timeline-copy">
+                            <span>{item.type === "meal" ? "식사" : item.type === "schedule" ? "일정" : "추억"}</span>
+                            <strong>{item.title}</strong>
+                            {item.description && <p>{item.description}</p>}
+                          </div>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -574,6 +625,39 @@ export default function MemoryOverviewPage() {
           </div>
         )}
       </section>
+
+      {selectedCalendarItem && (
+        <div
+          className="memory-overview-page__record-overlay"
+          role="presentation"
+          onClick={() => setSelectedCalendarItem(null)}
+        >
+          <section
+            className="memory-overview-page__record-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="calendar-record-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              className="memory-overview-page__record-dialog-close"
+              type="button"
+              aria-label="기록 상세 닫기"
+              onClick={() => setSelectedCalendarItem(null)}
+            >
+              ×
+            </button>
+            {selectedCalendarItem.imageUrl && (
+              <img src={selectedCalendarItem.imageUrl} alt={`${selectedCalendarItem.title} 사진`} />
+            )}
+            <span className={`memory-overview-page__record-dialog-type is-${selectedCalendarItem.type}`}>
+              {selectedCalendarItem.type === "meal" ? "식사 기록" : selectedCalendarItem.type === "schedule" ? "일정" : "추억"}
+            </span>
+            <h2 id="calendar-record-title">{selectedCalendarItem.title}</h2>
+            {selectedCalendarItem.description && <p>{selectedCalendarItem.description}</p>}
+          </section>
+        </div>
+      )}
     </main>
   );
 }
