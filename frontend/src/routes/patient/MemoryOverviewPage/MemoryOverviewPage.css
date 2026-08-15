@@ -229,28 +229,11 @@
   padding: 20px;
 }
 
-.memory-overview-page__today-time {
-  display: grid;
-  gap: 6px;
-  padding: 18px;
-  border-radius: 17px;
-  background: rgba(24, 64, 53, 0.48);
-}
-
-.memory-overview-page__today-time span,
-.memory-overview-page__today-time p,
 .memory-overview-page__section-heading p {
   color: rgba(255, 255, 255, 0.83);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
-}
-
-.memory-overview-page__today-time strong {
-  color: #d8fff5;
-  font-size: 23px;
-  font-weight: 900;
-  line-height: 1.25;
 }
 
 .memory-overview-page__section-heading h2 {
@@ -333,11 +316,94 @@
   cursor: pointer;
 }
 
+.memory-overview-page__today-meal-strip {
+  display: flex;
+  gap: 12px;
+  margin: -4px -2px 0;
+  padding: 2px 2px 7px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  list-style: none;
+}
+
+.memory-overview-page__today-meal-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.memory-overview-page__meal-polaroid {
+  flex: 0 0 clamp(112px, 29vw, 140px);
+  display: grid;
+  gap: 8px;
+  padding: 7px 7px 10px;
+  border: 1px solid rgba(229, 255, 245, 0.48);
+  border-radius: 5px;
+  background: rgba(190, 220, 206, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 10px 18px rgba(12, 29, 23, 0.14);
+  scroll-snap-align: start;
+}
+
+.memory-overview-page__meal-polaroid img,
+.memory-overview-page__meal-polaroid > span {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 2px;
+  object-fit: cover;
+  background: rgba(145, 232, 214, 0.18);
+}
+
+.memory-overview-page__meal-polaroid > span {
+  font-size: 31px;
+}
+
+.memory-overview-page__meal-polaroid strong {
+  color: #23463a;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.3;
+  text-align: center;
+}
+
 .memory-overview-page__today-memories {
   display: grid;
   gap: 12px;
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.memory-overview-page__today-memory-list {
+  display: grid;
+  gap: 8px;
+  margin: -2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-overview-page__today-memory-list li {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 14px;
+  background: rgba(18, 52, 42, 0.24);
+}
+
+.memory-overview-page__today-memory-list strong {
+  color: white;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.memory-overview-page__today-memory-list span {
+  color: #c7f8ec;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .memory-overview-page__calendar-actions {

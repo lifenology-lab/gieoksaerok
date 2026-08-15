@@ -12,6 +12,7 @@ import {
   fetchPatientMemorySchedules,
 } from "@/features/patient-memory/api/patientMemoryApi";
 import MemoryReflectionAssistant from "@/features/patient-memory/components/MemoryReflectionAssistant";
+import { getApiMediaUrl } from "@/shared/api/client";
 
 import "./MemoryOverviewPage.css";
 
@@ -23,6 +24,13 @@ const TAB_ITEMS = [
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 const REFLECTION_SESSION_IDLE_MS = 30 * 60 * 1000;
+const MEAL_TYPE_ORDER = {
+  breakfast: 0,
+  lunch: 1,
+  dinner: 2,
+  snack: 3,
+  unknown: 4,
+};
 
 function isSameDay(leftDate, rightDate) {
   return (
@@ -30,51 +38,6 @@ function isSameDay(leftDate, rightDate) {
     leftDate.getMonth() === rightDate.getMonth() &&
     leftDate.getDate() === rightDate.getDate()
   );
-}
-
-function formatMealTime(value) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "기록된 시간";
-  }
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function formatPromiseTime(promise) {
-  const scheduledAt = promise.scheduled_at
-    ? new Date(promise.scheduled_at)
-    : null;
-
-  if (scheduledAt && !Number.isNaN(scheduledAt.getTime())) {
-    const isToday = isSameDay(scheduledAt, new Date());
-    const dateLabel = isToday
-      ? "오늘"
-      : `${scheduledAt.getMonth() + 1}월 ${scheduledAt.getDate()}일`;
-
-    return `${dateLabel} ${new Intl.DateTimeFormat("ko-KR", {
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(scheduledAt)}`;
-  }
-
-  if (promise.scheduled_date) {
-    const scheduledDate = new Date(`${promise.scheduled_date}T00:00:00`);
-
-    if (!Number.isNaN(scheduledDate.getTime())) {
-      const dateLabel = isSameDay(scheduledDate, new Date())
-        ? "오늘"
-        : `${scheduledDate.getMonth() + 1}월 ${scheduledDate.getDate()}일`;
-
-      return promise.time_label ? `${dateLabel} ${promise.time_label}` : dateLabel;
-    }
-  }
-
-  return promise.time_label || "예정된 시간";
 }
 
 function getPromiseDate(promise) {
@@ -302,7 +265,18 @@ export default function MemoryOverviewPage() {
         const eatenAt = new Date(record.eatenAt);
         return !Number.isNaN(eatenAt.getTime()) && isSameDay(eatenAt, now);
       })
-      .slice(0, 2);
+      .sort((left, right) => {
+        const typeOrder =
+          (MEAL_TYPE_ORDER[left.mealType] ?? MEAL_TYPE_ORDER.unknown) -
+          (MEAL_TYPE_ORDER[right.mealType] ?? MEAL_TYPE_ORDER.unknown);
+
+        if (typeOrder !== 0) {
+          return typeOrder;
+        }
+
+        return new Date(left.eatenAt).getTime() - new Date(right.eatenAt).getTime();
+      })
+      .slice(0, 4);
   }, [mealRecords]);
   const todayMemories = useMemo(() => {
     const now = new Date();
@@ -312,7 +286,7 @@ export default function MemoryOverviewPage() {
         const memoryAt = new Date(memory.memory_at || memory.created_at);
         return !Number.isNaN(memoryAt.getTime()) && isSameDay(memoryAt, now);
       })
-      .slice(0, 2);
+      .slice(0, 1);
   }, [memories]);
   const peopleById = useMemo(
     () => new Map(people.map((person) => [person.id, person])),
@@ -431,54 +405,38 @@ export default function MemoryOverviewPage() {
 
         {!isLoading && activeTab === "today" && (
           <div className="memory-overview-page__panel">
-            <section className="memory-overview-page__today-time">
-              <span>지금은</span>
-              <strong>{new Intl.DateTimeFormat("ko-KR", { weekday: "long", hour: "numeric", minute: "2-digit" }).format(currentDateTime)}</strong>
-              <p>하나씩 천천히 확인해도 괜찮아요.</p>
-            </section>
             <section className="memory-overview-page__section-heading">
               <h2>오늘의 식사</h2>
-              <p>오늘 남긴 식사를 간단히 확인할 수 있어요.</p>
             </section>
             {todayMealRecords.length === 0 ? (
               <p className="memory-overview-page__summary-empty">오늘 남긴 식사 기록이 아직 없어요.</p>
             ) : (
-              <ul className="memory-overview-page__summary-list">
+              <ul className="memory-overview-page__today-meal-strip">
                 {todayMealRecords.map((record) => (
-                  <li key={record.id}>
+                  <li key={record.id} className="memory-overview-page__meal-polaroid">
+                    {record.sceneImage ? (
+                      <img
+                        src={getApiMediaUrl(record.sceneImage)}
+                        alt={`${record.mealLabel} 식사 사진`}
+                      />
+                    ) : (
+                      <span aria-label={`${record.mealLabel} 식사 사진 없음`} role="img">
+                        🍽
+                      </span>
+                    )}
                     <strong>{record.mealLabel}</strong>
-                    <span>{record.menu || formatMealTime(record.eatenAt)}</span>
                   </li>
                 ))}
               </ul>
             )}
-            <button className="memory-overview-page__summary-link" type="button" onClick={openCalendarForToday}>오늘 기록 보기</button>
-
-            <section className="memory-overview-page__section-heading">
-              <h2>오늘의 일정</h2>
-              <p>오늘 예정된 일을 하나씩 살펴볼 수 있어요.</p>
-            </section>
-            {scheduleGroups.today.length === 0 ? (
-              <p className="memory-overview-page__summary-empty">오늘 예정된 일정이 없어요.</p>
-            ) : (
-              <ul className="memory-overview-page__summary-list">
-                {scheduleGroups.today.slice(0, 2).map((promise) => (
-                  <li key={promise.id}>
-                    <strong>{promise.title || "예정된 약속"}</strong>
-                    <span>{formatPromiseTime(promise)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button className="memory-overview-page__summary-link" type="button" onClick={openCalendarForToday}>오늘 기록 보기</button>
+            <button className="memory-overview-page__summary-link" type="button" onClick={openCalendarForToday}>기억 달력에서 모두 보기</button>
 
             {todayMemories.length > 0 && (
               <section className="memory-overview-page__today-memories">
                 <div className="memory-overview-page__section-heading">
                   <h2>오늘 새로 남긴 추억</h2>
-                  <p>오늘 나눈 이야기를 다시 살펴볼 수 있어요.</p>
                 </div>
-                <ul className="memory-overview-page__summary-list">
+                <ul className="memory-overview-page__today-memory-list">
                   {todayMemories.map((memory) => {
                     const person = peopleById.get(memory.person);
 
