@@ -9,7 +9,10 @@ import {
 } from "../api/patientQuestionApi";
 import usePatientQuestionRecorder from "../hooks/usePatientQuestionRecorder";
 import { classifyPatientQuestion } from "../utils/classifyPatientQuestion";
-import { createPatientQuestionResponse } from "../utils/createPatientQuestionResponse";
+import {
+  createFamilyHelpRequestDemoResponse,
+  createPatientQuestionResponse,
+} from "../utils/createPatientQuestionResponse";
 
 import "./PatientQuestionAssistant.css";
 
@@ -321,6 +324,11 @@ export default function PatientQuestionAssistant({
     onRegisterUnknownPerson?.();
   };
 
+  const handleFamilyHelpRequest = () => {
+    questionRecorder.cancelRecording();
+    setResponse(createFamilyHelpRequestDemoResponse());
+  };
+
   const handleResponseContextAction = () => {
     if (!response?.action) {
       return;
@@ -506,6 +514,12 @@ export default function PatientQuestionAssistant({
                 <h3>{response.title}</h3>
                 <p>{response.message}</p>
                 <p>{response.suggestion}</p>
+                {response.isFamilyHelpRequestDemo && (
+                  <p className="patient-question-assistant__family-help-demo">
+                    실제 서비스에서는 보호자에게 연락하거나 현재 상황을 공유하는
+                    방식으로 연결할 수 있어요.
+                  </p>
+                )}
                 {response.upcomingPromises?.length > 0 && (
                   <section className="patient-question-assistant__upcoming-promises">
                     <strong>이후 약속</strong>
@@ -522,6 +536,15 @@ export default function PatientQuestionAssistant({
                   </section>
                 )}
                 <div className="patient-question-assistant__response-actions">
+                  {response.familyHelpAction === "request-family-help" && (
+                    <button
+                      type="button"
+                      className="patient-question-assistant__family-help-action"
+                      onClick={handleFamilyHelpRequest}
+                    >
+                      {response.familyHelpActionLabel}
+                    </button>
+                  )}
                   {response.action === "register-unknown-person" && (
                     <button
                       type="button"

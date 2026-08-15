@@ -553,6 +553,20 @@
   background: #91e8d6 !important;
 }
 
+.patient-question-assistant__family-help-action {
+  border-color: rgba(255, 209, 95, 0.86) !important;
+  color: #fff1c6 !important;
+  background: rgba(255, 209, 95, 0.16) !important;
+}
+
+.patient-question-assistant__family-help-demo {
+  padding: 10px 12px;
+  border: 1px dashed rgba(255, 209, 95, 0.52);
+  border-radius: 12px;
+  color: #fff1c6 !important;
+  background: rgba(255, 209, 95, 0.08) !important;
+}
+
 .patient-question-assistant__response button:hover,
 .patient-question-assistant__response button:focus-visible {
   border-color: rgba(255, 255, 255, 0.7);
