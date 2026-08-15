@@ -7,6 +7,7 @@ from .views import (
     PatientQuestionTranscriptionView,
     PatientMemoryScheduleView,
     MemoryReflectionAudioView,
+    MemoryReflectionTextView,
 )
 
 
@@ -40,5 +41,10 @@ urlpatterns = [
         'patient-memory/reflections/audio/',
         MemoryReflectionAudioView.as_view(),
         name='memory-reflection-audio',
+    ),
+    path(
+        'patient-memory/reflections/text/',
+        MemoryReflectionTextView.as_view(),
+        name='memory-reflection-text',
     ),
 ]

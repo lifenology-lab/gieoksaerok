@@ -137,6 +137,7 @@ export default function MemoryOverviewPage() {
   const [albumLoadMessage, setAlbumLoadMessage] = useState("");
   const [reflectionIndex, setReflectionIndex] = useState(0);
   const [isHintVisible, setIsHintVisible] = useState(false);
+  const [isPeopleChooserOpen, setIsPeopleChooserOpen] = useState(false);
   const [isReflectionAssistantOpen, setIsReflectionAssistantOpen] = useState(false);
   const [reflectionSessions, setReflectionSessions] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -391,7 +392,7 @@ export default function MemoryOverviewPage() {
   };
 
   return (
-    <main className={`memory-overview-page${activeTab === "calendar" ? " is-calendar-active" : ""}`}>
+    <main className={`memory-overview-page${activeTab === "calendar" ? " is-calendar-active" : ""}${activeTab === "memories" ? " is-reflection-active" : ""}`}>
       <div className="memory-overview-page__background" aria-hidden="true" />
 
       <header className="memory-overview-page__header">
@@ -403,7 +404,7 @@ export default function MemoryOverviewPage() {
         <button type="button" onClick={() => navigate("/patient")}>홈으로</button>
       </header>
 
-      <section className={`memory-overview-page__intro${activeTab === "calendar" ? " is-compact" : ""}`}>
+      <section className={`memory-overview-page__intro${activeTab !== "today" ? " is-compact" : ""}`}>
         <span aria-hidden="true" />
         <div>
           <h1>기억 살펴보기</h1>
@@ -571,54 +572,54 @@ export default function MemoryOverviewPage() {
         )}
 
         {!isLoading && activeTab === "memories" && (
-          <div className="memory-overview-page__panel">
-            <section className="memory-overview-page__section-heading">
-              <h2>기억 회상하기</h2>
-              <p>사진을 보며 떠오르는 이야기를 천천히 말해 보세요.</p>
-            </section>
+          <div className="memory-overview-page__reflection-stage">
             {isAlbumLoading && <p className="memory-overview-page__empty">추억 사진을 준비하고 있어요.</p>}
             {!isAlbumLoading && albumLoadMessage && <p className="memory-overview-page__notice is-warning">{albumLoadMessage}</p>}
             {!isAlbumLoading && !reflectionItem && !albumLoadMessage && (
               <p className="memory-overview-page__empty">아직 함께 볼 추억 사진이 없어요.</p>
             )}
             {!isAlbumLoading && reflectionItem && (
-              <section className="memory-overview-page__reflection-photo-card">
-                <img
-                  src={getMemoryAlbumPhotoUrl(reflectionItem.photo_url)}
-                  alt="함께 떠올려 볼 추억 사진"
-                  style={{ objectPosition: `${reflectionItem.crop_x ?? 50}% ${reflectionItem.crop_y ?? 50}%` }}
-                />
-                <div>
-                  <h3>이 사진을 보며 어떤 일이 떠오르세요?</h3>
-                  {isHintVisible ? (
-                    <p>{`${getPersonLabel(reflectionItem.person)}과 함께한 추억이에요. ${reflectionItem.description}`}</p>
-                  ) : (
-                    <button type="button" className="memory-overview-page__hint-button" onClick={() => setIsHintVisible(true)}>힌트 보기</button>
+              <section className="memory-overview-page__reflection-viewer">
+                <div className="memory-overview-page__reflection-photo">
+                  <img
+                    src={getMemoryAlbumPhotoUrl(reflectionItem.photo_url)}
+                    alt="함께 떠올려 볼 추억 사진"
+                    style={{ objectPosition: `${reflectionItem.crop_x ?? 50}% ${reflectionItem.crop_y ?? 50}%` }}
+                  />
+                  <span>{`${reflectionIndex % albumItems.length + 1} / ${albumItems.length}`}</span>
+                  {albumItems.length > 1 && (
+                    <button type="button" onClick={handleNextReflection}>다른 추억</button>
                   )}
                 </div>
-                <div className="memory-overview-page__reflection-actions">
-                  <button type="button" onClick={handleTalkAboutReflection}>새록이에게 이야기하기</button>
-                  {albumItems.length > 1 && <button type="button" onClick={handleNextReflection}>다른 추억 보기</button>}
-                </div>
-              </section>
-            )}
-            {isReflectionAssistantOpen && reflectionItem && (
-              <MemoryReflectionAssistant
-                reflectionItem={reflectionItem}
-                session={reflectionSessions[reflectionItem.id]}
-                onSessionChange={(nextSession) => (
-                  handleReflectionSessionChange(reflectionItem.id, nextSession)
-                )}
-                onClose={() => setIsReflectionAssistantOpen(false)}
-              />
-            )}
-            {people.length > 0 && (
-              <section className="memory-overview-page__people-shortcuts">
-                <h3>사람별 추억 보기</h3>
-                <div>
-                  {people.map((person) => (
-                    <button key={person.id} type="button" onClick={() => handleOpenAlbum(person)}>{getPersonLabel(person)}</button>
-                  ))}
+                <div className={`memory-overview-page__reflection-guide${isReflectionAssistantOpen ? " is-conversation-active" : ""}`}>
+                  {isReflectionAssistantOpen ? (
+                    <MemoryReflectionAssistant
+                      reflectionItem={reflectionItem}
+                      session={reflectionSessions[reflectionItem.id]}
+                      onSessionChange={(nextSession) => (
+                        handleReflectionSessionChange(reflectionItem.id, nextSession)
+                      )}
+                      onClose={() => setIsReflectionAssistantOpen(false)}
+                      isEmbedded
+                    />
+                  ) : (
+                    <>
+                      <div className="memory-overview-page__reflection-guide-intro">
+                        <h2>이 사진을 보며<br />어떤 일이 떠오르세요?</h2>
+                        <p>떠오르는 이야기를 새록이에게 들려주세요.</p>
+                      </div>
+                      <div className="memory-overview-page__reflection-chat-placeholder" aria-live="polite">
+                        <p>새록이와 이 사진의 이야기를 나눠 보세요.</p>
+                      </div>
+                      <div className="memory-overview-page__reflection-actions">
+                        <button type="button" onClick={handleTalkAboutReflection}>새록이에게 이야기하기</button>
+                        <button type="button" onClick={() => setIsHintVisible(true)}>힌트 보기</button>
+                        {people.length > 0 && (
+                          <button type="button" onClick={() => setIsPeopleChooserOpen(true)}>사람 선택</button>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </section>
             )}
@@ -658,6 +659,33 @@ export default function MemoryOverviewPage() {
           </section>
         </div>
       )}
+
+      {isHintVisible && reflectionItem && (
+        <div className="memory-overview-page__reflection-overlay" role="presentation" onClick={() => setIsHintVisible(false)}>
+          <section className="memory-overview-page__reflection-dialog" role="dialog" aria-modal="true" aria-labelledby="reflection-hint-title" onClick={(event) => event.stopPropagation()}>
+            <button type="button" aria-label="힌트 닫기" onClick={() => setIsHintVisible(false)}>×</button>
+            <span>기억의 힌트</span>
+            <h2 id="reflection-hint-title">{getPersonLabel(reflectionItem.person)}과 함께한 추억이에요.</h2>
+            <p>{reflectionItem.description || "사진을 보며 함께한 시간을 천천히 떠올려 보세요."}</p>
+          </section>
+        </div>
+      )}
+
+      {isPeopleChooserOpen && (
+        <div className="memory-overview-page__reflection-overlay" role="presentation" onClick={() => setIsPeopleChooserOpen(false)}>
+          <section className="memory-overview-page__reflection-dialog" role="dialog" aria-modal="true" aria-labelledby="reflection-people-title" onClick={(event) => event.stopPropagation()}>
+            <button type="button" aria-label="사람 선택 닫기" onClick={() => setIsPeopleChooserOpen(false)}>×</button>
+            <span>사람별 추억</span>
+            <h2 id="reflection-people-title">누구와의 추억을 살펴볼까요?</h2>
+            <div className="memory-overview-page__reflection-person-list">
+              {people.map((person) => (
+                <button key={person.id} type="button" onClick={() => handleOpenAlbum(person)}>{getPersonLabel(person)}</button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
     </main>
   );
 }

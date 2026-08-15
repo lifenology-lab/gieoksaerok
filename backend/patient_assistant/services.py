@@ -35,6 +35,10 @@ MEMORY_REFLECTION_SYSTEM_PROMPT = '''
 
 말투와 안전:
 - 따뜻하고 쉬운 한국어 존댓말로 1~3문장만 답하세요.
+- "괜찮으세요", "기억나세요", "맞으세요"처럼 환자의 상태나 기억을
+  평가·확인하는 어색한 질문형 표현은 쓰지 마세요. 막연한 위로가 필요할 때도
+  "괜찮아요"를 반복하지 말고, 환자가 방금 말한 내용이나 사진을 함께 살피는
+  자연스러운 문장으로 답하세요.
 - 환자의 말이 사실인지 평가·정정하지 말고, 의료 조언·혼동 통계·진단을
   언급하지 마세요.
 - 사진 설명을 기계적으로 반복하거나, 근거 없는 위로나 과장된 칭찬을 하지
@@ -82,7 +86,7 @@ def generate_memory_reflection_reply(
         ]
         response = OpenAI(api_key=settings.OPENAI_API_KEY).chat.completions.create(
             model=settings.OPENAI_MEMORY_REFLECTION_MODEL,
-            temperature=0.5,
+            temperature=0.3,
             messages=messages,
             response_format={
                 'type': 'json_schema',

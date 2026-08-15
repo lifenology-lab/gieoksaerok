@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchRecentMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
+import VoiceAssistantCard from "@/shared/components/VoiceAssistantCard";
 
 import {
   classifyPatientQuestionWithModel,
@@ -189,7 +190,7 @@ export default function PatientQuestionAssistant({
     isMicrophonePermissionDenied ||
     (questionRecorder.recordingStatus === "error" && !isRecording);
   const microphonePermissionMessage = isMicrophonePermissionDenied
-    ? "마이크 사용을 허용해 주세요. 브라우저 설정에서 마이크 접근을 켠 뒤 다시 말해 보세요."
+    ? "마이크 사용을 허용해 주세요. 브라우저 설정에서 마이크 접근을 켠 뒤 다시 말해 주세요."
     : questionRecorder.errorMessage;
   const isMicrophonePreparing =
     !isMicrophonePermissionDenied &&
@@ -375,21 +376,14 @@ export default function PatientQuestionAssistant({
   };
 
   return (
-    <section
+    <VoiceAssistantCard
       className="patient-question-assistant"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="patient-question-assistant-title"
+      cardClassName="patient-question-assistant__card"
+      closeClassName="patient-question-assistant__close"
+      ariaLabelledBy="patient-question-assistant-title"
+      closeLabel="질문 도우미 닫기"
+      onClose={handleClose}
     >
-      <article className="patient-question-assistant__card">
-        <button
-          className="patient-question-assistant__close"
-          type="button"
-          aria-label="질문 도우미 닫기"
-          onClick={handleClose}
-        >
-          ×
-        </button>
 
         {!isTextInputOpen && (
           <div
@@ -657,7 +651,6 @@ export default function PatientQuestionAssistant({
             </form>
           </section>
         )}
-      </article>
-    </section>
+    </VoiceAssistantCard>
   );
 }

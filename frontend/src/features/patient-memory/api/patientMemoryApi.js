@@ -29,3 +29,22 @@ export function requestMemoryReflectionAudio({
     body: formData,
   });
 }
+
+export function requestMemoryReflectionText({
+  personId,
+  albumItemId,
+  transcript,
+  history = [],
+  summary = "",
+}) {
+  return request("/api/patient-memory/reflections/text/", {
+    method: "POST",
+    body: JSON.stringify({
+      person_id: personId,
+      album_item_id: albumItemId,
+      transcript,
+      history,
+      summary,
+    }),
+  });
+}

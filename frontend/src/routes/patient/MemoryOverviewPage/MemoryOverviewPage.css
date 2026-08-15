@@ -727,6 +727,293 @@
   cursor: pointer;
 }
 
+.memory-overview-page__reflection-stage {
+  min-height: 0;
+}
+
+.memory-overview-page__reflection-viewer {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  min-height: 320px;
+  height: min(440px, calc(100dvh - 340px));
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 22px;
+  background: rgba(18, 52, 42, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 22px 60px rgba(0, 0, 0, 0.14);
+}
+
+.memory-overview-page__reflection-photo {
+  position: relative;
+  min-height: 0;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.memory-overview-page__reflection-photo > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.memory-overview-page__reflection-photo > span,
+.memory-overview-page__reflection-photo > button {
+  position: absolute;
+  bottom: 14px;
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  color: white;
+  background: rgba(16, 39, 31, 0.68);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.memory-overview-page__reflection-photo > span {
+  left: 14px;
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  padding: 0 10px;
+}
+
+.memory-overview-page__reflection-photo > button {
+  right: 14px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-guide {
+  display: grid;
+  grid-template-rows: auto minmax(72px, 1fr) auto;
+  align-content: stretch;
+  gap: 8px;
+  min-width: 0;
+  padding: clamp(12px, 1.8vw, 20px);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.memory-overview-page__reflection-guide-intro {
+  display: grid;
+  gap: 8px;
+}
+
+.memory-overview-page__reflection-guide h2,
+.memory-overview-page__reflection-guide p {
+  margin: 0;
+}
+
+.memory-overview-page__reflection-chat-placeholder {
+  min-height: 0;
+  display: grid;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(4, 32, 24, 0.22);
+}
+
+.memory-overview-page__reflection-chat-placeholder p {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active {
+  display: block;
+  min-height: 0;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant-shell,
+.memory-overview-page__reflection-guide.is-conversation-active .voice-assistant-card__content,
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant,
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__conversation,
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__agent-layout {
+  min-height: 0;
+  height: 100%;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .voice-assistant-card__content {
+  overflow: hidden;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__conversation {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__agent-layout {
+  grid-template-rows: minmax(0, 1fr) min-content;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__response {
+  min-height: 0;
+}
+
+.memory-overview-page__reflection-guide h2 {
+  color: white;
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 900;
+  line-height: 1.32;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  text-wrap: balance;
+}
+
+.memory-overview-page__reflection-guide p {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.memory-overview-page__reflection-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+  padding: 0;
+}
+
+.memory-overview-page__reflection-actions button {
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  padding: 0 12px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.12);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-actions button:first-child {
+  grid-column: 1 / -1;
+  border-color: #b8fff0;
+  color: #153e34;
+  background: #a4f0df;
+}
+
+.memory-overview-page__reflection-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(5, 15, 11, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.memory-overview-page__reflection-dialog {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: min(520px, calc(100dvh - 32px));
+  display: grid;
+  gap: 12px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 20px;
+  color: white;
+  background: rgba(37, 67, 56, 0.97);
+  box-shadow: 0 26px 68px rgba(0, 0, 0, 0.34);
+  scrollbar-width: none;
+}
+
+.memory-overview-page__reflection-dialog::-webkit-scrollbar {
+  display: none;
+}
+
+.memory-overview-page__reflection-dialog > button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 50%;
+  color: white;
+  background: rgba(15, 34, 27, 0.66);
+  font: inherit;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-dialog > span {
+  color: #b8fff0;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.memory-overview-page__reflection-dialog h2,
+.memory-overview-page__reflection-dialog p {
+  margin: 0;
+}
+
+.memory-overview-page__reflection-dialog h2 {
+  padding-right: 30px;
+  color: white;
+  font-size: clamp(21px, 5vw, 27px);
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.memory-overview-page__reflection-dialog p {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.memory-overview-page__reflection-person-list {
+  display: grid;
+  gap: 8px;
+}
+
+.memory-overview-page__reflection-person-list button {
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 13px;
+  color: white;
+  background: rgba(255, 255, 255, 0.11);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-overlay--conversation .voice-assistant-card__content {
+  max-height: calc(100dvh - 32px);
+}
+
+.memory-overview-page__reflection-overlay--conversation {
+  place-items: end center;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.memory-reflection-assistant .patient-question-assistant__voice-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.memory-reflection-assistant .patient-question-assistant__text-action {
+  min-height: 48px;
+  border-radius: 14px;
+}
+
 @media (min-width: 681px) {
   .memory-overview-page__calendar-layout {
     grid-template-columns: minmax(0, 1.35fr) minmax(210px, 0.65fr);
@@ -929,105 +1216,6 @@
   background: #a4f0df;
 }
 
-.memory-overview-page__reflection-photo-card {
-  display: grid;
-  gap: 16px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 19px;
-  background: rgba(18, 52, 42, 0.28);
-}
-
-.memory-overview-page__reflection-photo-card > img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  background: rgba(105, 198, 174, 0.2);
-}
-
-.memory-overview-page__reflection-photo-card > div:not(.memory-overview-page__reflection-actions) {
-  display: grid;
-  gap: 10px;
-  padding: 0 18px;
-}
-
-.memory-overview-page__reflection-photo-card h3,
-.memory-overview-page__people-shortcuts h3 {
-  margin: 0;
-  color: white;
-  font-size: 20px;
-  font-weight: 900;
-  line-height: 1.35;
-}
-
-.memory-overview-page__reflection-photo-card p {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.memory-overview-page__hint-button {
-  justify-self: start;
-  min-height: 38px;
-  padding: 0 4px;
-  border: 0;
-  color: #b8fff0;
-  background: transparent;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 900;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
-.memory-overview-page__reflection-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 9px;
-  padding: 0 18px 18px;
-}
-
-.memory-overview-page__reflection-actions button,
-.memory-overview-page__people-shortcuts button {
-  min-height: 45px;
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  border-radius: 13px;
-  color: white;
-  background: rgba(255, 255, 255, 0.12);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.memory-overview-page__reflection-actions button:first-child {
-  border-color: #b8fff0;
-  color: #153e34;
-  background: #a4f0df;
-}
-
-.memory-overview-page__people-shortcuts {
-  display: grid;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.memory-overview-page__people-shortcuts > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.memory-overview-page__people-shortcuts button {
-  min-height: 39px;
-  padding: 0 13px;
-  border-radius: 999px;
-}
 
 .memory-overview-page__header > button:hover,
 .memory-overview-page__header > button:focus-visible,
@@ -1139,13 +1327,94 @@
     overflow: hidden;
   }
 
+  .memory-overview-page.is-reflection-active {
+    height: 100dvh;
+    min-height: 100svh;
+    overflow: hidden;
+  }
+
   .memory-overview-page.is-calendar-active .memory-overview-page__tabs {
+    margin-top: 14px;
+  }
+
+  .memory-overview-page.is-reflection-active .memory-overview-page__tabs {
     margin-top: 14px;
   }
 
   .memory-overview-page.is-calendar-active .memory-overview-page__content {
     margin-top: 10px;
     padding-bottom: 14px;
+  }
+
+  .memory-overview-page.is-reflection-active .memory-overview-page__content {
+    margin-top: 10px;
+    padding-bottom: 14px;
+  }
+
+  .memory-overview-page__reflection-viewer {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 0;
+    height: clamp(250px, calc(100dvh - 315px), 370px);
+    border-radius: 18px;
+  }
+
+  .memory-overview-page__reflection-photo > span,
+  .memory-overview-page__reflection-photo > button {
+    bottom: 10px;
+    min-height: 30px;
+    font-size: 12px;
+  }
+
+  .memory-overview-page__reflection-photo > span {
+    left: 10px;
+  }
+
+  .memory-overview-page__reflection-photo > button {
+    right: 10px;
+  }
+
+  .memory-overview-page__reflection-guide {
+    gap: 7px;
+    padding: 12px;
+  }
+
+  .memory-overview-page__reflection-guide h2 {
+    font-size: 18px;
+    line-height: 1.28;
+  }
+
+  .memory-overview-page__reflection-guide p {
+    display: none;
+  }
+
+  .memory-overview-page__reflection-chat-placeholder {
+    min-height: 46px;
+    padding: 9px 10px;
+  }
+
+  .memory-overview-page__reflection-chat-placeholder p {
+    display: block;
+    font-size: 12px;
+  }
+
+  .memory-overview-page__reflection-actions {
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  .memory-overview-page__reflection-actions button {
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .memory-overview-page__reflection-overlay--conversation {
+    align-items: end;
+  }
+
+  .memory-overview-page__reflection-overlay--conversation .voice-assistant-card__content {
+    max-height: min(76dvh, calc(100dvh - 32px));
   }
 
   .memory-overview-page__panel {
@@ -1274,10 +1543,6 @@
   .memory-overview-page.is-calendar-active .memory-overview-page__empty {
     padding: 14px;
     font-size: 14px;
-  }
-
-  .memory-overview-page__reflection-actions {
-    grid-template-columns: 1fr;
   }
 
   @media (min-width: 641px) {
