@@ -2,6 +2,7 @@ import math
 
 from rest_framework import serializers
 
+from .display_summary import select_face_card_body
 from .models import (
     Conversation,
     LongTermMemory,
@@ -296,11 +297,11 @@ class PersonSerializer(serializers.ModelSerializer):
             or card.get('title')
             or ''
         )
-        card['body'] = (
-            recap.get('description')
-            or recap.get('summary')
-            or card.get('body')
-            or ''
+        card['body'] = select_face_card_body(
+            recap,
+            promise=active_promise,
+            person=obj,
+            fallback=card.get('body') or '',
         )
         card.pop('suggested_question', None)
         card['upcoming_promise'] = (

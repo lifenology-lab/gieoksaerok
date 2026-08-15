@@ -7,6 +7,7 @@ from tempfile import NamedTemporaryFile
 from django.conf import settings
 from pydantic import BaseModel, Field
 
+from .display_summary import select_face_card_body
 from .promise_utils import (
     format_person_summary_promise_display,
     format_promise_display,
@@ -650,6 +651,14 @@ def generate_memory_recap(
         'under 2 sentences and no more than 20 Korean words total. Avoid complex '
         'clause structures and passive voice. Extract any specific future time, '
         'place, promise, or scheduled plan into upcoming_promise and promise. '
+        'Memory Summary Separation Rules: summary is for the core memory from '
+        'the just-finished conversation, such as hospital results, health state, '
+        'relationship context, or a warm interaction. Future promises, schedules, '
+        'appointments, and planned actions must be extracted into promise and '
+        'upcoming_promise, not repeated as the main summary. If the conversation '
+        'contains both factual memory and future promise, summary must focus on '
+        'the factual memory and promise must focus on the future schedule. '
+        'Do not make summary and promise describe the same schedule. '
         'Promise Extraction Rules: Use recorded_at, reference_date, and '
         'promise_timezone to convert relative Korean dates into absolute dates. '
         'Examples: if reference_date is 2026-08-06, then "내일" means '
@@ -675,8 +684,8 @@ def generate_memory_recap(
         'one-off appointments that already passed. '
         'Output Format: You must respond strictly using the provided JSON schema. '
         'Use title for a 10-character Korean topic label, summary for the memory '
-        'card body, upcoming_promise for a display string, promise for the DB '
-        'record, and key_points for up to 4 useful facts for the next '
+        'card body that excludes future schedules, upcoming_promise for a display '
+        'string, promise for the DB record, and key_points for up to 4 useful facts for the next '
         'conversation. Use long_term_memories '
         'as durable background information, and use recent_memories as short-term '
         'context so older but important details are not lost. The JSON you return '
@@ -920,11 +929,16 @@ def generate_person_display_summary(
     latest_memory = _latest_memory_for_display(recent_memories)
     nearest_promise = _nearest_active_promise(active_promises)
     first_long_term_memory = next(iter(list(long_term_memories or [])), None)
+    latest_recap = _memory_value(latest_memory, 'recap') or {}
 
     card = {
         'display_name': f'{person.relationship} {person.name}'.strip(),
         'title': _recap_value(latest_memory, 'title', 'headline'),
-        'body': _recap_value(latest_memory, 'description', 'summary'),
+        'body': select_face_card_body(
+            latest_recap,
+            promise=nearest_promise,
+            person=person,
+        ),
         'upcoming_promise': (
             format_person_summary_promise_display(
                 nearest_promise,

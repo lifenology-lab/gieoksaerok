@@ -25,20 +25,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    LOCAL_ENVIRONMENT=(bool, False),
 )
 
-# 개발 환경은 .env.local을 우선 사용하고, 배포 환경은 .env를 사용한다.
+# .env를 기본으로 읽고, .env.local이 있으면 로컬 전용 값으로 덮어쓴다.
 local_env_file = BASE_DIR / '.env.local'
 default_env_file = BASE_DIR / '.env'
-is_local_environment = local_env_file.exists()
 
-environ.Env.read_env(
-    env_file=local_env_file if local_env_file.exists() else default_env_file,
-)
+if default_env_file.exists():
+    environ.Env.read_env(env_file=default_env_file)
+
+if local_env_file.exists():
+    environ.Env.read_env(env_file=local_env_file, overwrite=True)
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
+is_local_environment = env(
+    'LOCAL_ENVIRONMENT',
+    default=DEBUG or local_env_file.exists(),
+)
 
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
@@ -96,11 +102,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
-# .env.local이 있으면 SQLite를, .env만 있으면 MySQL을 기본으로 사용한다.
+# 로컬 환경은 SQLite를, 배포 환경은 MySQL을 기본으로 사용한다.
+# DB_ENGINE을 명시하면 해당 설정이 우선한다.
 database_engine = env(
     'DB_ENGINE',
     default='sqlite' if is_local_environment else 'mysql',
-)
+).lower()
 
 if database_engine == 'sqlite':
     DATABASES = {

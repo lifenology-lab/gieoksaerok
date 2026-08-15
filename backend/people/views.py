@@ -37,6 +37,7 @@ from .promise_utils import (
     ensure_aware_datetime,
     get_default_promise_timezone,
     infer_korean_relative_date,
+    infer_scheduled_at_from_explicit_time,
     is_promise_expired,
     normalize_promise_data,
     promise_sort_key,
@@ -168,6 +169,14 @@ def create_promise_record(person, conversation, memory, promise_data):
             fallback_text,
             reference=reference_datetime,
             zone=promise_zone,
+        )
+
+    if scheduled_date and not scheduled_at:
+        scheduled_at = infer_scheduled_at_from_explicit_time(
+            scheduled_date,
+            promise_zone,
+            promise_data.get('time_label'),
+            promise_data.get('raw_text'),
         )
 
     if not scheduled_at and not scheduled_date:
