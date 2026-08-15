@@ -443,7 +443,7 @@ export default function MemoryOverviewPage() {
       </nav>
 
       <section className="memory-overview-page__content" aria-live="polite">
-        {isLoading && <p className="memory-overview-page__notice">기억을 준비하고 있어요.</p>}
+        {isLoading && <p className="memory-overview-page__notice is-loading">기억을 준비하고 있어요. 잠시만 기다려 주세요.</p>}
         {!isLoading && loadMessage && <p className="memory-overview-page__notice is-warning">{loadMessage}</p>}
 
         {!isLoading && activeTab === "today" && (
@@ -588,7 +588,7 @@ export default function MemoryOverviewPage() {
 
         {!isLoading && activeTab === "memories" && (
           <div className="memory-overview-page__reflection-stage">
-            {isAlbumLoading && <p className="memory-overview-page__empty">추억 사진을 준비하고 있어요.</p>}
+            {isAlbumLoading && <p className="memory-overview-page__empty memory-overview-page__loading-message">추억 사진을 준비하고 있어요. 잠시만 기다려 주세요.</p>}
             {!isAlbumLoading && albumLoadMessage && <p className="memory-overview-page__notice is-warning">{albumLoadMessage}</p>}
             {!isAlbumLoading && !reflectionItem && !albumLoadMessage && (
               <p className="memory-overview-page__empty">아직 함께 볼 추억 사진이 없어요.</p>

@@ -11,7 +11,7 @@ export default function useRecognitionState() {
 
   const startMealRecognition = () => {
     setActiveRecognitionType("meal");
-    setStatusMessage("식사 상황인지 확인하고 있어요");
+    setStatusMessage("식사 인식 중입니다.");
   };
 
   const clearRecognition = () => {

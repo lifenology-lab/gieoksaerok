@@ -439,6 +439,11 @@ export default function DailyModePage() {
     activeRecognitionType === "person"
       ? personRecognitionStatusMessage
       : statusMessage;
+  const isRecognitionLoading = Boolean(
+    activeRecognitionType === DAILY_MODE_RECOGNITION_TYPES.PERSON &&
+      recognitionStatusMessage &&
+      !/문제|못했|발견했/.test(recognitionStatusMessage),
+  );
 
   return (
     <main className="daily-mode-page">
@@ -466,7 +471,10 @@ export default function DailyModePage() {
         onMealRecognition={handleMealRecognitionToggle}
       />
 
-      <RecognitionStatusToast message={recognitionStatusMessage} />
+      <RecognitionStatusToast
+        message={recognitionStatusMessage}
+        isLoading={isRecognitionLoading}
+      />
 
       <UnknownPersonDialog
         open={isRegisterDialogOpen && !isQuestionAssistantOpen}
@@ -484,7 +492,11 @@ export default function DailyModePage() {
             title={mealRecognitionResult.title}
             message={mealRecognitionResult.message}
             suggestion={mealRecognitionResult.suggestion}
-            primaryActionLabel={mealRecognitionResult.primaryActionLabel}
+            primaryActionLabel={
+              isMealRecordSaving
+                ? "식사 기록을 남기고 있어요"
+                : mealRecognitionResult.primaryActionLabel
+            }
             secondaryActionLabel={mealRecognitionResult.secondaryActionLabel}
             errorMessage={mealRecordError}
             isActionDisabled={isMealRecordSaving}

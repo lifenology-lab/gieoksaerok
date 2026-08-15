@@ -243,6 +243,26 @@
   padding: 20px;
 }
 
+.memory-overview-page__notice.is-loading::before,
+.memory-overview-page__loading-message::before {
+  content: "";
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  margin-right: 9px;
+  border: 2px solid rgba(184, 255, 240, 0.3);
+  border-top-color: #b8fff0;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: memory-overview-page-loading-spin 760ms linear infinite;
+}
+
+@keyframes memory-overview-page-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .memory-overview-page.is-calendar-active .memory-overview-page__timeline-panel {
   overflow-y: auto;
   scrollbar-width: none;

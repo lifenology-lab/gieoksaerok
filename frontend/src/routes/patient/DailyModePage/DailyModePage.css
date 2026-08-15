@@ -231,7 +231,26 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
+.daily-mode-page__status-loader {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  margin-right: 9px;
+  border: 2px solid rgba(184, 255, 240, 0.32);
+  border-top-color: #b8fff0;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: daily-mode-status-spin 760ms linear infinite;
+}
+
+@keyframes daily-mode-status-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .daily-mode-page__status p {
+  display: inline;
   font-size: 14px;
   line-height: 1.4;
 }
