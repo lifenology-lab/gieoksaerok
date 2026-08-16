@@ -282,6 +282,65 @@ class MemoryReflectionAudioView(APIView):
         )
 
 
+class MemoryReflectionTextView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        transcript = str(request.data.get('transcript') or '').strip()
+        person_id = request.data.get('person_id')
+        album_item_id = request.data.get('album_item_id')
+
+        if not transcript or not person_id or not album_item_id:
+            return Response(
+                {'detail': '사진과 이야기 내용이 필요합니다.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(transcript) > MAX_PATIENT_QUESTION_TRANSCRIPT_LENGTH:
+            return Response(
+                {'detail': '이야기는 500자 이하로 입력해 주세요.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            normalized_history, summary = get_memory_reflection_context(
+                request.data.get('history'),
+                request.data.get('summary'),
+            )
+        except ValueError as exc:
+            return Response(
+                {'detail': str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        person = get_object_or_404(Person, id=person_id, user=request.user)
+        album_item = get_object_or_404(
+            MemoryAlbumItem,
+            id=album_item_id,
+            person=person,
+            user=request.user,
+        )
+
+        try:
+            result = generate_memory_reflection_reply(
+                person,
+                album_item,
+                transcript,
+                conversation_history=normalized_history,
+                conversation_summary=summary,
+            )
+        except OpenAIMemoryReflectionError as exc:
+            return Response(
+                {'detail': str(exc)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(
+            {'transcript': transcript, **result},
+            status=status.HTTP_200_OK,
+        )
+
+
 class PatientQuestionScheduleContextView(APIView):
     permission_classes = [IsAuthenticated]
 

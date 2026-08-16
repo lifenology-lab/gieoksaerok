@@ -1,8 +1,12 @@
 .memory-overview-page {
   position: relative;
   width: 100vw;
+  height: 100dvh;
   min-height: 100svh;
   overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
   color: white;
   background: #53655d;
   z-index: 100;
@@ -24,12 +28,18 @@
 }
 
 .memory-overview-page__header,
-.memory-overview-page__intro,
+.memory-overview-page__intro {
+  position: relative;
+  z-index: 1;
+  width: calc(100vw - 84px);
+  margin: 0 auto;
+}
+
 .memory-overview-page__tabs,
 .memory-overview-page__content {
   position: relative;
   z-index: 1;
-  width: min(760px, calc(100vw - 84px));
+  width: min(1120px, calc(100vw - 84px));
   margin: 0 auto;
 }
 
@@ -67,6 +77,7 @@
   font-size: 18px;
   font-weight: 800;
   line-height: 1.2;
+  letter-spacing: 0;
 }
 
 .memory-overview-page__date-time strong {
@@ -74,6 +85,7 @@
   font-size: 35px;
   font-weight: 900;
   line-height: 1;
+  letter-spacing: 0;
 }
 
 .memory-overview-page__date-time span {
@@ -99,7 +111,7 @@
 }
 
 .memory-overview-page__header > button {
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 16px;
 }
 
@@ -107,7 +119,7 @@
   display: flex;
   gap: 20px;
   align-items: stretch;
-  margin-top: 42px;
+  margin-top: 31px;
   text-align: left;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.42);
 }
@@ -125,6 +137,7 @@
   font-weight: 900;
   line-height: 1.12;
   color: white;
+  letter-spacing: 0;
 }
 
 .memory-overview-page__intro p {
@@ -133,6 +146,7 @@
   font-size: 18px;
   font-weight: 800;
   line-height: 1.25;
+  letter-spacing: 0;
 }
 
 .memory-overview-page__tabs {
@@ -148,7 +162,7 @@
 }
 
 .memory-overview-page__tabs button {
-  min-height: 43px;
+  min-height: 44px;
   flex: 0 0 auto;
   padding: 0 16px;
   border: 1px solid rgba(255, 255, 255, 0.26);
@@ -229,28 +243,41 @@
   padding: 20px;
 }
 
-.memory-overview-page__today-time {
-  display: grid;
-  gap: 6px;
-  padding: 18px;
-  border-radius: 17px;
-  background: rgba(24, 64, 53, 0.48);
+.memory-overview-page__notice.is-loading::before,
+.memory-overview-page__loading-message::before {
+  content: "";
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  margin-right: 9px;
+  border: 2px solid rgba(184, 255, 240, 0.3);
+  border-top-color: #b8fff0;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: memory-overview-page-loading-spin 760ms linear infinite;
 }
 
-.memory-overview-page__today-time span,
-.memory-overview-page__today-time p,
+@keyframes memory-overview-page-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.memory-overview-page.is-calendar-active .memory-overview-page__timeline-panel {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.memory-overview-page.is-calendar-active .memory-overview-page__timeline-panel::-webkit-scrollbar {
+  display: none;
+}
+
 .memory-overview-page__section-heading p {
   color: rgba(255, 255, 255, 0.83);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
-}
-
-.memory-overview-page__today-time strong {
-  color: #d8fff5;
-  font-size: 23px;
-  font-weight: 900;
-  line-height: 1.25;
 }
 
 .memory-overview-page__section-heading h2 {
@@ -319,7 +346,7 @@
 
 .memory-overview-page__summary-link {
   justify-self: start;
-  min-height: 37px;
+  min-height: 44px;
   margin-top: -10px;
   padding: 0 4px;
   border: 0;
@@ -333,11 +360,94 @@
   cursor: pointer;
 }
 
+.memory-overview-page__today-meal-strip {
+  display: flex;
+  gap: 12px;
+  margin: -4px -2px 0;
+  padding: 2px 2px 7px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  list-style: none;
+}
+
+.memory-overview-page__today-meal-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.memory-overview-page__meal-polaroid {
+  flex: 0 0 clamp(112px, 29vw, 140px);
+  display: grid;
+  gap: 8px;
+  padding: 7px 7px 10px;
+  border: 1px solid rgba(229, 255, 245, 0.48);
+  border-radius: 5px;
+  background: rgba(190, 220, 206, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 10px 18px rgba(12, 29, 23, 0.14);
+  scroll-snap-align: start;
+}
+
+.memory-overview-page__meal-polaroid img,
+.memory-overview-page__meal-polaroid > span {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 2px;
+  object-fit: cover;
+  background: rgba(145, 232, 214, 0.18);
+}
+
+.memory-overview-page__meal-polaroid > span {
+  font-size: 31px;
+}
+
+.memory-overview-page__meal-polaroid strong {
+  color: #23463a;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.3;
+  text-align: center;
+}
+
 .memory-overview-page__today-memories {
   display: grid;
   gap: 12px;
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.memory-overview-page__today-memory-list {
+  display: grid;
+  gap: 8px;
+  margin: -2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-overview-page__today-memory-list li {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 14px;
+  background: rgba(18, 52, 42, 0.24);
+}
+
+.memory-overview-page__today-memory-list strong {
+  color: white;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.memory-overview-page__today-memory-list span {
+  color: #c7f8ec;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .memory-overview-page__calendar-actions {
@@ -393,6 +503,9 @@
 }
 
 .memory-overview-page__calendar-days button {
+  position: relative;
+  display: grid;
+  place-items: center;
   min-height: 43px;
   padding: 4px 2px;
   border: 1px solid rgba(255, 255, 255, 0.24);
@@ -403,9 +516,38 @@
   cursor: pointer;
 }
 
-.memory-overview-page__calendar-days span {
+.memory-overview-page__calendar-days button > span:first-child {
   font-size: 17px;
   font-weight: 900;
+}
+
+.memory-overview-page__calendar-dots {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  display: flex;
+  gap: 3px;
+  transform: translateX(-50%);
+}
+
+.memory-overview-page__calendar-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #8ee5d2;
+}
+
+.memory-overview-page__calendar-dots i.is-schedule {
+  background: #8cccf3;
+}
+
+.memory-overview-page__calendar-dots i.is-memory {
+  background: #ffd37d;
+}
+
+.memory-overview-page__calendar-days button.is-today:not(.is-selected) {
+  border-color: rgba(184, 255, 240, 0.72);
+  color: #d8fff5;
 }
 
 .memory-overview-page__calendar-days button.is-selected {
@@ -436,30 +578,44 @@
 }
 
 .memory-overview-page__timeline li {
-  display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
-  gap: 11px;
-  align-items: stretch;
+  min-width: 0;
 }
 
-.memory-overview-page__timeline li > time {
-  padding-top: 14px;
-  color: #bdf7ea;
-  font-size: 13px;
-  font-weight: 900;
-  text-align: right;
-}
-
-.memory-overview-page__timeline li > div {
+.memory-overview-page__timeline-card {
+  width: 100%;
   display: grid;
   gap: 4px;
   padding: 13px 15px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 15px;
   background: rgba(18, 52, 42, 0.26);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.memory-overview-page__timeline li > div > span {
+.memory-overview-page__timeline-card.has-image {
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 11px;
+  padding: 8px;
+}
+
+.memory-overview-page__timeline-card img {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: rgba(145, 232, 214, 0.16);
+}
+
+.memory-overview-page__timeline-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.memory-overview-page__timeline-copy > span {
   width: fit-content;
   padding: 3px 7px;
   border-radius: 999px;
@@ -469,12 +625,12 @@
   font-weight: 900;
 }
 
-.memory-overview-page__timeline li[data-type="schedule"] > div > span {
+.memory-overview-page__timeline li[data-type="schedule"] .memory-overview-page__timeline-copy > span {
   color: #d7ecff;
   background: rgba(102, 182, 232, 0.2);
 }
 
-.memory-overview-page__timeline li[data-type="memory"] > div > span {
+.memory-overview-page__timeline li[data-type="memory"] .memory-overview-page__timeline-copy > span {
   color: #ffe9b2;
   background: rgba(255, 192, 83, 0.18);
 }
@@ -487,11 +643,427 @@
 }
 
 .memory-overview-page__timeline li p {
+  display: none;
   margin: 0;
   color: rgba(255, 255, 255, 0.82);
   font-size: 14px;
   font-weight: 700;
   line-height: 1.4;
+}
+
+
+.memory-overview-page__record-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(5, 15, 11, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.memory-overview-page__record-dialog {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: min(600px, calc(100dvh - 32px));
+  display: grid;
+  gap: 12px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 20px;
+  color: white;
+  background: rgba(37, 67, 56, 0.96);
+  box-shadow: 0 26px 68px rgba(0, 0, 0, 0.34);
+  text-align: left;
+  scrollbar-width: none;
+}
+
+.memory-overview-page__record-dialog::-webkit-scrollbar {
+  display: none;
+}
+
+.memory-overview-page__record-dialog > img {
+  width: 100%;
+  max-height: min(280px, 38dvh);
+  border-radius: 13px;
+  object-fit: cover;
+  background: rgba(145, 232, 214, 0.15);
+}
+
+.memory-overview-page__record-dialog-type {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #d8fff5;
+  background: rgba(114, 222, 194, 0.18);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.memory-overview-page__record-dialog-type.is-schedule {
+  color: #d7ecff;
+  background: rgba(102, 182, 232, 0.2);
+}
+
+.memory-overview-page__record-dialog-type.is-memory {
+  color: #ffe9b2;
+  background: rgba(255, 192, 83, 0.18);
+}
+
+.memory-overview-page__record-dialog h2,
+.memory-overview-page__record-dialog p {
+  margin: 0;
+}
+
+.memory-overview-page__record-dialog h2 {
+  padding-right: 34px;
+  color: white;
+  font-size: clamp(21px, 5vw, 27px);
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.memory-overview-page__record-dialog p {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: clamp(15px, 3.8vw, 17px);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.memory-overview-page__record-dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 50%;
+  color: white;
+  background: rgba(15, 34, 27, 0.66);
+  font: inherit;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-stage {
+  min-height: 0;
+}
+
+.memory-overview-page__reflection-viewer {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  min-height: 320px;
+  height: min(440px, calc(100dvh - 340px));
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 22px;
+  background: rgba(18, 52, 42, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 22px 60px rgba(0, 0, 0, 0.14);
+}
+
+.memory-overview-page__reflection-photo {
+  position: relative;
+  min-height: 0;
+  background: rgba(145, 232, 214, 0.12);
+}
+
+.memory-overview-page__reflection-photo > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.memory-overview-page__reflection-photo > span,
+.memory-overview-page__reflection-photo > button {
+  position: absolute;
+  bottom: 14px;
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  color: white;
+  background: rgba(16, 39, 31, 0.68);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.memory-overview-page__reflection-photo > span {
+  left: 14px;
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  padding: 0 10px;
+}
+
+.memory-overview-page__reflection-photo > button {
+  right: 14px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-guide {
+  display: grid;
+  grid-template-rows: auto minmax(72px, 1fr) auto;
+  align-content: stretch;
+  gap: 8px;
+  min-width: 0;
+  padding: clamp(12px, 1.8vw, 20px);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.memory-overview-page__reflection-guide-intro {
+  display: grid;
+  gap: 8px;
+}
+
+.memory-overview-page__reflection-guide h2,
+.memory-overview-page__reflection-guide p {
+  margin: 0;
+}
+
+.memory-overview-page__reflection-chat-placeholder {
+  min-height: 0;
+  display: grid;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(4, 32, 24, 0.22);
+}
+
+.memory-overview-page__reflection-chat-placeholder p {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active {
+  display: block;
+  min-height: 0;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant-shell,
+.memory-overview-page__reflection-guide.is-conversation-active .voice-assistant-card__content,
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant,
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__conversation,
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__agent-layout {
+  min-height: 0;
+  height: 100%;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .voice-assistant-card__content {
+  overflow: hidden;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__conversation {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__conversation.is-processing {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__agent-layout {
+  grid-template-rows: minmax(0, 1fr) min-content;
+}
+
+.memory-overview-page__reflection-guide.is-conversation-active .memory-reflection-assistant__response {
+  min-height: 0;
+}
+
+.memory-overview-page__reflection-guide h2 {
+  color: white;
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 900;
+  line-height: 1.32;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  text-wrap: balance;
+}
+
+.memory-overview-page__reflection-guide p {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.memory-overview-page__reflection-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+  padding: 0;
+}
+
+.memory-overview-page__reflection-actions button {
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  padding: 0 12px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.12);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-actions button:first-child {
+  grid-column: 1 / -1;
+  border-color: #b8fff0;
+  color: #153e34;
+  background: #a4f0df;
+}
+
+.memory-overview-page__reflection-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(5, 15, 11, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.memory-overview-page__reflection-dialog {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: min(520px, calc(100dvh - 32px));
+  display: grid;
+  gap: 12px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 20px;
+  color: white;
+  background: rgba(37, 67, 56, 0.97);
+  box-shadow: 0 26px 68px rgba(0, 0, 0, 0.34);
+  scrollbar-width: none;
+}
+
+.memory-overview-page__reflection-dialog::-webkit-scrollbar {
+  display: none;
+}
+
+.memory-overview-page__reflection-dialog > button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 50%;
+  color: white;
+  background: rgba(15, 34, 27, 0.66);
+  font: inherit;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-dialog > span {
+  color: #b8fff0;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.memory-overview-page__reflection-dialog h2,
+.memory-overview-page__reflection-dialog p {
+  margin: 0;
+}
+
+.memory-overview-page__reflection-dialog h2 {
+  padding-right: 30px;
+  color: white;
+  font-size: clamp(21px, 5vw, 27px);
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.memory-overview-page__reflection-dialog p {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.memory-overview-page__reflection-person-list {
+  display: grid;
+  gap: 8px;
+}
+
+.memory-overview-page__reflection-person-list button {
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 13px;
+  color: white;
+  background: rgba(255, 255, 255, 0.11);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.memory-overview-page__reflection-overlay--conversation .voice-assistant-card__content {
+  max-height: calc(100dvh - 32px);
+}
+
+.memory-overview-page__reflection-overlay--conversation {
+  place-items: end center;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.memory-reflection-assistant .patient-question-assistant__voice-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.memory-reflection-assistant .patient-question-assistant__text-action {
+  min-height: 48px;
+  border-radius: 14px;
+}
+
+@media (min-width: 681px) {
+  .memory-overview-page__calendar-layout {
+    grid-template-columns: minmax(0, 1.35fr) minmax(210px, 0.65fr);
+    align-items: stretch;
+  }
+
+  .memory-overview-page__calendar-panel,
+  .memory-overview-page__timeline-panel {
+    height: auto;
+  }
+
+  .memory-overview-page__timeline {
+    gap: 10px;
+  }
+
+  .memory-overview-page__timeline ul {
+    gap: 8px;
+  }
+
+  .memory-overview-page__timeline-card {
+    padding: 10px 12px;
+  }
 }
 
 .memory-overview-page__reflection-list article,
@@ -672,105 +1244,6 @@
   background: #a4f0df;
 }
 
-.memory-overview-page__reflection-photo-card {
-  display: grid;
-  gap: 16px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 19px;
-  background: rgba(18, 52, 42, 0.28);
-}
-
-.memory-overview-page__reflection-photo-card > img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  background: rgba(105, 198, 174, 0.2);
-}
-
-.memory-overview-page__reflection-photo-card > div:not(.memory-overview-page__reflection-actions) {
-  display: grid;
-  gap: 10px;
-  padding: 0 18px;
-}
-
-.memory-overview-page__reflection-photo-card h3,
-.memory-overview-page__people-shortcuts h3 {
-  margin: 0;
-  color: white;
-  font-size: 20px;
-  font-weight: 900;
-  line-height: 1.35;
-}
-
-.memory-overview-page__reflection-photo-card p {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.memory-overview-page__hint-button {
-  justify-self: start;
-  min-height: 38px;
-  padding: 0 4px;
-  border: 0;
-  color: #b8fff0;
-  background: transparent;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 900;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
-.memory-overview-page__reflection-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 9px;
-  padding: 0 18px 18px;
-}
-
-.memory-overview-page__reflection-actions button,
-.memory-overview-page__people-shortcuts button {
-  min-height: 45px;
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  border-radius: 13px;
-  color: white;
-  background: rgba(255, 255, 255, 0.12);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.memory-overview-page__reflection-actions button:first-child {
-  border-color: #b8fff0;
-  color: #153e34;
-  background: #a4f0df;
-}
-
-.memory-overview-page__people-shortcuts {
-  display: grid;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.memory-overview-page__people-shortcuts > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.memory-overview-page__people-shortcuts button {
-  min-height: 39px;
-  padding: 0 13px;
-  border-radius: 999px;
-}
 
 .memory-overview-page__header > button:hover,
 .memory-overview-page__header > button:focus-visible,
@@ -785,6 +1258,45 @@
   outline: none;
 }
 
+@media (max-width: 920px) {
+  .memory-overview-page__header,
+  .memory-overview-page__intro,
+  .memory-overview-page__tabs,
+  .memory-overview-page__content {
+    width: calc(100vw - 44px);
+  }
+
+  .memory-overview-page__header {
+    padding-top: 24px;
+  }
+
+  .memory-overview-page__date-time p {
+    font-size: 16px;
+  }
+
+  .memory-overview-page__date-time strong {
+    font-size: 31px;
+  }
+
+  .memory-overview-page__intro {
+    gap: 14px;
+    margin-top: 26px;
+  }
+
+  .memory-overview-page__intro > span {
+    min-height: 58px;
+  }
+
+  .memory-overview-page__intro h1 {
+    font-size: 26px;
+  }
+
+  .memory-overview-page__intro p {
+    margin-top: 8px;
+    font-size: 15px;
+  }
+}
+
 @media (max-width: 680px) {
   .memory-overview-page__header,
   .memory-overview-page__intro,
@@ -794,52 +1306,280 @@
   }
 
   .memory-overview-page__header {
-    padding-top: 26px;
+    padding-top: max(82px, calc(env(safe-area-inset-top) + 16px));
   }
 
   .memory-overview-page__date-time p {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .memory-overview-page__date-time strong {
-    font-size: 27px;
+    font-size: 31px;
   }
 
   .memory-overview-page__intro {
-    margin-top: 29px;
+    margin-top: 4px;
     gap: 14px;
   }
 
   .memory-overview-page__intro h1 {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .memory-overview-page__intro p {
-    font-size: 16px;
+    margin-top: 6px;
+    font-size: 14px;
+  }
+
+  .memory-overview-page__intro > span {
+    min-height: 58px;
+  }
+
+  .memory-overview-page__intro.is-compact {
+    min-height: 44px;
+    margin-top: 22px;
+    align-items: center;
+  }
+
+  .memory-overview-page__intro.is-compact > span {
+    min-height: 44px;
+  }
+
+  .memory-overview-page__intro.is-compact p {
+    display: none;
+  }
+
+  .memory-overview-page.is-calendar-active {
+    height: 100dvh;
+    min-height: 100svh;
+    overflow: hidden;
+  }
+
+  .memory-overview-page.is-reflection-active {
+    height: 100dvh;
+    min-height: 100svh;
+    overflow: hidden;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__tabs {
+    margin-top: 14px;
+  }
+
+  .memory-overview-page.is-reflection-active .memory-overview-page__tabs {
+    margin-top: 14px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__content {
+    margin-top: 10px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .memory-overview-page.is-reflection-active .memory-overview-page__content {
+    margin-top: 10px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .memory-overview-page__reflection-viewer {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 0;
+    height: clamp(250px, calc(100dvh - 315px), 370px);
+    border-radius: 18px;
+  }
+
+  .memory-overview-page__reflection-photo > span,
+  .memory-overview-page__reflection-photo > button {
+    bottom: 10px;
+    min-height: 30px;
+    font-size: 12px;
+  }
+
+  .memory-overview-page__reflection-photo > span {
+    left: 10px;
+  }
+
+  .memory-overview-page__reflection-photo > button {
+    right: 10px;
+  }
+
+  .memory-overview-page__reflection-guide {
+    gap: 7px;
+    padding: 12px;
+  }
+
+  .memory-overview-page__reflection-guide h2 {
+    font-size: 18px;
+    line-height: 1.28;
+  }
+
+  .memory-overview-page__reflection-guide p {
+    display: none;
+  }
+
+  .memory-overview-page__reflection-chat-placeholder {
+    min-height: 46px;
+    padding: 9px 10px;
+  }
+
+  .memory-overview-page__reflection-chat-placeholder p {
+    display: block;
+    font-size: 12px;
+  }
+
+  .memory-overview-page__reflection-actions {
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  .memory-overview-page__reflection-actions button {
+    min-height: 44px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .memory-overview-page__reflection-overlay--conversation {
+    align-items: end;
+  }
+
+  .memory-overview-page__reflection-overlay--conversation .voice-assistant-card__content {
+    max-height: min(76dvh, calc(100dvh - 32px));
   }
 
   .memory-overview-page__panel {
     padding: 16px;
   }
 
-  .memory-overview-page__calendar-panel,
   .memory-overview-page__timeline-panel {
     padding: 16px;
   }
 
-  .memory-overview-page__calendar-days {
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-panel {
+    width: min(92%, 420px);
+    margin: 0 auto;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-actions {
+    grid-template-columns: 30px minmax(0, 1fr) 30px;
     gap: 4px;
+    padding: 0 4px;
   }
 
-  .memory-overview-page__calendar-days button {
-    min-height: 40px;
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-actions button {
+    min-height: 26px;
+    border-radius: 10px;
+    font-size: 24px;
   }
 
-  .memory-overview-page__timeline li {
-    grid-template-columns: 52px minmax(0, 1fr);
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-actions strong {
+    font-size: 16px;
   }
 
-  .memory-overview-page__reflection-actions {
-    grid-template-columns: 1fr;
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-weekdays {
+    gap: 2px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-weekdays span {
+    font-size: 11px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-days {
+    gap: 1px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-days button {
+    min-height: 27px;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-days button > span:first-child {
+    font-size: 14px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__calendar-dots {
+    bottom: 2px;
+  }
+
+  .memory-overview-page__calendar-days button.is-selected {
+    border-color: #b8fff0;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline-panel {
+    min-height: 0;
+    max-height: clamp(94px, 19dvh, 146px);
+    padding: 10px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline {
+    gap: 6px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline h3 {
+    font-size: 16px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline li {
+    min-width: 0;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline-card {
+    gap: 3px;
+    min-height: 0;
+    padding: 7px;
+    border-radius: 12px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline-card.has-image {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 7px;
+    padding: 6px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline-card img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline-copy {
+    gap: 2px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline-copy > span {
+    padding: 2px 5px;
+    font-size: 10px;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__timeline li strong {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .memory-overview-page.is-calendar-active .memory-overview-page__empty {
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  @media (min-width: 641px) {
+    .memory-overview-page__header {
+      padding-top: 24px;
+    }
+
+    .memory-overview-page__intro {
+      margin-top: 26px;
+    }
   }
 }

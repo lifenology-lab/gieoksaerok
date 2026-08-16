@@ -1,0 +1,87 @@
+.voice-assistant-card {
+  position: absolute;
+  inset: 0;
+  z-index: 36;
+  display: grid;
+  place-items: end center;
+  padding: 16px max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
+  background: transparent;
+  pointer-events: none;
+}
+
+.voice-assistant-card__content {
+  position: relative;
+  width: min(400px, 100%);
+  max-height: min(62svh, 480px);
+  display: grid;
+  gap: 13px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 20px;
+  color: white;
+  background: rgba(30, 52, 44, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 22px 60px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  pointer-events: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.voice-assistant-card__content::-webkit-scrollbar {
+  display: none;
+}
+
+.voice-assistant-card__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.voice-assistant-card__close:focus-visible {
+  outline: 2px solid #b3f5e6;
+  outline-offset: 2px;
+}
+
+.voice-assistant-card.is-embedded {
+  position: static;
+  display: block;
+  padding: 0;
+  pointer-events: auto;
+}
+
+.voice-assistant-card.is-embedded .voice-assistant-card__content {
+  width: 100%;
+  max-height: none;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.voice-assistant-card.is-embedded .voice-assistant-card__close {
+  top: -2px;
+  right: -2px;
+}

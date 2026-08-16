@@ -1,20 +1,22 @@
 .memory-reflection-assistant {
   display: grid;
-  gap: 15px;
-  margin-top: 16px;
-  padding: 18px;
-  border: 1px solid rgba(184, 255, 240, 0.56);
-  border-radius: 19px;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   color: white;
-  background: rgba(19, 68, 55, 0.68);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.16);
+  background: transparent;
+  box-shadow: none;
 }
 
 .memory-reflection-assistant__heading,
 .memory-reflection-assistant__heading > div,
 .memory-reflection-assistant__recording,
 .memory-reflection-assistant__conversation,
-.memory-reflection-assistant__status {
+.memory-reflection-assistant__status,
+.memory-reflection-assistant__text-form {
   display: grid;
   gap: 9px;
 }
@@ -31,13 +33,16 @@
 }
 
 .memory-reflection-assistant__heading > div > span {
-  width: 11px;
-  height: 11px;
-  margin-top: 7px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  margin-top: 0;
+  border: 2px solid rgba(160, 235, 215, 0.82);
   border-radius: 50%;
   color: #a4f0df;
-  background: currentColor;
-  box-shadow: 0 0 13px rgba(164, 240, 223, 0.92);
+  background: rgba(160, 235, 215, 0.18);
+  box-shadow: 0 0 18px rgba(160, 235, 215, 0.2);
   font-size: 0;
 }
 
@@ -47,8 +52,8 @@
 
 @keyframes memory-reflection-assistant-listening {
   50% {
-    transform: scale(1.7);
-    box-shadow: 0 0 21px rgba(164, 240, 223, 1);
+    transform: scale(1.08);
+    box-shadow: 0 0 22px rgba(164, 240, 223, 0.68);
   }
 }
 
@@ -75,7 +80,7 @@
 .memory-reflection-assistant button {
   min-height: 40px;
   border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 12px;
+  border-radius: 999px;
   color: white;
   background: rgba(255, 255, 255, 0.13);
   font: inherit;
@@ -106,7 +111,7 @@
   min-height: 48px;
   place-items: center;
   border: 1px solid rgba(184, 255, 240, 0.34);
-  border-radius: 12px;
+  border-radius: 14px;
   color: rgba(233, 255, 249, 0.86);
   background: rgba(4, 32, 24, 0.22);
   font-size: 14px;
@@ -126,7 +131,7 @@
 
 .memory-reflection-assistant__voice-wave {
   display: flex;
-  height: 58px;
+  height: 42px;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -173,7 +178,146 @@
 }
 
 .memory-reflection-assistant__conversation {
-  padding-top: 3px;
+  padding-top: 0;
+}
+
+.memory-reflection-assistant-shell.is-conversation .voice-assistant-card__content {
+  width: min(680px, 100%);
+  max-height: min(74svh, 520px);
+}
+
+.memory-reflection-assistant-shell.is-embedded .memory-reflection-assistant {
+  min-height: 100%;
+}
+
+.memory-reflection-assistant-shell.is-embedded .voice-assistant-card__content {
+  max-height: none;
+}
+
+.memory-reflection-assistant-shell.is-embedded .memory-reflection-assistant__conversation {
+  align-content: center;
+}
+
+.memory-reflection-assistant-shell.is-embedded .memory-reflection-assistant__agent-layout {
+  grid-template-columns: 1fr;
+}
+
+.memory-reflection-assistant-shell.is-embedded .memory-reflection-assistant__agent-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.memory-reflection-assistant__agent-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 258px;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.memory-reflection-assistant__agent-layout.is-processing {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.memory-reflection-assistant__response {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  min-width: 0;
+  padding: clamp(18px, 2vw, 26px);
+  border-radius: 14px;
+  background: rgba(4, 32, 24, 0.25);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.memory-reflection-assistant__response::-webkit-scrollbar {
+  display: none;
+}
+
+.memory-reflection-assistant__transcript {
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.memory-reflection-assistant__transcript > span {
+  color: #b8fff0;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.memory-reflection-assistant__transcript > p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(17px, 1.7vw, 20px);
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+
+.memory-reflection-assistant__transcript > button {
+  min-height: 34px;
+  padding: 0 11px;
+  border-color: rgba(184, 255, 240, 0.54);
+  color: #dffdf6;
+  background: rgba(164, 240, 223, 0.14);
+  font-size: 13px;
+}
+
+.memory-reflection-assistant__answer {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: clamp(20px, 2.2vw, 25px);
+  font-weight: 800;
+  line-height: 1.55;
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+
+.memory-reflection-assistant__response .patient-question-assistant__voice-wave {
+  height: 26px;
+  justify-content: flex-start;
+}
+
+.memory-reflection-assistant__response .patient-question-assistant__voice-wave span {
+  width: 5px;
+}
+
+.memory-reflection-assistant__agent-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.memory-reflection-assistant__agent-actions.is-text-mode {
+  display: block;
+  align-self: end;
+}
+
+.memory-reflection-assistant__agent-actions.is-text-mode .memory-reflection-assistant__text-form {
+  min-height: 0;
+  padding: 8px;
+}
+
+.memory-reflection-assistant__agent-actions.is-text-mode .memory-reflection-assistant__text-form textarea {
+  min-height: 56px;
+}
+
+.memory-reflection-assistant__agent-actions .patient-question-assistant__voice-primary-button,
+.memory-reflection-assistant__agent-actions .patient-question-assistant__voice-cancel-button,
+.memory-reflection-assistant__agent-actions .patient-question-assistant__text-action {
+  min-height: 0;
+  padding: 7px 8px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.memory-reflection-assistant__agent-actions .memory-reflection-assistant__status {
+  min-height: 0;
+  padding: 8px;
+  font-size: 12px;
 }
 
 .memory-reflection-assistant__conversation > p {
@@ -203,6 +347,81 @@
   background: rgba(123, 45, 53, 0.38) !important;
 }
 
+.memory-reflection-assistant__voice-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.memory-reflection-assistant__voice-actions button:first-child,
+.memory-reflection-assistant__text-form button[type="submit"] {
+  border-color: #b8fff0;
+  color: #153e34;
+  background: #a4f0df;
+}
+
+.memory-reflection-assistant__error.is-permission-error {
+  display: grid;
+  gap: 5px;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 155, 165, 0.52);
+  border-radius: 13px;
+  background: rgba(153, 39, 54, 0.3) !important;
+}
+
+.memory-reflection-assistant__error.is-permission-error strong,
+.memory-reflection-assistant__error.is-permission-error p {
+  margin: 0;
+}
+
+.memory-reflection-assistant__text-form {
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid rgba(184, 255, 240, 0.3);
+  border-radius: 14px;
+  background: rgba(4, 32, 24, 0.22);
+}
+
+.memory-reflection-assistant__text-form textarea {
+  width: 100%;
+  min-height: 72px;
+  box-sizing: border-box;
+  resize: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 11px;
+  padding: 10px 11px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.memory-reflection-assistant__text-form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.memory-reflection-assistant__text-form > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.memory-reflection-assistant__error.is-permission-error strong {
+  color: #fff0f2;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.memory-reflection-assistant__error.is-permission-error p {
+  color: #ffd4d9;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
 @media (max-width: 420px) {
   .memory-reflection-assistant__heading {
     grid-template-columns: 1fr;
@@ -210,5 +429,36 @@
 
   .memory-reflection-assistant__heading > button {
     justify-self: start;
+  }
+}
+
+@media (max-width: 560px) {
+  .memory-reflection-assistant-shell.is-conversation .voice-assistant-card__content {
+    width: min(400px, 100%);
+  }
+
+  .memory-reflection-assistant__agent-layout {
+    grid-template-columns: minmax(0, 1fr) 118px;
+    gap: 8px;
+  }
+
+  .memory-reflection-assistant__agent-actions {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .memory-reflection-assistant__agent-actions .patient-question-assistant__voice-primary-button,
+  .memory-reflection-assistant__agent-actions .patient-question-assistant__voice-cancel-button,
+  .memory-reflection-assistant__agent-actions .patient-question-assistant__text-action {
+    font-size: 12px;
+  }
+
+  .memory-reflection-assistant__response {
+    padding: 18px;
+  }
+
+  .memory-reflection-assistant__answer {
+    font-size: 19px;
   }
 }

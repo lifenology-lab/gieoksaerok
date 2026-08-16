@@ -54,6 +54,17 @@ body {
   margin: 0;
   min-width: 0;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
 }
 
 html {

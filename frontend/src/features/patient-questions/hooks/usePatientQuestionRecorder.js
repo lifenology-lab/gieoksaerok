@@ -29,7 +29,7 @@ function stopStream(stream) {
 
 function getMicrophoneErrorMessage(error) {
   if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
-    return '마이크 사용을 허용해 주세요. 브라우저 설정에서 마이크 접근을 켠 뒤 다시 말해 보세요.';
+    return '마이크 사용을 허용해 주세요. 브라우저 설정에서 마이크 접근을 켠 뒤 다시 말해 주세요.';
   }
 
   if (error?.name === 'NotFoundError') {

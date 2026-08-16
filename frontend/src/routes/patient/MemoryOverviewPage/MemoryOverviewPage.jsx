@@ -12,6 +12,7 @@ import {
   fetchPatientMemorySchedules,
 } from "@/features/patient-memory/api/patientMemoryApi";
 import MemoryReflectionAssistant from "@/features/patient-memory/components/MemoryReflectionAssistant";
+import { getApiMediaUrl } from "@/shared/api/client";
 
 import "./MemoryOverviewPage.css";
 
@@ -23,6 +24,14 @@ const TAB_ITEMS = [
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 const REFLECTION_SESSION_IDLE_MS = 30 * 60 * 1000;
+const INITIAL_PEOPLE_CHOOSER_COUNT = 5;
+const MEAL_TYPE_ORDER = {
+  breakfast: 0,
+  lunch: 1,
+  dinner: 2,
+  snack: 3,
+  unknown: 4,
+};
 
 function isSameDay(leftDate, rightDate) {
   return (
@@ -30,51 +39,6 @@ function isSameDay(leftDate, rightDate) {
     leftDate.getMonth() === rightDate.getMonth() &&
     leftDate.getDate() === rightDate.getDate()
   );
-}
-
-function formatMealTime(value) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "기록된 시간";
-  }
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function formatPromiseTime(promise) {
-  const scheduledAt = promise.scheduled_at
-    ? new Date(promise.scheduled_at)
-    : null;
-
-  if (scheduledAt && !Number.isNaN(scheduledAt.getTime())) {
-    const isToday = isSameDay(scheduledAt, new Date());
-    const dateLabel = isToday
-      ? "오늘"
-      : `${scheduledAt.getMonth() + 1}월 ${scheduledAt.getDate()}일`;
-
-    return `${dateLabel} ${new Intl.DateTimeFormat("ko-KR", {
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(scheduledAt)}`;
-  }
-
-  if (promise.scheduled_date) {
-    const scheduledDate = new Date(`${promise.scheduled_date}T00:00:00`);
-
-    if (!Number.isNaN(scheduledDate.getTime())) {
-      const dateLabel = isSameDay(scheduledDate, new Date())
-        ? "오늘"
-        : `${scheduledDate.getMonth() + 1}월 ${scheduledDate.getDate()}일`;
-
-      return promise.time_label ? `${dateLabel} ${promise.time_label}` : dateLabel;
-    }
-  }
-
-  return promise.time_label || "예정된 시간";
 }
 
 function getPromiseDate(promise) {
@@ -116,11 +80,14 @@ function getMonthDays(monthDate) {
   ];
 }
 
-function formatTimelineTime(date) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+function getCalendarDateKey(date) {
+  const normalizedDate = new Date(date);
+
+  if (Number.isNaN(normalizedDate.getTime())) {
+    return "";
+  }
+
+  return `${normalizedDate.getFullYear()}-${String(normalizedDate.getMonth() + 1).padStart(2, "0")}-${String(normalizedDate.getDate()).padStart(2, "0")}`;
 }
 
 function getPersonLabel(person) {
@@ -154,6 +121,7 @@ export default function MemoryOverviewPage() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(
     () => new Date(),
   );
+  const [selectedCalendarItem, setSelectedCalendarItem] = useState(null);
   const [calendarMonth, setCalendarMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   );
@@ -170,6 +138,8 @@ export default function MemoryOverviewPage() {
   const [albumLoadMessage, setAlbumLoadMessage] = useState("");
   const [reflectionIndex, setReflectionIndex] = useState(0);
   const [isHintVisible, setIsHintVisible] = useState(false);
+  const [isPeopleChooserOpen, setIsPeopleChooserOpen] = useState(false);
+  const [isPeopleChooserExpanded, setIsPeopleChooserExpanded] = useState(false);
   const [isReflectionAssistantOpen, setIsReflectionAssistantOpen] = useState(false);
   const [reflectionSessions, setReflectionSessions] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -302,7 +272,18 @@ export default function MemoryOverviewPage() {
         const eatenAt = new Date(record.eatenAt);
         return !Number.isNaN(eatenAt.getTime()) && isSameDay(eatenAt, now);
       })
-      .slice(0, 2);
+      .sort((left, right) => {
+        const typeOrder =
+          (MEAL_TYPE_ORDER[left.mealType] ?? MEAL_TYPE_ORDER.unknown) -
+          (MEAL_TYPE_ORDER[right.mealType] ?? MEAL_TYPE_ORDER.unknown);
+
+        if (typeOrder !== 0) {
+          return typeOrder;
+        }
+
+        return new Date(left.eatenAt).getTime() - new Date(right.eatenAt).getTime();
+      })
+      .slice(0, 4);
   }, [mealRecords]);
   const todayMemories = useMemo(() => {
     const now = new Date();
@@ -312,7 +293,7 @@ export default function MemoryOverviewPage() {
         const memoryAt = new Date(memory.memory_at || memory.created_at);
         return !Number.isNaN(memoryAt.getTime()) && isSameDay(memoryAt, now);
       })
-      .slice(0, 2);
+      .slice(0, 1);
   }, [memories]);
   const peopleById = useMemo(
     () => new Map(people.map((person) => [person.id, person])),
@@ -322,6 +303,28 @@ export default function MemoryOverviewPage() {
     ? albumItems[reflectionIndex % albumItems.length]
     : null;
   const calendarDays = useMemo(() => getMonthDays(calendarMonth), [calendarMonth]);
+  const calendarRecordTypesByDate = useMemo(() => {
+    const recordTypesByDate = new Map();
+    const addRecordType = (date, type) => {
+      const dateKey = getCalendarDateKey(date);
+
+      if (!dateKey) {
+        return;
+      }
+
+      const types = recordTypesByDate.get(dateKey) || new Set();
+      types.add(type);
+      recordTypesByDate.set(dateKey, types);
+    };
+
+    mealRecords.forEach((record) => addRecordType(record.eatenAt, "meal"));
+    Object.values(scheduleGroups)
+      .flat()
+      .forEach((promise) => addRecordType(getPromiseDate(promise), "schedule"));
+    memories.forEach((memory) => addRecordType(memory.memory_at || memory.created_at, "memory"));
+
+    return recordTypesByDate;
+  }, [mealRecords, memories, scheduleGroups]);
   const calendarItems = useMemo(() => {
     const items = [
       ...mealRecords.map((record) => ({
@@ -329,7 +332,8 @@ export default function MemoryOverviewPage() {
         type: "meal",
         date: new Date(record.eatenAt),
         title: record.mealLabel,
-        description: record.menu || "남긴 식사 기록",
+        description: record.menu || "",
+        imageUrl: record.sceneImage ? getApiMediaUrl(record.sceneImage) : "",
       })),
       ...Object.values(scheduleGroups).flat().map((promise) => ({
         id: `schedule-${promise.id}`,
@@ -379,7 +383,20 @@ export default function MemoryOverviewPage() {
   };
 
   const handleTalkAboutReflection = () => {
+    setIsHintVisible(false);
+    setIsPeopleChooserOpen(false);
+    setIsPeopleChooserExpanded(false);
+    setSelectedCalendarItem(null);
     setIsReflectionAssistantOpen(true);
+  };
+
+  const handleMemoryTabChange = (nextTab) => {
+    setSelectedCalendarItem(null);
+    setIsHintVisible(false);
+    setIsPeopleChooserOpen(false);
+    setIsPeopleChooserExpanded(false);
+    setIsReflectionAssistantOpen(false);
+    setActiveTab(nextTab);
   };
 
   const handleReflectionSessionChange = (albumItemId, nextSession) => {
@@ -390,7 +407,7 @@ export default function MemoryOverviewPage() {
   };
 
   return (
-    <main className="memory-overview-page">
+    <main className={`memory-overview-page${activeTab === "calendar" ? " is-calendar-active" : ""}${activeTab === "memories" ? " is-reflection-active" : ""}`}>
       <div className="memory-overview-page__background" aria-hidden="true" />
 
       <header className="memory-overview-page__header">
@@ -402,7 +419,7 @@ export default function MemoryOverviewPage() {
         <button type="button" onClick={() => navigate("/patient")}>홈으로</button>
       </header>
 
-      <section className="memory-overview-page__intro">
+      <section className={`memory-overview-page__intro${activeTab !== "today" ? " is-compact" : ""}`}>
         <span aria-hidden="true" />
         <div>
           <h1>기억 살펴보기</h1>
@@ -418,7 +435,7 @@ export default function MemoryOverviewPage() {
             role="tab"
             aria-selected={activeTab === tab.id}
             className={activeTab === tab.id ? "is-active" : ""}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleMemoryTabChange(tab.id)}
           >
             {tab.label}
           </button>
@@ -426,59 +443,43 @@ export default function MemoryOverviewPage() {
       </nav>
 
       <section className="memory-overview-page__content" aria-live="polite">
-        {isLoading && <p className="memory-overview-page__notice">기억을 준비하고 있어요.</p>}
+        {isLoading && <p className="memory-overview-page__notice is-loading">기억을 준비하고 있어요. 잠시만 기다려 주세요.</p>}
         {!isLoading && loadMessage && <p className="memory-overview-page__notice is-warning">{loadMessage}</p>}
 
         {!isLoading && activeTab === "today" && (
           <div className="memory-overview-page__panel">
-            <section className="memory-overview-page__today-time">
-              <span>지금은</span>
-              <strong>{new Intl.DateTimeFormat("ko-KR", { weekday: "long", hour: "numeric", minute: "2-digit" }).format(currentDateTime)}</strong>
-              <p>하나씩 천천히 확인해도 괜찮아요.</p>
-            </section>
             <section className="memory-overview-page__section-heading">
               <h2>오늘의 식사</h2>
-              <p>오늘 남긴 식사를 간단히 확인할 수 있어요.</p>
             </section>
             {todayMealRecords.length === 0 ? (
               <p className="memory-overview-page__summary-empty">오늘 남긴 식사 기록이 아직 없어요.</p>
             ) : (
-              <ul className="memory-overview-page__summary-list">
+              <ul className="memory-overview-page__today-meal-strip">
                 {todayMealRecords.map((record) => (
-                  <li key={record.id}>
+                  <li key={record.id} className="memory-overview-page__meal-polaroid">
+                    {record.sceneImage ? (
+                      <img
+                        src={getApiMediaUrl(record.sceneImage)}
+                        alt={`${record.mealLabel} 식사 사진`}
+                      />
+                    ) : (
+                      <span aria-label={`${record.mealLabel} 식사 사진 없음`} role="img">
+                        🍽
+                      </span>
+                    )}
                     <strong>{record.mealLabel}</strong>
-                    <span>{record.menu || formatMealTime(record.eatenAt)}</span>
                   </li>
                 ))}
               </ul>
             )}
-            <button className="memory-overview-page__summary-link" type="button" onClick={openCalendarForToday}>오늘 기록 보기</button>
-
-            <section className="memory-overview-page__section-heading">
-              <h2>오늘의 일정</h2>
-              <p>오늘 예정된 일을 하나씩 살펴볼 수 있어요.</p>
-            </section>
-            {scheduleGroups.today.length === 0 ? (
-              <p className="memory-overview-page__summary-empty">오늘 예정된 일정이 없어요.</p>
-            ) : (
-              <ul className="memory-overview-page__summary-list">
-                {scheduleGroups.today.slice(0, 2).map((promise) => (
-                  <li key={promise.id}>
-                    <strong>{promise.title || "예정된 약속"}</strong>
-                    <span>{formatPromiseTime(promise)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button className="memory-overview-page__summary-link" type="button" onClick={openCalendarForToday}>오늘 기록 보기</button>
+            <button className="memory-overview-page__summary-link" type="button" onClick={openCalendarForToday}>기억 달력에서 모두 보기</button>
 
             {todayMemories.length > 0 && (
               <section className="memory-overview-page__today-memories">
                 <div className="memory-overview-page__section-heading">
                   <h2>오늘 새로 남긴 추억</h2>
-                  <p>오늘 나눈 이야기를 다시 살펴볼 수 있어요.</p>
                 </div>
-                <ul className="memory-overview-page__summary-list">
+                <ul className="memory-overview-page__today-memory-list">
                   {todayMemories.map((memory) => {
                     const person = peopleById.get(memory.person);
 
@@ -498,10 +499,6 @@ export default function MemoryOverviewPage() {
         {!isLoading && activeTab === "calendar" && (
           <div className="memory-overview-page__calendar-layout">
             <section className="memory-overview-page__calendar-panel">
-              <div className="memory-overview-page__section-heading">
-                <h2>기억 달력</h2>
-                <p>날짜를 고르면 그날의 식사, 일정, 추억을 함께 볼 수 있어요.</p>
-              </div>
               <div className="memory-overview-page__calendar-actions">
                 <button
                   type="button"
@@ -524,16 +521,37 @@ export default function MemoryOverviewPage() {
               </div>
               <div className="memory-overview-page__calendar-days" role="grid" aria-label="날짜 선택">
                 {calendarDays.map((date, index) => date ? (
-                  <button
-                    key={date.toISOString()}
-                    type="button"
-                    role="gridcell"
-                    className={isSameDay(date, selectedCalendarDate) ? "is-selected" : ""}
-                    aria-pressed={isSameDay(date, selectedCalendarDate)}
-                    onClick={() => setSelectedCalendarDate(date)}
-                  >
-                    {date.getDate()}
-                  </button>
+                  (() => {
+                    const recordTypes = calendarRecordTypesByDate.get(getCalendarDateKey(date)) || new Set();
+                    const hasRecords = recordTypes.size > 0;
+                    const isSelected = isSameDay(date, selectedCalendarDate);
+                    const isToday = isSameDay(date, new Date());
+                    const recordSummary = [...recordTypes]
+                      .map((type) => (type === "meal" ? "식사" : type === "schedule" ? "일정" : "추억"))
+                      .join(", ");
+
+                    return (
+                      <button
+                        key={date.toISOString()}
+                        type="button"
+                        role="gridcell"
+                        className={`${isSelected ? "is-selected" : ""}${isToday ? " is-today" : ""}`.trim()}
+                        aria-label={`${formatCalendarDate(date)}${hasRecords ? `, ${recordSummary} 기록 있음` : ""}`}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          setSelectedCalendarDate(date);
+                          setSelectedCalendarItem(null);
+                        }}
+                      >
+                        <span>{date.getDate()}</span>
+                        {hasRecords && (
+                          <span className="memory-overview-page__calendar-dots" aria-hidden="true">
+                            {[...recordTypes].map((type) => <i key={type} className={`is-${type}`} />)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })()
                 ) : <span key={`blank-${index}`} aria-hidden="true" />)}
               </div>
             </section>
@@ -546,12 +564,19 @@ export default function MemoryOverviewPage() {
                   <ul>
                     {calendarItems.map((item) => (
                       <li key={item.id} data-type={item.type}>
-                        <time>{formatTimelineTime(item.date)}</time>
-                        <div>
-                          <span>{item.type === "meal" ? "식사" : item.type === "schedule" ? "일정" : "추억"}</span>
-                          <strong>{item.title}</strong>
-                          {item.description && <p>{item.description}</p>}
-                        </div>
+                        <button
+                          type="button"
+                          className={`memory-overview-page__timeline-card${item.imageUrl ? " has-image" : ""}`}
+                          aria-label={`${item.title} 상세 보기`}
+                          onClick={() => setSelectedCalendarItem(item)}
+                        >
+                          {item.imageUrl && <img src={item.imageUrl} alt={`${item.title} 사진`} />}
+                          <div className="memory-overview-page__timeline-copy">
+                            <span>{item.type === "meal" ? "식사" : item.type === "schedule" ? "일정" : "추억"}</span>
+                            <strong>{item.title}</strong>
+                            {item.description && <p>{item.description}</p>}
+                          </div>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -562,60 +587,151 @@ export default function MemoryOverviewPage() {
         )}
 
         {!isLoading && activeTab === "memories" && (
-          <div className="memory-overview-page__panel">
-            <section className="memory-overview-page__section-heading">
-              <h2>기억 회상하기</h2>
-              <p>사진을 보며 떠오르는 이야기를 천천히 말해 보세요.</p>
-            </section>
-            {isAlbumLoading && <p className="memory-overview-page__empty">추억 사진을 준비하고 있어요.</p>}
+          <div className="memory-overview-page__reflection-stage">
+            {isAlbumLoading && <p className="memory-overview-page__empty memory-overview-page__loading-message">추억 사진을 준비하고 있어요. 잠시만 기다려 주세요.</p>}
             {!isAlbumLoading && albumLoadMessage && <p className="memory-overview-page__notice is-warning">{albumLoadMessage}</p>}
             {!isAlbumLoading && !reflectionItem && !albumLoadMessage && (
               <p className="memory-overview-page__empty">아직 함께 볼 추억 사진이 없어요.</p>
             )}
             {!isAlbumLoading && reflectionItem && (
-              <section className="memory-overview-page__reflection-photo-card">
-                <img
-                  src={getMemoryAlbumPhotoUrl(reflectionItem.photo_url)}
-                  alt="함께 떠올려 볼 추억 사진"
-                  style={{ objectPosition: `${reflectionItem.crop_x ?? 50}% ${reflectionItem.crop_y ?? 50}%` }}
-                />
-                <div>
-                  <h3>이 사진을 보며 어떤 일이 떠오르세요?</h3>
-                  {isHintVisible ? (
-                    <p>{`${getPersonLabel(reflectionItem.person)}과 함께한 추억이에요. ${reflectionItem.description}`}</p>
-                  ) : (
-                    <button type="button" className="memory-overview-page__hint-button" onClick={() => setIsHintVisible(true)}>힌트 보기</button>
+              <section className="memory-overview-page__reflection-viewer">
+                <div className="memory-overview-page__reflection-photo">
+                  <img
+                    src={getMemoryAlbumPhotoUrl(reflectionItem.photo_url)}
+                    alt="함께 떠올려 볼 추억 사진"
+                    style={{ objectPosition: `${reflectionItem.crop_x ?? 50}% ${reflectionItem.crop_y ?? 50}%` }}
+                  />
+                  <span>{`${reflectionIndex % albumItems.length + 1} / ${albumItems.length}`}</span>
+                  {albumItems.length > 1 && (
+                    <button type="button" onClick={handleNextReflection}>다른 추억</button>
                   )}
                 </div>
-                <div className="memory-overview-page__reflection-actions">
-                  <button type="button" onClick={handleTalkAboutReflection}>새록이에게 이야기하기</button>
-                  {albumItems.length > 1 && <button type="button" onClick={handleNextReflection}>다른 추억 보기</button>}
-                </div>
-              </section>
-            )}
-            {isReflectionAssistantOpen && reflectionItem && (
-              <MemoryReflectionAssistant
-                reflectionItem={reflectionItem}
-                session={reflectionSessions[reflectionItem.id]}
-                onSessionChange={(nextSession) => (
-                  handleReflectionSessionChange(reflectionItem.id, nextSession)
-                )}
-                onClose={() => setIsReflectionAssistantOpen(false)}
-              />
-            )}
-            {people.length > 0 && (
-              <section className="memory-overview-page__people-shortcuts">
-                <h3>사람별 추억 보기</h3>
-                <div>
-                  {people.map((person) => (
-                    <button key={person.id} type="button" onClick={() => handleOpenAlbum(person)}>{getPersonLabel(person)}</button>
-                  ))}
+                <div className={`memory-overview-page__reflection-guide${isReflectionAssistantOpen ? " is-conversation-active" : ""}`}>
+                  {isReflectionAssistantOpen ? (
+                    <MemoryReflectionAssistant
+                      reflectionItem={reflectionItem}
+                      session={reflectionSessions[reflectionItem.id]}
+                      onSessionChange={(nextSession) => (
+                        handleReflectionSessionChange(reflectionItem.id, nextSession)
+                      )}
+                      onClose={() => setIsReflectionAssistantOpen(false)}
+                      isEmbedded
+                    />
+                  ) : (
+                    <>
+                      <div className="memory-overview-page__reflection-guide-intro">
+                        <h2>이 사진을 보며<br />어떤 일이 떠오르세요?</h2>
+                        <p>떠오르는 이야기를 새록이에게 들려주세요.</p>
+                      </div>
+                      <div className="memory-overview-page__reflection-chat-placeholder" aria-live="polite">
+                        <p>새록이와 이 사진의 이야기를 나눠 보세요.</p>
+                      </div>
+                      <div className="memory-overview-page__reflection-actions">
+                        <button type="button" onClick={handleTalkAboutReflection}>새록이에게 이야기하기</button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPeopleChooserOpen(false);
+                            setSelectedCalendarItem(null);
+                            setIsHintVisible(true);
+                          }}
+                        >
+                          힌트 보기
+                        </button>
+                        {people.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                            setIsHintVisible(false);
+                            setSelectedCalendarItem(null);
+                            setIsPeopleChooserExpanded(false);
+                            setIsPeopleChooserOpen(true);
+                            }}
+                          >
+                            사람 선택
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </section>
             )}
           </div>
         )}
       </section>
+
+      {selectedCalendarItem && (
+        <div
+          className="memory-overview-page__record-overlay"
+          role="presentation"
+          onClick={() => setSelectedCalendarItem(null)}
+        >
+          <section
+            className="memory-overview-page__record-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="calendar-record-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              className="memory-overview-page__record-dialog-close"
+              type="button"
+              aria-label="기록 상세 닫기"
+              onClick={() => setSelectedCalendarItem(null)}
+            >
+              ×
+            </button>
+            {selectedCalendarItem.imageUrl && (
+              <img src={selectedCalendarItem.imageUrl} alt={`${selectedCalendarItem.title} 사진`} />
+            )}
+            <span className={`memory-overview-page__record-dialog-type is-${selectedCalendarItem.type}`}>
+              {selectedCalendarItem.type === "meal" ? "식사 기록" : selectedCalendarItem.type === "schedule" ? "일정" : "추억"}
+            </span>
+            <h2 id="calendar-record-title">{selectedCalendarItem.title}</h2>
+            {selectedCalendarItem.description && <p>{selectedCalendarItem.description}</p>}
+          </section>
+        </div>
+      )}
+
+      {isHintVisible && reflectionItem && (
+        <div className="memory-overview-page__reflection-overlay" role="presentation" onClick={() => setIsHintVisible(false)}>
+          <section className="memory-overview-page__reflection-dialog" role="dialog" aria-modal="true" aria-labelledby="reflection-hint-title" onClick={(event) => event.stopPropagation()}>
+            <button type="button" aria-label="힌트 닫기" onClick={() => setIsHintVisible(false)}>×</button>
+            <span>기억의 힌트</span>
+            <h2 id="reflection-hint-title">{getPersonLabel(reflectionItem.person)}과 함께한 추억이에요.</h2>
+            <p>{reflectionItem.description || "사진을 보며 함께한 시간을 천천히 떠올려 보세요."}</p>
+          </section>
+        </div>
+      )}
+
+      {isPeopleChooserOpen && (
+        <div className="memory-overview-page__reflection-overlay" role="presentation" onClick={() => setIsPeopleChooserOpen(false)}>
+          <section className="memory-overview-page__reflection-dialog" role="dialog" aria-modal="true" aria-labelledby="reflection-people-title" onClick={(event) => event.stopPropagation()}>
+            <button type="button" aria-label="사람 선택 닫기" onClick={() => {
+              setIsPeopleChooserOpen(false);
+              setIsPeopleChooserExpanded(false);
+            }}>×</button>
+            <span>사람별 추억</span>
+            <h2 id="reflection-people-title">누구와의 추억을 살펴볼까요?</h2>
+            <div className="memory-overview-page__reflection-person-list">
+              {people.slice(0, isPeopleChooserExpanded ? people.length : INITIAL_PEOPLE_CHOOSER_COUNT).map((person) => (
+                <button key={person.id} type="button" onClick={() => handleOpenAlbum(person)}>{getPersonLabel(person)}</button>
+              ))}
+              {people.length > INITIAL_PEOPLE_CHOOSER_COUNT && (
+                <button
+                  type="button"
+                  className="memory-overview-page__reflection-people-more"
+                  onClick={() => setIsPeopleChooserExpanded((expanded) => !expanded)}
+                >
+                  {isPeopleChooserExpanded ? "접기" : `${people.length - INITIAL_PEOPLE_CHOOSER_COUNT}명 더 보기`}
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
     </main>
   );
 }
