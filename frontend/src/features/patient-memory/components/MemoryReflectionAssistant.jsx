@@ -89,6 +89,7 @@ export default function MemoryReflectionAssistant({
   const isMicrophonePermissionError = /마이크.*(?:허용|권한)|NotAllowedError/i.test(
     recorder.errorMessage || "",
   );
+  const isTextReplyLoading = isReplyLoading && Boolean(pendingTranscript);
 
   const title = isMicrophoneUnavailable
     ? "마이크를 사용할 수 없어요"
@@ -170,7 +171,7 @@ export default function MemoryReflectionAssistant({
         className={`memory-reflection-assistant ${isRecording ? "is-recording" : ""}`}
         aria-live="polite"
       >
-      {(!hasConversationView || isMicrophoneUnavailable) && !isTextMode && (
+      {!hasConversationView && !isTextMode && (
         <div className={`patient-question-assistant__heading ${isRecording ? "is-recording" : ""}`}>
           <span aria-hidden="true">●</span>
           <div>
@@ -213,7 +214,7 @@ export default function MemoryReflectionAssistant({
         </div>
       )}
 
-      {isMicrophoneUnavailable && !isTextMode && (
+      {isMicrophoneUnavailable && !isTextMode && !hasConversationView && (
         <section className="patient-question-assistant__permission-panel" role="alert">
           <p>{recorder.errorMessage}</p>
           <div className="patient-question-assistant__response-actions">
@@ -239,11 +240,16 @@ export default function MemoryReflectionAssistant({
         </div>
       )}
 
-      {hasConversationView && !isMicrophoneUnavailable && (
+      {hasConversationView && (
         <div className={`memory-reflection-assistant__conversation${isProcessing ? " is-processing" : ""}`}>
           {isProcessing && (
             <div className="memory-reflection-assistant__status" aria-live="polite">
-              말씀을 확인하고 있어요
+              <div className="memory-reflection-assistant__voice-wave" aria-hidden="true">
+                {[0, 1, 2, 3, 4].map((barIndex) => <span key={barIndex} />)}
+              </div>
+              <span>
+                {isTextReplyLoading ? "새록이가 답하고 있어요" : "말씀을 확인하고 있어요"}
+              </span>
             </div>
           )}
           <div className={`memory-reflection-assistant__agent-layout${isProcessing ? " is-processing" : ""}`}>
@@ -259,7 +265,9 @@ export default function MemoryReflectionAssistant({
               )}
               <p className="memory-reflection-assistant__answer">
                 {isProcessing
-                  ? "새록이가 이야기를 살펴보고 있어요."
+                  ? isTextReplyLoading
+                    ? "남겨주신 이야기를 바탕으로 답을 준비하고 있어요."
+                    : "새록이가 이야기를 살펴보고 있어요."
                   : latestAssistantMessage || "사진을 보며 떠오르는 이야기를 들려주세요."}
               </p>
               {isRecording && (
@@ -289,6 +297,14 @@ export default function MemoryReflectionAssistant({
                       <button type="submit" disabled={!textDraft.trim() || isProcessing}>이야기 나누기</button>
                     </div>
                   </form>
+                ) : isMicrophoneUnavailable ? (
+                  <button
+                    type="button"
+                    className="patient-question-assistant__text-action"
+                    onClick={() => setIsTextMode(true)}
+                  >
+                    텍스트로<br />이야기하기
+                  </button>
                 ) : (
                   <>
                   <button type="button" className={`patient-question-assistant__voice-primary-button ${isRecording ? "is-recording" : ""}`} onClick={handleContinue}>
