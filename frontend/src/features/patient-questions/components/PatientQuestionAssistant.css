@@ -151,6 +151,31 @@
   gap: 9px;
 }
 
+.patient-question-assistant__form
+  .patient-question-assistant__response-actions
+  button {
+  min-height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.patient-question-assistant__form
+  .patient-question-assistant__response-actions
+  button:hover,
+.patient-question-assistant__form
+  .patient-question-assistant__response-actions
+  button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+
 .patient-question-assistant__text-action {
   min-height: 48px;
   border: 1px solid rgba(255, 255, 255, 0.34);

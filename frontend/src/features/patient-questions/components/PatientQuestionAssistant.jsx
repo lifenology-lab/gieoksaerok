@@ -30,6 +30,14 @@ const EXAMPLE_QUESTIONS = [
   "여기가 어디야?",
 ];
 
+function createResponseSpeechRequest(response, speechText) {
+  if (response?.familyHelpAction === "request-family-help") {
+    return createPresetSpeechRequest("FAMILY_HELP_PROMPT");
+  }
+
+  return createTtsSpeechRequest(speechText);
+}
+
 export default function PatientQuestionAssistant({
   open,
   onClose,
@@ -267,6 +275,7 @@ export default function PatientQuestionAssistant({
   useEffect(() => {
     preloadPreset("ASSISTANT_LISTENING");
     preloadPreset("MICROPHONE_UNAVAILABLE");
+    preloadPreset("FAMILY_HELP_PROMPT");
   }, [preloadPreset]);
 
   useEffect(() => {
@@ -327,17 +336,28 @@ export default function PatientQuestionAssistant({
   ]);
 
   const responseSpeechText = createPatientAnswerSpeechText(response);
+  const isFamilyHelpPrompt =
+    response?.familyHelpAction === "request-family-help";
+  const shouldPlayResponseSpeech = Boolean(responseSpeechText) &&
+    !response?.isFamilyHelpRequestDemo;
   const hasPrimaryResponseAction = Boolean(
     response?.action || response?.familyHelpAction,
   );
 
   useEffect(() => {
-    if (!open || !responseSpeechText) {
+    if (!open || !shouldPlayResponseSpeech) {
       return;
     }
 
-    void playSpeech(createTtsSpeechRequest(responseSpeechText));
-  }, [open, playSpeech, responseSpeechText]);
+    void playSpeech(createResponseSpeechRequest(response, responseSpeechText));
+  }, [
+    isFamilyHelpPrompt,
+    open,
+    playSpeech,
+    response,
+    responseSpeechText,
+    shouldPlayResponseSpeech,
+  ]);
 
   useEffect(() => {
     if (
@@ -496,13 +516,19 @@ export default function PatientQuestionAssistant({
       return;
     }
 
-    void playSpeech(createTtsSpeechRequest(responseSpeechText));
+    void playSpeech(createResponseSpeechRequest(response, responseSpeechText));
   };
 
   return (
     <VoiceAssistantCard
       className="patient-question-assistant"
-      cardClassName="patient-question-assistant__card"
+      cardClassName={`patient-question-assistant__card ${
+        panelView === "text-input" ? "is-text-input" : ""
+      } ${
+        panelView === "microphone-permission"
+          ? "is-microphone-permission"
+          : ""
+      }`}
       closeClassName="patient-question-assistant__close"
       ariaLabelledBy="patient-question-assistant-title"
       closeLabel="질문 도우미 닫기"
@@ -659,7 +685,7 @@ export default function PatientQuestionAssistant({
                   방식으로 연결할 수 있어요.
                 </p>
               )}
-            {responseSpeechText && (
+            {shouldPlayResponseSpeech && (
               <button
                 type="button"
                 className={`patient-question-assistant__speech-action ${speechStatus === "playing" ? "is-playing" : ""}`}
@@ -683,7 +709,7 @@ export default function PatientQuestionAssistant({
                 {speechActionLabel}
               </button>
             )}
-            {speechErrorMessage && (
+            {shouldPlayResponseSpeech && speechErrorMessage && (
               <p
                 className="patient-question-assistant__speech-error"
                 role="alert"
