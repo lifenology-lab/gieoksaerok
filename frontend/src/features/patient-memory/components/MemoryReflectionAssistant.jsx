@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 
+import { requestPatientAnswerSpeech } from "@/features/patient-questions/api/patientAnswerSpeechApi";
 import usePatientQuestionRecorder from "@/features/patient-questions/hooks/usePatientQuestionRecorder";
 import VoiceAssistantCard from "@/shared/components/VoiceAssistantCard";
+import { createTtsSpeechRequest } from "@/shared/speech/createSpeechRequest";
+import useSpeechPlayback from "@/shared/speech/useSpeechPlayback";
 import "@/features/patient-questions/components/PatientQuestionAssistant.css";
 
 import {
   requestMemoryReflectionAudio,
   requestMemoryReflectionText,
 } from "../api/patientMemoryApi";
+import { createMemoryReflectionSpeechText } from "../utils/createMemoryReflectionSpeechText";
 
 import "./MemoryReflectionAssistant.css";
 
@@ -27,6 +31,12 @@ export default function MemoryReflectionAssistant({
   const [pendingTranscript, setPendingTranscript] = useState("");
   const messages = session?.messages || [];
   const summary = session?.summary || "";
+  const {
+    errorMessage: speechErrorMessage,
+    play: playSpeech,
+    status: speechStatus,
+    stop: stopSpeech,
+  } = useSpeechPlayback({ requestTts: requestPatientAnswerSpeech });
 
   const updateConversation = (result, source) => {
     const nextTranscript = result.transcript?.trim();
@@ -40,17 +50,24 @@ export default function MemoryReflectionAssistant({
       { role: "user", content: nextTranscript, source },
     ].slice(-MAX_VISIBLE_MESSAGES);
 
+    const assistantReply = result.reply || "이야기를 함께 들었어요.";
+
     onSessionChange({
       messages: [
         ...nextMessages,
-        { role: "assistant", content: result.reply || "이야기를 함께 들었어요." },
+        { role: "assistant", content: assistantReply },
       ].slice(-MAX_VISIBLE_MESSAGES),
       summary: result.summary || summary,
       lastActiveAt: Date.now(),
     });
+
+    void playSpeech(
+      createTtsSpeechRequest(createMemoryReflectionSpeechText(assistantReply)),
+    );
   };
 
   const handleAudio = async ({ audioBlob }) => {
+    stopSpeech();
     setErrorMessage("");
     setIsReplyLoading(true);
 
@@ -89,7 +106,7 @@ export default function MemoryReflectionAssistant({
   const isMicrophonePermissionError = /마이크.*(?:허용|권한)|NotAllowedError/i.test(
     recorder.errorMessage || "",
   );
-  const isTextReplyLoading = isReplyLoading && Boolean(pendingTranscript);
+  const isReplyPreparing = isReplyLoading;
 
   const title = isMicrophoneUnavailable
     ? "마이크를 사용할 수 없어요"
@@ -120,10 +137,12 @@ export default function MemoryReflectionAssistant({
 
   const handleClose = () => {
     recorder.cancelRecording();
+    stopSpeech();
     onClose();
   };
 
   const handleContinue = () => {
+    stopSpeech();
     setErrorMessage("");
     recorder.startRecording();
   };
@@ -136,6 +155,7 @@ export default function MemoryReflectionAssistant({
       return;
     }
 
+    stopSpeech();
     setErrorMessage("");
     setPendingTranscript(transcript);
     setIsTextMode(false);
@@ -157,6 +177,25 @@ export default function MemoryReflectionAssistant({
     } finally {
       setIsReplyLoading(false);
     }
+  };
+
+  const reflectionSpeechText = createMemoryReflectionSpeechText(
+    latestAssistantMessage,
+  );
+  const speechActionLabel =
+    speechStatus === "loading"
+      ? "안내를 준비하고 있어요"
+      : speechStatus === "playing"
+        ? "안내를 들려드리고 있어요"
+        : "다시 듣기";
+
+  const handleReplayAssistantReply = () => {
+    if (speechStatus === "playing") {
+      stopSpeech();
+      return;
+    }
+
+    void playSpeech(createTtsSpeechRequest(reflectionSpeechText));
   };
 
   return (
@@ -244,11 +283,10 @@ export default function MemoryReflectionAssistant({
         <div className={`memory-reflection-assistant__conversation${isProcessing ? " is-processing" : ""}`}>
           {isProcessing && (
             <div className="memory-reflection-assistant__status" aria-live="polite">
-              <div className="memory-reflection-assistant__voice-wave" aria-hidden="true">
-                {[0, 1, 2, 3, 4].map((barIndex) => <span key={barIndex} />)}
-              </div>
               <span>
-                {isTextReplyLoading ? "새록이가 답하고 있어요" : "말씀을 확인하고 있어요"}
+                {isReplyPreparing
+                  ? "새록이가 답변을 준비하고 있어요"
+                  : "말씀을 확인하고 있어요"}
               </span>
             </div>
           )}
@@ -265,11 +303,40 @@ export default function MemoryReflectionAssistant({
               )}
               <p className="memory-reflection-assistant__answer">
                 {isProcessing
-                  ? isTextReplyLoading
+                  ? isReplyPreparing
                     ? "남겨주신 이야기를 바탕으로 답을 준비하고 있어요."
-                    : "새록이가 이야기를 살펴보고 있어요."
+                    : "말씀을 확인하고 있어요."
                   : latestAssistantMessage || "사진을 보며 떠오르는 이야기를 들려주세요."}
               </p>
+              {!isProcessing && reflectionSpeechText && (
+                <button
+                  type="button"
+                  className={`patient-question-assistant__speech-action ${speechStatus === "playing" ? "is-playing" : ""}`}
+                  disabled={speechStatus === "loading"}
+                  aria-pressed={speechStatus === "playing"}
+                  aria-label={
+                    speechStatus === "playing"
+                      ? "안내 재생을 멈추기"
+                      : speechActionLabel
+                  }
+                  onClick={handleReplayAssistantReply}
+                >
+                  <span
+                    className="patient-question-assistant__speech-wave"
+                    aria-hidden="true"
+                  >
+                    {[0, 1, 2, 3].map((barIndex) => (
+                      <i key={barIndex} />
+                    ))}
+                  </span>
+                  {speechActionLabel}
+                </button>
+              )}
+              {speechErrorMessage && (
+                <p className="patient-question-assistant__speech-error" role="alert">
+                  {speechErrorMessage}
+                </p>
+              )}
               {isRecording && (
                 <div className="patient-question-assistant__voice-wave" aria-hidden="true">
                   {[0, 1, 2, 3, 4].map((barIndex) => <span key={barIndex} />)}
@@ -307,7 +374,11 @@ export default function MemoryReflectionAssistant({
                   </button>
                 ) : (
                   <>
-                  <button type="button" className={`patient-question-assistant__voice-primary-button ${isRecording ? "is-recording" : ""}`} onClick={handleContinue}>
+                  <button
+                    type="button"
+                    className={`patient-question-assistant__voice-primary-button ${isRecording ? "is-recording" : ""}`}
+                    onClick={isRecording ? recorder.stopRecording : handleContinue}
+                  >
                     <span aria-hidden="true">●</span>
                     {isRecording ? <>말하기<br />끝내기</> : <>말로<br />대화하기</>}
                   </button>

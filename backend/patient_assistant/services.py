@@ -70,6 +70,35 @@ class OpenAIMemoryReflectionError(Exception):
     pass
 
 
+class OpenAITextToSpeechError(Exception):
+    pass
+
+
+def generate_speech_audio(text):
+    if not settings.OPENAI_API_KEY:
+        raise OpenAITextToSpeechError('음성 안내 설정을 찾지 못했어요.')
+
+    try:
+        from openai import OpenAI
+
+        response = OpenAI(api_key=settings.OPENAI_API_KEY).audio.speech.create(
+            model=settings.OPENAI_TTS_MODEL,
+            voice=settings.OPENAI_TTS_VOICE,
+            input=text,
+            response_format='mp3',
+        )
+        audio = response.read()
+    except Exception as exc:
+        raise OpenAITextToSpeechError(
+            '음성 안내를 만들지 못했어요.'
+        ) from exc
+
+    if not audio:
+        raise OpenAITextToSpeechError('음성 안내를 만들지 못했어요.')
+
+    return audio
+
+
 def generate_memory_reflection_reply(
     person,
     album_item,

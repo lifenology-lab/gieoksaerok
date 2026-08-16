@@ -8,11 +8,15 @@ const RESPONSES = {
     title: "지금 있는 곳을 함께 살펴볼까요?",
     message: "주변의 익숙한 물건이나 표지판을 천천히 확인해보세요.",
     suggestion: "필요하면 보호자에게 지금 있는 곳을 물어봐도 괜찮아요.",
+    familyHelpAction: "request-family-help",
+    familyHelpActionLabel: "가족에게 도움 요청하기",
   },
   way_home: {
     title: "집에 가는 길을 함께 확인해 볼까요?",
     message: "혼자 서두르지 말고, 지금 있는 곳에서 잠시 안전하게 기다려 주세요.",
     suggestion: "가까운 분이나 보호자에게 집에 가는 방법을 물어보세요.",
+    familyHelpAction: "request-family-help",
+    familyHelpActionLabel: "가족에게 도움 요청하기",
   },
   unknown: {
     title: "질문을 조금 더 들려주세요",
@@ -20,6 +24,17 @@ const RESPONSES = {
     suggestion: "천천히 다시 말씀하시거나, 다른 표현으로 입력해 주세요.",
   },
 };
+
+export function createFamilyHelpRequestDemoResponse() {
+  return {
+    title: "가족에게 도움을 요청할 준비가 되었어요",
+    message:
+      "가족에게 지금 있는 곳이나 귀가 방법을 확인하기 어렵다고 알려드릴 수 있어요.",
+    suggestion:
+      "지금은 데모 화면이에요. 실제 연락이나 위치 정보는 전송되지 않았어요.",
+    isFamilyHelpRequestDemo: true,
+  };
+}
 
 const WEEKDAY_LABELS = [
   "일요일",
@@ -96,6 +111,7 @@ const MEAL_TYPE_KEYWORDS = {
   dinner: "저녁",
   snack: "간식",
 };
+const MEAL_TYPE_ORDER = ["breakfast", "lunch", "dinner", "snack"];
 
 function getQuestionedMealType(question) {
   const normalizedQuestion = question?.replace(/\s/g, "") || "";
@@ -123,6 +139,36 @@ function getTodayMealRecords(mealRecords) {
   });
 }
 
+function createTodayMealSpeechText(mealRecords) {
+  const mealTypes = [...new Set(mealRecords.map((record) => record.mealType))]
+    .sort(
+      (left, right) =>
+        MEAL_TYPE_ORDER.indexOf(left) - MEAL_TYPE_ORDER.indexOf(right),
+    );
+  const mealLabels = mealTypes
+    .map((mealType) => MEAL_TYPE_KEYWORDS[mealType])
+    .filter(Boolean);
+
+  if (!mealLabels.length) {
+    return "오늘 식사 기록이 없어요.";
+  }
+
+  const hasSnackRecord = mealTypes.includes("snack");
+  const mealOnlyLabels = mealTypes
+    .filter((mealType) => mealType !== "snack")
+    .map((mealType) => MEAL_TYPE_KEYWORDS[mealType]);
+
+  if (hasSnackRecord && !mealOnlyLabels.length) {
+    return "오늘 간식 기록이 있어요.";
+  }
+
+  if (hasSnackRecord) {
+    return `오늘 ${mealOnlyLabels.join(", ")} 식사 기록과 간식 기록이 있어요.`;
+  }
+
+  return `오늘 ${mealLabels.join(", ")} 식사 기록이 있어요.`;
+}
+
 function createMealResponse(mealRecords, question) {
   const questionedMealType = getQuestionedMealType(question);
   const mealRecord = questionedMealType
@@ -131,10 +177,12 @@ function createMealResponse(mealRecords, question) {
   const mealLabel = questionedMealType
     ? MEAL_TYPE_KEYWORDS[questionedMealType]
     : "최근";
+  const todayMealRecords = getTodayMealRecords(mealRecords);
 
   if (!mealRecord) {
     return {
       title: `${mealLabel} 식사 기록이 없어요`,
+      speechText: "오늘 식사 기록이 없어요.",
       message: questionedMealType
         ? `오늘 기록에서 ${mealLabel} 식사를 찾지 못했어요.`
         : "아직 남겨진 식사 기록을 찾지 못했어요.",
@@ -151,7 +199,6 @@ function createMealResponse(mealRecords, question) {
     mealDetails.push(mealRecord.menu);
   }
 
-  const todayMealRecords = getTodayMealRecords(mealRecords);
   const todayRecordMessage = todayMealRecords.length
     ? `오늘 식사 기록은 모두 ${todayMealRecords.length}개예요.`
     : "오늘의 다른 식사 기록은 아직 없어요.";
@@ -160,6 +207,7 @@ function createMealResponse(mealRecords, question) {
     title: questionedMealType
       ? `${mealLabel} 식사 기록이에요`
       : "가장 최근 식사 기록이에요",
+    speechText: createTodayMealSpeechText(todayMealRecords),
     message: `${formatMealRecordTime(mealRecord.eatenAt)}에 ${mealDetails.join(" · ")} 기록이 있어요.`,
     suggestion: mealRecord.memo || todayRecordMessage,
     action: "open-meal-records",
