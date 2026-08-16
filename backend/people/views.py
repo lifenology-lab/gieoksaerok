@@ -37,6 +37,7 @@ from .promise_utils import (
     ensure_aware_datetime,
     get_default_promise_timezone,
     infer_korean_relative_date,
+    infer_scheduled_at_from_explicit_time,
     is_promise_expired,
     normalize_promise_data,
     promise_sort_key,
@@ -49,6 +50,7 @@ from .services import (
     build_transcription_prompt,
     extract_initial_long_term_memories,
     extract_long_term_memories,
+    generate_patient_memory_album_description,
     generate_person_display_summary,
     generate_memory_recap,
     merge_long_term_memory_candidate,
@@ -168,6 +170,14 @@ def create_promise_record(person, conversation, memory, promise_data):
             fallback_text,
             reference=reference_datetime,
             zone=promise_zone,
+        )
+
+    if scheduled_date and not scheduled_at:
+        scheduled_at = infer_scheduled_at_from_explicit_time(
+            scheduled_date,
+            promise_zone,
+            promise_data.get('time_label'),
+            promise_data.get('raw_text'),
         )
 
     if not scheduled_at and not scheduled_date:
@@ -707,7 +717,26 @@ class MemoryAlbumItemListCreateView(PatientOwnedAPIView):
     def post(self, request, person_id):
         user = get_request_patient_user(request)
         person = get_object_or_404(Person, pk=person_id, user=user)
-        serializer = MemoryAlbumItemSerializer(data=request.data)
+        data = request.data.copy()
+        source = (data.get('source') or '').strip().lower()
+        description = (data.get('description') or '').strip()
+
+        if source == 'caregiver' and description:
+            patient_name = (getattr(user, 'name', '') or user.username).strip()
+
+            try:
+                data['description'] = generate_patient_memory_album_description(
+                    person=person,
+                    caregiver_description=description,
+                    patient_name=patient_name,
+                )
+            except OpenAIMemorySummaryError as exc:
+                return Response(
+                    {'detail': str(exc)},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+
+        serializer = MemoryAlbumItemSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=user, person=person)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

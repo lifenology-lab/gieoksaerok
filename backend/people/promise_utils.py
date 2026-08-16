@@ -251,6 +251,68 @@ def has_explicit_clock_time(text):
     )
 
 
+def infer_explicit_clock_time(text):
+    text = re.sub(r'\s+', ' ', (text or '').strip())
+
+    if not text:
+        return None
+
+    clock_match = re.search(r'(\d{1,2}):(\d{2})', text)
+
+    if clock_match:
+        hour = int(clock_match.group(1))
+        minute = int(clock_match.group(2))
+
+        if 0 <= hour <= 23 and 0 <= minute <= 59:
+            return time(hour, minute)
+
+        return None
+
+    korean_time_match = re.search(
+        r'(오전|오후|저녁|아침|점심|밤|새벽)?\s*'
+        r'(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?',
+        text,
+    )
+
+    if not korean_time_match:
+        return None
+
+    period = korean_time_match.group(1) or ''
+    hour = int(korean_time_match.group(2))
+    minute = int(korean_time_match.group(3) or 0)
+
+    if not 1 <= hour <= 24 or not 0 <= minute <= 59:
+        return None
+
+    if hour == 24:
+        hour = 0
+
+    if period in {'오후', '저녁', '밤'} and hour < 12:
+        hour += 12
+    elif period in {'오전', '아침', '새벽'} and hour == 12:
+        hour = 0
+    elif period == '점심' and hour < 11:
+        hour += 12
+
+    if hour > 23:
+        return None
+
+    return time(hour, minute)
+
+
+def infer_scheduled_at_from_explicit_time(scheduled_date, zone, *texts):
+    if not scheduled_date:
+        return None
+
+    for text in texts:
+        explicit_time = infer_explicit_clock_time(text)
+
+        if explicit_time:
+            return datetime.combine(scheduled_date, explicit_time, tzinfo=zone)
+
+    return None
+
+
 def _date_string_from_iso_datetime(value):
     if not value:
         return None

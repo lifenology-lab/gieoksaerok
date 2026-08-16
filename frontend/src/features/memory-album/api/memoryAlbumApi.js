@@ -14,6 +14,7 @@ export function createMemoryAlbumItem({
   description,
   cropX,
   cropY,
+  source,
 }) {
   const formData = new FormData();
 
@@ -21,6 +22,10 @@ export function createMemoryAlbumItem({
   formData.append("description", description);
   formData.append("crop_x", cropX);
   formData.append("crop_y", cropY);
+
+  if (source) {
+    formData.append("source", source);
+  }
 
   return request(`/api/people/${personId}/memory-album/`, {
     method: "POST",

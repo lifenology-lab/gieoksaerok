@@ -7,6 +7,10 @@ from tempfile import NamedTemporaryFile
 from django.conf import settings
 from pydantic import BaseModel, Field
 
+from .display_summary import (
+    select_face_card_body,
+    strip_repeated_relationship_label,
+)
 from .promise_utils import (
     format_person_summary_promise_display,
     format_promise_display,
@@ -139,6 +143,15 @@ class PersonDisplaySummaryCard(BaseModel):
     )
 
 
+class PatientMemoryAlbumDescription(BaseModel):
+    description: str = Field(
+        description=(
+            '보호자가 쓴 추억 원문을 환자가 바로 이해할 수 있게 바꾼 '
+            '따뜻한 한국어 한 문장'
+        ),
+    )
+
+
 class OpenAITranscriptionError(Exception):
     pass
 
@@ -151,6 +164,7 @@ RECENT_MEMORY_LIMIT = 3
 DISPLAY_SUMMARY_RECENT_MEMORY_LIMIT = 3
 CONVERSATION_MEMORY_RETENTION_LIMIT = 5
 PATIENT_SPEAKER_NAME = '환자'
+MEMORY_ALBUM_DESCRIPTION_MAX_LENGTH = 160
 
 
 @dataclass
@@ -437,6 +451,11 @@ def build_transcription_prompt(
     parts = [
         '다음 오디오는 한국어 일상 대화입니다.',
         f'화자는 환자와 {person.relationship} {person.name}입니다.',
+        f'이미 인식된 상대방의 이름은 "{person.name}"입니다.',
+        (
+            f'STT가 비슷하게 들리는 다른 이름을 만들더라도 문맥상 같은 사람이면 '
+            f'반드시 인식된 이름({person.name})을 사용해 전사하세요.'
+        ),
         '사람 이름, 가족 호칭, 장소, 날짜, 시간, 약속 표현을 가능한 한 정확하게 전사하세요.',
     ]
 
@@ -598,6 +617,72 @@ def _extract_parsed_memory(response):
     raise OpenAIMemorySummaryError('요약 결과를 JSON으로 해석하지 못했습니다.')
 
 
+def _normalize_memory_album_description(description):
+    normalized = ' '.join((description or '').split()).strip(' "\'')
+
+    if len(normalized) <= MEMORY_ALBUM_DESCRIPTION_MAX_LENGTH:
+        return normalized
+
+    return f'{normalized[:MEMORY_ALBUM_DESCRIPTION_MAX_LENGTH - 3].rstrip()}...'
+
+
+def generate_patient_memory_album_description(
+    person,
+    caregiver_description,
+    patient_name=None,
+):
+    client = _get_openai_client(OpenAIMemorySummaryError)
+    patient_label = (patient_name or '환자').strip() or '환자'
+    caregiver_label = f'{person.relationship} {person.name}'
+
+    instructions = (
+        'You are an expert AI assistant specializing in cognitive support for '
+        "patients with Alzheimer's disease and dementia. Convert a caregiver's "
+        'memory note into one clear, warm Korean sentence that can be shown '
+        'under a photo in the patient memory album. '
+        'Write from the patient-facing perspective, so the patient can read it '
+        'as their own reassuring memory. Use explicit relationship and name '
+        f'like "{caregiver_label}" when that helps. Do not use pronouns such as '
+        '"그녀", "그분", or "상대방". Preserve only facts present in the input. '
+        'Do not invent dates, places, emotions, or family members. Avoid medical '
+        'advice. Use polite, simple Korean. Output exactly one sentence, no '
+        'emoji, no markdown, no quotation marks, and keep it within 80 Korean '
+        'characters when possible. You MUST respond strictly using the provided '
+        'JSON schema.'
+    )
+
+    try:
+        response = client.responses.parse(
+            model=settings.OPENAI_MEMORY_SUMMARY_MODEL,
+            instructions=instructions,
+            input=(
+                '[배경 정보]\n'
+                f'환자 이름: {patient_label}\n'
+                f'보호자/인물: {caregiver_label}\n\n'
+                '[보호자가 쓴 추억 원문]\n'
+                f'{caregiver_description}\n\n'
+                '[지시사항]\n'
+                '위 원문을 환자의 추억 앨범 사진 아래에 표시할 한 문장으로 바꾸세요.'
+            ),
+            text_format=PatientMemoryAlbumDescription,
+            max_output_tokens=180,
+            temperature=0.2,
+        )
+    except Exception as exc:
+        raise OpenAIMemorySummaryError(
+            'OpenAI 추억 글귀 변환 요청에 실패했습니다.',
+        ) from exc
+
+    parsed = _extract_parsed_memory(response)
+    data = parsed.model_dump() if hasattr(parsed, 'model_dump') else dict(parsed)
+    description = _normalize_memory_album_description(data.get('description'))
+
+    if not description:
+        raise OpenAIMemorySummaryError('추억 글귀 변환 결과가 비어 있습니다.')
+
+    return description
+
+
 def generate_memory_recap(
     person,
     transcript,
@@ -642,7 +727,14 @@ def generate_memory_recap(
         'STT Noise Reduction Rules: Ignore filler words such as "어", "음", '
         '"그니까", repetitions, and minor speech recognition errors. Focus '
         'strictly on factual information, explicit commitments or promises, and '
-        'warm interactions. '
+        'warm interactions. STT Name Normalization Rules: The recognized person '
+        f'is "{person.relationship} {person.name}". If current_transcript '
+        f'contains a similar-sounding Korean name that likely refers to this '
+        f'person, normalize it to "{person.name}". Do not introduce a second '
+        'person with a similar name unless the transcript clearly says they are '
+        'different people. For example, if the recognized person is "민호" and '
+        'the STT text says "민구" in the same speaker/context, summarize it as '
+        '"민호". '
         'Patient Readability & Cognitive Rules: Write in a clear, warm, polite '
         'Korean tone ending like "~했습니다" or "~입니다". Never use pronouns '
         'such as "그녀", "그분", or "상대방"; always explicitly write the '
@@ -650,6 +742,14 @@ def generate_memory_recap(
         'under 2 sentences and no more than 20 Korean words total. Avoid complex '
         'clause structures and passive voice. Extract any specific future time, '
         'place, promise, or scheduled plan into upcoming_promise and promise. '
+        'Memory Summary Separation Rules: summary is for the core memory from '
+        'the just-finished conversation, such as hospital results, health state, '
+        'relationship context, or a warm interaction. Future promises, schedules, '
+        'appointments, and planned actions must be extracted into promise and '
+        'upcoming_promise, not repeated as the main summary. If the conversation '
+        'contains both factual memory and future promise, summary must focus on '
+        'the factual memory and promise must focus on the future schedule. '
+        'Do not make summary and promise describe the same schedule. '
         'Promise Extraction Rules: Use recorded_at, reference_date, and '
         'promise_timezone to convert relative Korean dates into absolute dates. '
         'Examples: if reference_date is 2026-08-06, then "내일" means '
@@ -675,8 +775,8 @@ def generate_memory_recap(
         'one-off appointments that already passed. '
         'Output Format: You must respond strictly using the provided JSON schema. '
         'Use title for a 10-character Korean topic label, summary for the memory '
-        'card body, upcoming_promise for a display string, promise for the DB '
-        'record, and key_points for up to 4 useful facts for the next '
+        'card body that excludes future schedules, upcoming_promise for a display '
+        'string, promise for the DB record, and key_points for up to 4 useful facts for the next '
         'conversation. Use long_term_memories '
         'as durable background information, and use recent_memories as short-term '
         'context so older but important details are not lost. The JSON you return '
@@ -920,11 +1020,19 @@ def generate_person_display_summary(
     latest_memory = _latest_memory_for_display(recent_memories)
     nearest_promise = _nearest_active_promise(active_promises)
     first_long_term_memory = next(iter(list(long_term_memories or [])), None)
+    latest_recap = _memory_value(latest_memory, 'recap') or {}
 
     card = {
         'display_name': f'{person.relationship} {person.name}'.strip(),
-        'title': _recap_value(latest_memory, 'title', 'headline'),
-        'body': _recap_value(latest_memory, 'description', 'summary'),
+        'title': strip_repeated_relationship_label(
+            _recap_value(latest_memory, 'title', 'headline'),
+            person=person,
+        ),
+        'body': select_face_card_body(
+            latest_recap,
+            promise=nearest_promise,
+            person=person,
+        ),
         'upcoming_promise': (
             format_person_summary_promise_display(
                 nearest_promise,

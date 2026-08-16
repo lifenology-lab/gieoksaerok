@@ -7,7 +7,7 @@ import { createMemoryAlbumItem } from "@/features/memory-album/api/memoryAlbumAp
 
 import "./CaregiverMemoryRegisterPage.css";
 
-const DESCRIPTION_MAX_LENGTH = 160;
+const DESCRIPTION_MAX_LENGTH = 700;
 const DEFAULT_CROP_POSITION = { x: 50, y: 50 };
 
 function clampCropValue(value) {
@@ -44,6 +44,7 @@ export default function CaregiverMemoryRegisterPage() {
   );
   const selectedPersonLabel = getPersonLabel(selectedPerson);
   const patientName = user?.name?.trim() || user?.username?.trim() || "환자";
+  const descriptionPlaceholder = `${patientName}님과의 추억을 편하게 설명해주세요.\n\n예: 작년 가을 제주도에서 엄마가 억새밭을 보며 활짝 웃으셨어요`;
 
   useEffect(() => {
     let isMounted = true;
@@ -194,6 +195,7 @@ export default function CaregiverMemoryRegisterPage() {
         description: description.trim(),
         cropX: cropPosition.x,
         cropY: cropPosition.y,
+        source: "caregiver",
       });
 
       resetPhotoForm();
@@ -249,8 +251,8 @@ export default function CaregiverMemoryRegisterPage() {
           </label>
 
           <p>
-            선택한 이름의 인물이 환자 일상 모드에서 인식되면, 등록한 사진과
-            글귀가 같은 추억 카드 앨범에 표시됩니다.
+            선택한 이름의 인물이 환자 일상 모드에서 인식되면, 등록한 사진과 내가
+            기억하는 추억이 환자에게 읽기 쉬운 한 문장으로 정리되어 표시됩니다.
           </p>
         </section>
 
@@ -308,11 +310,7 @@ export default function CaregiverMemoryRegisterPage() {
             <span>글귀</span>
             <textarea
               maxLength={DESCRIPTION_MAX_LENGTH}
-              placeholder={
-                selectedPersonLabel
-                  ? `${selectedPersonLabel}님과의 추억을 짧게 적어주세요.`
-                  : `${patientName}님께 보여줄 따뜻한 글귀를 적어주세요.`
-              }
+              placeholder={descriptionPlaceholder}
               rows="5"
               value={description}
               onChange={(event) => {

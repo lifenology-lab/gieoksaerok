@@ -2,6 +2,10 @@ import math
 
 from rest_framework import serializers
 
+from .display_summary import (
+    select_face_card_body,
+    strip_repeated_relationship_label,
+)
 from .models import (
     Conversation,
     LongTermMemory,
@@ -290,17 +294,18 @@ class PersonSerializer(serializers.ModelSerializer):
         if not isinstance(recap, dict):
             recap = {}
 
-        card['title'] = (
+        card['title'] = strip_repeated_relationship_label(
             recap.get('title')
             or recap.get('headline')
             or card.get('title')
-            or ''
+            or '',
+            person=obj,
         )
-        card['body'] = (
-            recap.get('description')
-            or recap.get('summary')
-            or card.get('body')
-            or ''
+        card['body'] = select_face_card_body(
+            recap,
+            promise=active_promise,
+            person=obj,
+            fallback=card.get('body') or '',
         )
         card.pop('suggested_question', None)
         card['upcoming_promise'] = (
