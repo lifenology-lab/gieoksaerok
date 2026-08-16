@@ -96,6 +96,7 @@ const MEAL_TYPE_KEYWORDS = {
   dinner: "저녁",
   snack: "간식",
 };
+const MEAL_TYPE_ORDER = ["breakfast", "lunch", "dinner", "snack"];
 
 function getQuestionedMealType(question) {
   const normalizedQuestion = question?.replace(/\s/g, "") || "";
@@ -123,6 +124,36 @@ function getTodayMealRecords(mealRecords) {
   });
 }
 
+function createTodayMealSpeechText(mealRecords) {
+  const mealTypes = [...new Set(mealRecords.map((record) => record.mealType))]
+    .sort(
+      (left, right) =>
+        MEAL_TYPE_ORDER.indexOf(left) - MEAL_TYPE_ORDER.indexOf(right),
+    );
+  const mealLabels = mealTypes
+    .map((mealType) => MEAL_TYPE_KEYWORDS[mealType])
+    .filter(Boolean);
+
+  if (!mealLabels.length) {
+    return "오늘 식사 기록이 없어요.";
+  }
+
+  const hasSnackRecord = mealTypes.includes("snack");
+  const mealOnlyLabels = mealTypes
+    .filter((mealType) => mealType !== "snack")
+    .map((mealType) => MEAL_TYPE_KEYWORDS[mealType]);
+
+  if (hasSnackRecord && !mealOnlyLabels.length) {
+    return "오늘 간식 기록이 있어요.";
+  }
+
+  if (hasSnackRecord) {
+    return `오늘 ${mealOnlyLabels.join(", ")} 식사 기록과 간식 기록이 있어요.`;
+  }
+
+  return `오늘 ${mealLabels.join(", ")} 식사 기록이 있어요.`;
+}
+
 function createMealResponse(mealRecords, question) {
   const questionedMealType = getQuestionedMealType(question);
   const mealRecord = questionedMealType
@@ -131,10 +162,12 @@ function createMealResponse(mealRecords, question) {
   const mealLabel = questionedMealType
     ? MEAL_TYPE_KEYWORDS[questionedMealType]
     : "최근";
+  const todayMealRecords = getTodayMealRecords(mealRecords);
 
   if (!mealRecord) {
     return {
       title: `${mealLabel} 식사 기록이 없어요`,
+      speechText: "오늘 식사 기록이 없어요.",
       message: questionedMealType
         ? `오늘 기록에서 ${mealLabel} 식사를 찾지 못했어요.`
         : "아직 남겨진 식사 기록을 찾지 못했어요.",
@@ -151,7 +184,6 @@ function createMealResponse(mealRecords, question) {
     mealDetails.push(mealRecord.menu);
   }
 
-  const todayMealRecords = getTodayMealRecords(mealRecords);
   const todayRecordMessage = todayMealRecords.length
     ? `오늘 식사 기록은 모두 ${todayMealRecords.length}개예요.`
     : "오늘의 다른 식사 기록은 아직 없어요.";
@@ -160,6 +192,7 @@ function createMealResponse(mealRecords, question) {
     title: questionedMealType
       ? `${mealLabel} 식사 기록이에요`
       : "가장 최근 식사 기록이에요",
+    speechText: createTodayMealSpeechText(todayMealRecords),
     message: `${formatMealRecordTime(mealRecord.eatenAt)}에 ${mealDetails.join(" · ")} 기록이 있어요.`,
     suggestion: mealRecord.memo || todayRecordMessage,
     action: "open-meal-records",

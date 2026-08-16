@@ -1,6 +1,7 @@
 import json
 
 from django.db import transaction
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -24,7 +25,9 @@ from .serializers import PatientQuestionEventSerializer
 from .services import (
     OpenAIPatientQuestionClassificationError,
     OpenAIMemoryReflectionError,
+    OpenAITextToSpeechError,
     classify_patient_question,
+    generate_speech_audio,
     generate_memory_reflection_reply,
 )
 
@@ -33,6 +36,7 @@ MAX_PATIENT_QUESTION_AUDIO_BYTES = 10 * 1024 * 1024
 MAX_PATIENT_QUESTION_TRANSCRIPT_LENGTH = 500
 MAX_MEMORY_REFLECTION_HISTORY_MESSAGES = 6
 MAX_MEMORY_REFLECTION_SUMMARY_LENGTH = 200
+MAX_TTS_TEXT_LENGTH = 1000
 
 QUESTION_INTENT_TO_CONFUSION_TYPE = {
     'person': 'person',
@@ -188,6 +192,37 @@ class PatientQuestionClassificationView(APIView):
             )
 
         return Response({'intent': intent}, status=status.HTTP_200_OK)
+
+
+class PatientAnswerSpeechView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        text = str(request.data.get('text') or '').strip()
+
+        if not text:
+            return Response(
+                {'detail': '음성으로 안내할 내용이 필요합니다.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(text) > MAX_TTS_TEXT_LENGTH:
+            return Response(
+                {'detail': '음성 안내는 1,000자 이하로 만들 수 있습니다.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            audio = generate_speech_audio(text)
+        except OpenAITextToSpeechError as exc:
+            return Response(
+                {'detail': str(exc)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        response = HttpResponse(audio, content_type='audio/mpeg')
+        response['Content-Disposition'] = 'inline; filename="gieoksaerok-guide.mp3"'
+        return response
 
 
 class MemoryReflectionAudioView(APIView):

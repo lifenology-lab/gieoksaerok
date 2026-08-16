@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     PatientQuestionClassificationView,
+    PatientAnswerSpeechView,
     PatientQuestionEventView,
     PatientQuestionScheduleContextView,
     PatientQuestionTranscriptionView,
@@ -12,6 +13,11 @@ from .views import (
 
 
 urlpatterns = [
+    path(
+        'patient-answers/speech/',
+        PatientAnswerSpeechView.as_view(),
+        name='patient-answer-speech',
+    ),
     path(
         'patient-questions/classify/',
         PatientQuestionClassificationView.as_view(),
