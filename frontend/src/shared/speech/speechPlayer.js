@@ -35,10 +35,11 @@ class SpeechPlayer {
   }
 
   async playTts(audioBlob, options) {
+    this.stop();
     this.releaseObjectUrl();
     this.objectUrl = URL.createObjectURL(audioBlob);
 
-    await this.play(this.objectUrl, options);
+    await this.startPlayback(this.objectUrl, options);
   }
 
   preloadPreset(id) {
@@ -71,6 +72,14 @@ class SpeechPlayer {
     }
 
     this.stop();
+    await this.startPlayback(source, { waitForEnd });
+  }
+
+  async startPlayback(source, { waitForEnd = false } = {}) {
+    if (!this.audio) {
+      throw new Error("이 기기에서는 음성 재생을 지원하지 않아요.");
+    }
+
     this.audio.src = source;
 
     await this.audio.play();

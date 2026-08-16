@@ -464,8 +464,8 @@ export default function PatientQuestionAssistant({
     speechStatus === "loading"
       ? "안내를 준비하고 있어요"
         : speechStatus === "playing"
-          ? "안내 멈추기"
-          : "새록이의 안내 듣기";
+          ? "안내를 들려드리고 있어요"
+          : "다시 듣기";
 
   const handleResponseSpeech = () => {
     if (speechStatus === "playing") {
@@ -630,6 +630,11 @@ export default function PatientQuestionAssistant({
                   className={`patient-question-assistant__speech-action ${speechStatus === "playing" ? "is-playing" : ""}`}
                   disabled={speechStatus === "loading"}
                   aria-pressed={speechStatus === "playing"}
+                  aria-label={
+                    speechStatus === "playing"
+                      ? "안내 재생을 멈추기"
+                      : speechActionLabel
+                  }
                   onClick={handleResponseSpeech}
                 >
                   <span className="patient-question-assistant__speech-wave" aria-hidden="true">

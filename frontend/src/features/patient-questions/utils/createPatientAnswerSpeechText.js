@@ -3,8 +3,11 @@ export function createPatientAnswerSpeechText(response) {
     return "";
   }
 
+  if (typeof response.speechText === "string" && response.speechText.trim()) {
+    return response.speechText.trim().slice(0, 220);
+  }
+
   const textParts = [
-    response.speechText,
     response.title,
     response.message,
     response.suggestion,
