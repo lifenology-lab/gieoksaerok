@@ -29,11 +29,18 @@ import {
   MealRecognitionCard,
   MealRecognitionOverlay,
 } from "@/features/meal-recognition/components";
+import { requestPatientAnswerSpeech } from "@/features/patient-questions/api/patientAnswerSpeechApi";
 import {
   getMealContextResult,
   getSuggestedMealType,
   MEAL_CONTEXT_RESULT_TYPES,
 } from "@/features/meal-recognition/utils/mealRecordUtils";
+import {
+  createNoSpeechRequest,
+  createPresetSpeechRequest,
+  createTtsSpeechRequest,
+} from "@/shared/speech/createSpeechRequest";
+import useSpeechPlayback from "@/shared/speech/useSpeechPlayback";
 
 import "./DailyModePage.css";
 
@@ -80,6 +87,41 @@ function captureMealSceneImage(videoElement) {
   });
 }
 
+function createMealRecognitionSpeechRequest(result) {
+  if (!result) {
+    return createNoSpeechRequest();
+  }
+
+  if (result.type === "meal_detected_without_record") {
+    return createPresetSpeechRequest("MEAL_CHECK");
+  }
+
+  if (result.type === "recent_meal_found") {
+    return createPresetSpeechRequest("RECENT_MEAL_FOUND");
+  }
+
+  return createTtsSpeechRequest(`${result.title || ""} ${result.message || ""}`);
+}
+
+function createRecognizedPersonSpeechRequest(person) {
+  if (!person?.name) {
+    return createNoSpeechRequest();
+  }
+
+  const personLabel = person.relationship
+    ? `${person.relationship} ${person.name}님`
+    : `${person.name}님`;
+  const memoryHint =
+    person.latest_summary?.card?.title ||
+    person.latest_summary?.card?.body ||
+    person.core_memory ||
+    "천천히 인사를 건네 보세요.";
+
+  return createTtsSpeechRequest(
+    `앞에 계신 분은 ${personLabel}이에요. ${memoryHint}`.slice(0, 180),
+  );
+}
+
 export default function DailyModePage() {
   const nav = useNavigate();
   const camera = useCamera();
@@ -95,11 +137,16 @@ export default function DailyModePage() {
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
   const [isQuestionAssistantOpen, setIsQuestionAssistantOpen] = useState(false);
   const [questionRecordingRequestId, setQuestionRecordingRequestId] = useState(0);
+  const { play: playSpeech, preloadPreset, stop: stopSpeech } =
+    useSpeechPlayback({ requestTts: requestPatientAnswerSpeech });
 
   const mealRecordsRef = useRef(mealRecords);
   const mealRecognitionResultRef = useRef(mealRecognitionResult);
   const isMealRecognitionRunningRef = useRef(false);
   const isMealRecordsReadyRef = useRef(false);
+  const lastMealSpeechKeyRef = useRef("");
+  const lastPersonSpeechKeyRef = useRef("");
+  const hasPlayedUnknownPersonPromptRef = useRef(false);
 
   const {
     activeRecognitionType,
@@ -130,6 +177,64 @@ export default function DailyModePage() {
     person: activeConversationPerson,
     onConversationSaved: refreshPeople,
   });
+
+  useEffect(() => {
+    preloadPreset("MEAL_CHECK");
+    preloadPreset("RECENT_MEAL_FOUND");
+    preloadPreset("UNKNOWN_PERSON");
+  }, [preloadPreset]);
+
+  useEffect(() => {
+    if (!mealRecognitionResult || isQuestionAssistantOpen || isRegisterDialogOpen) {
+      return;
+    }
+
+    const speechKey = `${mealRecognitionResult.type}:${mealRecognitionResult.title}:${mealRecognitionResult.message}`;
+
+    if (lastMealSpeechKeyRef.current === speechKey) {
+      return;
+    }
+
+    lastMealSpeechKeyRef.current = speechKey;
+    void playSpeech(createMealRecognitionSpeechRequest(mealRecognitionResult));
+  }, [
+    isQuestionAssistantOpen,
+    isRegisterDialogOpen,
+    mealRecognitionResult,
+    playSpeech,
+  ]);
+
+  useEffect(() => {
+    if (!isRegisterDialogOpen || isQuestionAssistantOpen) {
+      hasPlayedUnknownPersonPromptRef.current = false;
+      return;
+    }
+
+    if (hasPlayedUnknownPersonPromptRef.current) {
+      return;
+    }
+
+    hasPlayedUnknownPersonPromptRef.current = true;
+    void playSpeech(createPresetSpeechRequest("UNKNOWN_PERSON"));
+  }, [isQuestionAssistantOpen, isRegisterDialogOpen, playSpeech]);
+
+  useEffect(() => {
+    const person = recognizedFaces[0]?.person;
+
+    if (!person || activeRecognitionType !== DAILY_MODE_RECOGNITION_TYPES.PERSON) {
+      lastPersonSpeechKeyRef.current = "";
+      return;
+    }
+
+    const speechKey = `${person.id}:${person.latest_summary?.updated_at || ""}`;
+
+    if (lastPersonSpeechKeyRef.current === speechKey) {
+      return;
+    }
+
+    lastPersonSpeechKeyRef.current = speechKey;
+    void playSpeech(createRecognizedPersonSpeechRequest(person));
+  }, [activeRecognitionType, playSpeech, recognizedFaces]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -293,6 +398,7 @@ export default function DailyModePage() {
   };
 
   const handleCloseMealRecognition = () => {
+    stopSpeech();
     setMealRecognitionResult(null);
     setMealRecordError("");
   };
