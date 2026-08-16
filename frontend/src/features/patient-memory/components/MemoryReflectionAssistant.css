@@ -278,7 +278,7 @@
 
 .memory-reflection-assistant__response .patient-question-assistant__voice-wave {
   height: 26px;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .memory-reflection-assistant__response .patient-question-assistant__voice-wave span {

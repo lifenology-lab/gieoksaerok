@@ -374,7 +374,11 @@ export default function MemoryReflectionAssistant({
                   </button>
                 ) : (
                   <>
-                  <button type="button" className={`patient-question-assistant__voice-primary-button ${isRecording ? "is-recording" : ""}`} onClick={handleContinue}>
+                  <button
+                    type="button"
+                    className={`patient-question-assistant__voice-primary-button ${isRecording ? "is-recording" : ""}`}
+                    onClick={isRecording ? recorder.stopRecording : handleContinue}
+                  >
                     <span aria-hidden="true">●</span>
                     {isRecording ? <>말하기<br />끝내기</> : <>말로<br />대화하기</>}
                   </button>
