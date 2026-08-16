@@ -5,6 +5,7 @@ class SpeechPlayer {
     this.audio = typeof Audio === "undefined" ? null : new Audio();
     this.objectUrl = "";
     this.listeners = new Set();
+    this.playbackWaiters = new Set();
 
     if (this.audio) {
       this.audio.preload = "auto";
@@ -23,21 +24,21 @@ class SpeechPlayer {
     this.listeners.forEach((listener) => listener(status));
   }
 
-  async playPreset(id) {
+  async playPreset(id, options) {
     const source = PRESET_SPEECH[id];
 
     if (!source) {
       throw new Error("등록되지 않은 고정 음성입니다.");
     }
 
-    await this.play(source);
+    await this.play(source, options);
   }
 
-  async playTts(audioBlob) {
+  async playTts(audioBlob, options) {
     this.releaseObjectUrl();
     this.objectUrl = URL.createObjectURL(audioBlob);
 
-    await this.play(this.objectUrl);
+    await this.play(this.objectUrl, options);
   }
 
   preloadPreset(id) {
@@ -60,10 +61,11 @@ class SpeechPlayer {
     this.audio.pause();
     this.audio.currentTime = 0;
     this.releaseObjectUrl();
+    this.resolvePlaybackWaiters();
     this.emit("idle");
   }
 
-  async play(source) {
+  async play(source, { waitForEnd = false } = {}) {
     if (!this.audio) {
       throw new Error("이 기기에서는 음성 재생을 지원하지 않아요.");
     }
@@ -73,11 +75,27 @@ class SpeechPlayer {
 
     await this.audio.play();
     this.emit("playing");
+
+    if (waitForEnd) {
+      await this.waitForPlaybackEnd();
+    }
   }
 
   handleEnded() {
     this.releaseObjectUrl();
+    this.resolvePlaybackWaiters();
     this.emit("idle");
+  }
+
+  waitForPlaybackEnd() {
+    return new Promise((resolve) => {
+      this.playbackWaiters.add(resolve);
+    });
+  }
+
+  resolvePlaybackWaiters() {
+    this.playbackWaiters.forEach((resolve) => resolve());
+    this.playbackWaiters.clear();
   }
 
   releaseObjectUrl() {

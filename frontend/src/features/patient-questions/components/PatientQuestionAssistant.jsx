@@ -50,6 +50,7 @@ export default function PatientQuestionAssistant({
   const [isWaitingForPersonRecognition, setIsWaitingForPersonRecognition] =
     useState(false);
   const textInputRef = useRef(null);
+  const isOpenRef = useRef(open);
   const {
     errorMessage: speechErrorMessage,
     play: playSpeech,
@@ -255,6 +256,10 @@ export default function PatientQuestionAssistant({
     preloadPreset("MICROPHONE_UNAVAILABLE");
   }, [preloadPreset]);
 
+  useEffect(() => {
+    isOpenRef.current = open;
+  }, [open]);
+
   const handledRecordingRequestIdRef = useRef(0);
 
   useEffect(() => {
@@ -267,8 +272,19 @@ export default function PatientQuestionAssistant({
     }
 
     handledRecordingRequestIdRef.current = recordingRequestId;
-    startQuestionRecording();
-  }, [open, recordingRequestId, startQuestionRecording]);
+
+    const startAfterIntro = async () => {
+      await playSpeech(createPresetSpeechRequest("ASSISTANT_LISTENING"), {
+        waitForEnd: true,
+      });
+
+      if (isOpenRef.current) {
+        startQuestionRecording();
+      }
+    };
+
+    void startAfterIntro();
+  }, [open, playSpeech, recordingRequestId, startQuestionRecording]);
 
   useEffect(() => {
     if (!isWaitingForPersonRecognition) {
@@ -311,6 +327,7 @@ export default function PatientQuestionAssistant({
       response ||
       isMicrophoneUnavailable ||
       isAnswerLoading ||
+      recordingRequestId ||
       ["preparing", "recording", "transcribing"].includes(
         questionRecorder.recordingStatus,
       )
@@ -325,6 +342,7 @@ export default function PatientQuestionAssistant({
     open,
     playSpeech,
     questionRecorder.recordingStatus,
+    recordingRequestId,
     response,
   ]);
 

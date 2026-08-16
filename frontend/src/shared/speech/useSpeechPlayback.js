@@ -18,7 +18,7 @@ export default function useSpeechPlayback({ requestTts } = {}) {
   }, []);
 
   const play = useCallback(
-    async (speechRequest) => {
+    async (speechRequest, options) => {
       if (!speechRequest || speechRequest.mode === SPEECH_MODE.NONE) {
         stop();
         return;
@@ -29,7 +29,7 @@ export default function useSpeechPlayback({ requestTts } = {}) {
 
       try {
         if (speechRequest.mode === SPEECH_MODE.PRESET) {
-          await speechPlayer.playPreset(speechRequest.id);
+          await speechPlayer.playPreset(speechRequest.id, options);
           return;
         }
 
@@ -39,7 +39,7 @@ export default function useSpeechPlayback({ requestTts } = {}) {
           }
 
           const audioBlob = await requestTts(speechRequest.text);
-          await speechPlayer.playTts(audioBlob);
+          await speechPlayer.playTts(audioBlob, options);
         }
       } catch (error) {
         setStatus("ready");
