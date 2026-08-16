@@ -17,7 +17,10 @@ import {
 import usePatientQuestionRecorder from "../hooks/usePatientQuestionRecorder";
 import { classifyPatientQuestion } from "../utils/classifyPatientQuestion";
 import { createPatientAnswerSpeechText } from "../utils/createPatientAnswerSpeechText";
-import { createPatientQuestionResponse } from "../utils/createPatientQuestionResponse";
+import {
+  createFamilyHelpRequestDemoResponse,
+  createPatientQuestionResponse,
+} from "../utils/createPatientQuestionResponse";
 
 import "./PatientQuestionAssistant.css";
 
@@ -324,7 +327,9 @@ export default function PatientQuestionAssistant({
   ]);
 
   const responseSpeechText = createPatientAnswerSpeechText(response);
-  const hasPrimaryResponseAction = Boolean(response?.action);
+  const hasPrimaryResponseAction = Boolean(
+    response?.action || response?.familyHelpAction,
+  );
 
   useEffect(() => {
     if (!open || !responseSpeechText) {
@@ -445,6 +450,11 @@ export default function PatientQuestionAssistant({
   const handleUnknownPersonRegistration = () => {
     resetAssistantState();
     onRegisterUnknownPerson?.();
+  };
+
+  const handleFamilyHelpRequest = () => {
+    questionRecorder.cancelRecording();
+    setResponse(createFamilyHelpRequestDemoResponse());
   };
 
   const handleResponseContextAction = () => {
@@ -635,9 +645,20 @@ export default function PatientQuestionAssistant({
           )}
           <div className="patient-question-assistant__response" role="status">
             <h3>{response.title}</h3>
-            <p className="patient-question-assistant__response-message">
-              {response.message}
-            </p>
+              <p className="patient-question-assistant__response-message">
+                {response.message}
+              </p>
+              {response.suggestion && (
+                <p className="patient-question-assistant__response-suggestion">
+                  {response.suggestion}
+                </p>
+              )}
+              {response.isFamilyHelpRequestDemo && (
+                <p className="patient-question-assistant__family-help-demo">
+                  실제 서비스에서는 보호자에게 연락하거나 현재 상황을 공유하는
+                  방식으로 연결할 수 있어요.
+                </p>
+              )}
             {responseSpeechText && (
               <button
                 type="button"
@@ -675,9 +696,18 @@ export default function PatientQuestionAssistant({
                 소리가 들리지 않으면 기기의 미디어 음량과 무음 모드를 확인해
                 주세요.
               </p>
-            )}
-            <div className="patient-question-assistant__response-actions">
-              {response.action === "register-unknown-person" && (
+              )}
+              <div className="patient-question-assistant__response-actions">
+                {response.familyHelpAction === "request-family-help" && (
+                  <button
+                    type="button"
+                    className="patient-question-assistant__family-help-action"
+                    onClick={handleFamilyHelpRequest}
+                  >
+                    {response.familyHelpActionLabel}
+                  </button>
+                )}
+                {response.action === "register-unknown-person" && (
                 <button
                   type="button"
                   className="patient-question-assistant__response-primary-action"

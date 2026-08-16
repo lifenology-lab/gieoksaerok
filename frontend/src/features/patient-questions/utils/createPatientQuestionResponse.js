@@ -8,11 +8,15 @@ const RESPONSES = {
     title: "지금 있는 곳을 함께 살펴볼까요?",
     message: "주변의 익숙한 물건이나 표지판을 천천히 확인해보세요.",
     suggestion: "필요하면 보호자에게 지금 있는 곳을 물어봐도 괜찮아요.",
+    familyHelpAction: "request-family-help",
+    familyHelpActionLabel: "가족에게 도움 요청하기",
   },
   way_home: {
     title: "집에 가는 길을 함께 확인해 볼까요?",
     message: "혼자 서두르지 말고, 지금 있는 곳에서 잠시 안전하게 기다려 주세요.",
     suggestion: "가까운 분이나 보호자에게 집에 가는 방법을 물어보세요.",
+    familyHelpAction: "request-family-help",
+    familyHelpActionLabel: "가족에게 도움 요청하기",
   },
   unknown: {
     title: "질문을 조금 더 들려주세요",
@@ -20,6 +24,17 @@ const RESPONSES = {
     suggestion: "천천히 다시 말씀하시거나, 다른 표현으로 입력해 주세요.",
   },
 };
+
+export function createFamilyHelpRequestDemoResponse() {
+  return {
+    title: "가족에게 도움을 요청할 준비가 되었어요",
+    message:
+      "가족에게 지금 있는 곳이나 귀가 방법을 확인하기 어렵다고 알려드릴 수 있어요.",
+    suggestion:
+      "지금은 데모 화면이에요. 실제 연락이나 위치 정보는 전송되지 않았어요.",
+    isFamilyHelpRequestDemo: true,
+  };
+}
 
 const WEEKDAY_LABELS = [
   "일요일",
