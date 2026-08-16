@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchRecentMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
+import { requestPatientAnswerSpeech } from "@/features/patient-questions/api/patientAnswerSpeechApi";
+import {
+  createPresetSpeechRequest,
+  createTtsSpeechRequest,
+} from "@/shared/speech/createSpeechRequest";
+import useSpeechPlayback from "@/shared/speech/useSpeechPlayback";
 
 import {
   classifyPatientQuestionWithModel,
   fetchPatientQuestionSchedules,
   savePatientQuestionEvent,
 } from "../api/patientQuestionApi";
-import usePatientAnswerSpeech from "../hooks/usePatientAnswerSpeech";
 import usePatientQuestionRecorder from "../hooks/usePatientQuestionRecorder";
 import { classifyPatientQuestion } from "../utils/classifyPatientQuestion";
 import { createPatientAnswerSpeechText } from "../utils/createPatientAnswerSpeechText";
@@ -20,8 +25,6 @@ const EXAMPLE_QUESTIONS = [
   "나 밥 먹었나?",
   "여기가 어디야?",
 ];
-
-const DAILY_MODE_AUDIO_WARMUP_TEXT = "안녕하세요. 기억새록이에요.";
 
 export default function PatientQuestionAssistant({
   open,
@@ -49,12 +52,11 @@ export default function PatientQuestionAssistant({
   const textInputRef = useRef(null);
   const {
     errorMessage: speechErrorMessage,
-    play: playAnswerSpeech,
-    preload: preloadAnswerSpeech,
+    play: playSpeech,
+    preloadPreset,
     status: speechStatus,
-    stop: stopAnswerSpeech,
-  } = usePatientAnswerSpeech();
-  const warmedAudioRef = useRef(false);
+    stop: stopSpeech,
+  } = useSpeechPlayback({ requestTts: requestPatientAnswerSpeech });
 
   const saveQuestionEvent = useCallback(
     async ({ transcript, inputMethod, intentType, patientResponse }) => {
@@ -82,7 +84,7 @@ export default function PatientQuestionAssistant({
 
     setQuestion(normalizedQuestion);
     setSubmittedQuestion(normalizedQuestion);
-    stopAnswerSpeech();
+    stopSpeech();
     let result = classifyPatientQuestion(normalizedQuestion);
     setResponse(null);
     setAnswerError("");
@@ -181,7 +183,7 @@ export default function PatientQuestionAssistant({
       setAnswerLoadingMessage("");
     }
   }, [
-    stopAnswerSpeech,
+    stopSpeech,
     isUnknownPersonDetected,
     onRequestPersonRecognition,
     recognizedPerson,
@@ -249,13 +251,9 @@ export default function PatientQuestionAssistant({
   }, [isTextInputOpen]);
 
   useEffect(() => {
-    if (warmedAudioRef.current) {
-      return;
-    }
-
-    warmedAudioRef.current = true;
-    void preloadAnswerSpeech(DAILY_MODE_AUDIO_WARMUP_TEXT);
-  }, [preloadAnswerSpeech]);
+    preloadPreset("ASSISTANT_LISTENING");
+    preloadPreset("MICROPHONE_UNAVAILABLE");
+  }, [preloadPreset]);
 
   const handledRecordingRequestIdRef = useRef(0);
 
@@ -304,8 +302,45 @@ export default function PatientQuestionAssistant({
       return;
     }
 
-    void playAnswerSpeech(responseSpeechText, { autoplay: true });
-  }, [open, playAnswerSpeech, responseSpeechText]);
+    void playSpeech(createTtsSpeechRequest(responseSpeechText));
+  }, [open, playSpeech, responseSpeechText]);
+
+  useEffect(() => {
+    if (
+      !open ||
+      response ||
+      isMicrophoneUnavailable ||
+      isAnswerLoading ||
+      ["preparing", "recording", "transcribing"].includes(
+        questionRecorder.recordingStatus,
+      )
+    ) {
+      return;
+    }
+
+    void playSpeech(createPresetSpeechRequest("ASSISTANT_LISTENING"));
+  }, [
+    isAnswerLoading,
+    isMicrophoneUnavailable,
+    open,
+    playSpeech,
+    questionRecorder.recordingStatus,
+    response,
+  ]);
+
+  useEffect(() => {
+    if (isRecording) {
+      stopSpeech();
+    }
+  }, [isRecording, stopSpeech]);
+
+  useEffect(() => {
+    if (!open || !isMicrophoneUnavailable) {
+      return;
+    }
+
+    void playSpeech(createPresetSpeechRequest("MICROPHONE_UNAVAILABLE"));
+  }, [isMicrophoneUnavailable, open, playSpeech]);
 
   if (!open) {
     return null;
@@ -323,7 +358,7 @@ export default function PatientQuestionAssistant({
   };
 
   const resetAssistantState = () => {
-    stopAnswerSpeech();
+    stopSpeech();
     setQuestion("");
     setSubmittedQuestion("");
     setResponse(null);
@@ -416,11 +451,11 @@ export default function PatientQuestionAssistant({
 
   const handleResponseSpeech = () => {
     if (speechStatus === "playing") {
-      stopAnswerSpeech();
+      stopSpeech();
       return;
     }
 
-    void playAnswerSpeech(responseSpeechText);
+    void playSpeech(createTtsSpeechRequest(responseSpeechText));
   };
 
   return (
