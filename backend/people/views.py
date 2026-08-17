@@ -717,15 +717,14 @@ class MemoryAlbumItemListCreateView(PatientOwnedAPIView):
     def post(self, request, person_id):
         user = get_request_patient_user(request)
         person = get_object_or_404(Person, pk=person_id, user=user)
-        data = request.data.copy()
-        source = (data.get('source') or '').strip().lower()
-        description = (data.get('description') or '').strip()
+        source = (request.data.get('source') or '').strip().lower()
+        description = (request.data.get('description') or '').strip()
 
         if source == 'caregiver' and description:
             patient_name = (getattr(user, 'name', '') or user.username).strip()
 
             try:
-                data['description'] = generate_patient_memory_album_description(
+                description = generate_patient_memory_album_description(
                     person=person,
                     caregiver_description=description,
                     patient_name=patient_name,
@@ -736,6 +735,12 @@ class MemoryAlbumItemListCreateView(PatientOwnedAPIView):
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
 
+        data = {
+            'photo': request.FILES.get('photo') or request.data.get('photo'),
+            'description': description,
+            'crop_x': request.data.get('crop_x'),
+            'crop_y': request.data.get('crop_y'),
+        }
         serializer = MemoryAlbumItemSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=user, person=person)

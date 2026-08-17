@@ -1790,6 +1790,34 @@ class MemoryAlbumItemListCreateViewTests(TestCase):
                 self.assertEqual(list_response.json()[0]['id'], str(item.id))
                 self.assertEqual(list_response.json()[0]['crop_x'], 24.5)
 
+    def test_create_memory_album_item_accepts_temporary_uploaded_file(self):
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(
+                FILE_UPLOAD_MAX_MEMORY_SIZE=1,
+                MEDIA_ROOT=media_root,
+            ):
+                photo = SimpleUploadedFile(
+                    'large.png',
+                    b'fake-image-bytes',
+                    content_type='image/png',
+                )
+
+                response = self.client.post(
+                    reverse(
+                        'memory-album-item-list-create',
+                        kwargs={'person_id': self.person.id},
+                    ),
+                    {
+                        'photo': photo,
+                        'description': '파일 업로드 테스트',
+                        'crop_x': '50',
+                        'crop_y': '50',
+                    },
+                )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(MemoryAlbumItem.objects.count(), 1)
+
     @mock.patch('people.views.generate_patient_memory_album_description')
     def test_caregiver_memory_album_description_is_rewritten_for_patient(
         self,
