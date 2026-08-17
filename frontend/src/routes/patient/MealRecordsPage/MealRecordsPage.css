@@ -112,7 +112,6 @@
   width: min(760px, calc(100vw - 84px));
   margin: 0 auto;
   overflow-y: auto;
-  scrollbar-width: thin;
 }
 
 .meal-records-page__notice,
