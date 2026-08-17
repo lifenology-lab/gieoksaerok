@@ -23,6 +23,15 @@ const TAB_ITEMS = [
 ];
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+const DATE_WEEKDAY_LABELS = [
+  "일요일",
+  "월요일",
+  "화요일",
+  "수요일",
+  "목요일",
+  "금요일",
+  "토요일",
+];
 const REFLECTION_SESSION_IDLE_MS = 30 * 60 * 1000;
 const INITIAL_PEOPLE_CHOOSER_COUNT = 5;
 const MEAL_TYPE_ORDER = {
@@ -63,6 +72,19 @@ function getPromiseDate(promise) {
 
 function formatCalendarDate(date) {
   return `${date.getMonth() + 1}월 ${date.getDate()}일 ${WEEKDAY_LABELS[(date.getDay() + 6) % 7]}요일`;
+}
+
+function formatMemoryOverviewDate(date) {
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${DATE_WEEKDAY_LABELS[date.getDay()]})`;
+}
+
+function formatMemoryOverviewTime(date) {
+  const hours = date.getHours();
+  const period = hours < 12 ? "오전" : "오후";
+  const displayHours = hours % 12 || 12;
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${period} ${String(displayHours).padStart(2, "0")}:${minutes}`;
 }
 
 function getMonthDays(monthDate) {
@@ -412,18 +434,18 @@ export default function MemoryOverviewPage() {
 
       <header className="memory-overview-page__header">
         <div className="memory-overview-page__date-time" aria-live="polite">
-          <p>{`${currentDateTime.getFullYear()}년 ${currentDateTime.getMonth() + 1}월 ${currentDateTime.getDate()}일`}</p>
-          <strong>{new Intl.DateTimeFormat("ko-KR", { hour: "numeric", minute: "2-digit" }).format(currentDateTime)}</strong>
+          <p>{formatMemoryOverviewDate(currentDateTime)}</p>
+          <strong>{formatMemoryOverviewTime(currentDateTime)}</strong>
           <span aria-hidden="true" />
         </div>
         <button type="button" onClick={() => navigate("/patient")}>홈으로</button>
       </header>
 
-      <section className={`memory-overview-page__intro${activeTab !== "today" ? " is-compact" : ""}`}>
+      <section className="memory-overview-page__intro">
         <span aria-hidden="true" />
         <div>
           <h1>기억 살펴보기</h1>
-          <p>오늘의 이야기와 소중한 기억을 함께 살펴봐요.</p>
+          <p>오늘의 기록과 추억을 함께 봐요.</p>
         </div>
       </section>
 

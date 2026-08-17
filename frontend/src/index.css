@@ -1,5 +1,8 @@
 :root {
   --visual-viewport-height: 100dvh;
+  --page-gutter: clamp(16px, 4.2vw, 42px);
+  --page-bottom-gutter: clamp(18px, 3.6vw, 36px);
+  --page-content-width: calc(100vw - clamp(32px, 8.4vw, 84px));
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;

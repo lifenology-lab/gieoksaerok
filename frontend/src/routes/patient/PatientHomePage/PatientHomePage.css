@@ -43,8 +43,8 @@
 
 .patient-home-page__date-time {
   position: absolute;
-  top: 42px;
-  left: 42px;
+  top: max(var(--page-gutter), env(safe-area-inset-top));
+  left: max(var(--page-gutter), env(safe-area-inset-left));
   z-index: 12;
   display: grid;
   gap: 8px;
@@ -79,8 +79,8 @@
 
 .patient-home-page__collapse-button {
   position: absolute;
-  left: 42px;
-  bottom: 34px;
+  left: max(var(--page-gutter), env(safe-area-inset-left));
+  bottom: max(var(--page-bottom-gutter), env(safe-area-inset-bottom));
   z-index: 12;
   min-width: 132px;
   min-height: 52px;
@@ -117,7 +117,7 @@
 .patient-home-page__intro {
   position: absolute;
   top: 148px;
-  left: 42px;
+  left: max(var(--page-gutter), env(safe-area-inset-left));
   z-index: 12;
   display: flex;
   align-items: stretch;
@@ -449,7 +449,7 @@
   }
 }
 
-@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 520px) {
   .patient-home-page {
     height: 100dvh;
     min-height: 100dvh;
@@ -542,7 +542,7 @@
   }
 }
 
-@media (orientation: landscape) and (max-height: 390px) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 390px) {
   .patient-home-page__intro {
     top: 82px;
   }

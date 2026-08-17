@@ -622,7 +622,7 @@
   }
 }
 
-@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 520px) {
   .confusion-select-page {
     height: 100dvh;
     min-height: 100dvh;
@@ -756,7 +756,7 @@
   }
 }
 
-@media (orientation: landscape) and (max-height: 390px) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 390px) {
   .confusion-select-page__intro {
     top: 82px;
   }

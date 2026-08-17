@@ -87,11 +87,6 @@ export default function AuthPage() {
           isSignUpMode ? "auth-page__panel--signup" : "auth-page__panel--login"
         }`}
       >
-        <div className="auth-page__intro">
-          <p className="auth-page__eyebrow">기억새록</p>
-          <h1>{isSignUpMode ? "회원가입" : "로그인"}</h1>
-        </div>
-
         <div className="auth-page__tabs" role="tablist" aria-label="인증 방식">
           <button
             type="button"
@@ -111,7 +106,12 @@ export default function AuthPage() {
           </button>
         </div>
 
-        <form className="auth-page__form" onSubmit={handleSubmit}>
+        <form
+          className={`auth-page__form ${
+            isSignUpMode ? "auth-page__form--signup" : ""
+          }`}
+          onSubmit={handleSubmit}
+        >
           {isSignUpMode && (
             <>
               <label>

@@ -165,7 +165,7 @@
   }
 }
 
-@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 520px) {
   .role-select-page {
     padding: max(14px, env(safe-area-inset-top))
       max(22px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom))

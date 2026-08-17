@@ -971,7 +971,7 @@
   }
 }
 
-@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 520px) {
   .patient-question-assistant {
     padding: 10px max(14px, env(safe-area-inset-right))
       max(10px, env(safe-area-inset-bottom))

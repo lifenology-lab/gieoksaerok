@@ -13,7 +13,7 @@
 }
 
 /* 가로 모바일에서 키보드가 열린 동안에는 회상 입력에만 화면을 집중한다. */
-@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 520px) {
   .memory-overview-page.is-reflection-active:has(
     .memory-reflection-assistant__text-form textarea:focus
   ) {
@@ -121,7 +121,7 @@
 .memory-overview-page__intro {
   position: relative;
   z-index: 1;
-  width: calc(100vw - 84px);
+  width: var(--page-content-width);
   margin: 0 auto;
 }
 
@@ -129,7 +129,7 @@
 .memory-overview-page__content {
   position: relative;
   z-index: 1;
-  width: min(1120px, calc(100vw - 84px));
+  width: min(1120px, var(--page-content-width));
   margin: 0 auto;
 }
 
@@ -137,7 +137,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding-top: 42px;
+  padding-top: max(var(--page-gutter), env(safe-area-inset-top));
 }
 
 .memory-overview-page__date-time {
@@ -273,7 +273,7 @@
 
 .memory-overview-page__content {
   margin-top: 20px;
-  padding-bottom: 42px;
+  padding-bottom: var(--page-gutter);
   box-sizing: border-box;
 }
 
@@ -1671,5 +1671,52 @@
     .memory-overview-page__intro {
       margin-top: 26px;
     }
+  }
+}
+
+/* 환자 홈·일상 모드와 같은 상단 기준으로 가로 화면의 날짜와 안내를 배치한다. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .memory-overview-page__header,
+  .memory-overview-page__intro {
+    width: calc(100vw - 36px);
+  }
+
+  .memory-overview-page__header {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .memory-overview-page__date-time {
+    gap: 5px;
+  }
+
+  .memory-overview-page__date-time p {
+    font-size: 13px;
+  }
+
+  .memory-overview-page__date-time strong {
+    font-size: 24px;
+  }
+
+  .memory-overview-page__date-time span {
+    width: 36px;
+  }
+
+  .memory-overview-page__intro {
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .memory-overview-page__intro > span {
+    width: 3px;
+    min-height: 48px;
+  }
+
+  .memory-overview-page__intro h1 {
+    font-size: 22px;
+  }
+
+  .memory-overview-page__intro p {
+    margin-top: 5px;
+    font-size: 13px;
   }
 }

@@ -221,7 +221,7 @@
   }
 }
 
-@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 520px) {
   .caregiver-home-page {
     height: 100dvh;
     min-height: 100dvh;
