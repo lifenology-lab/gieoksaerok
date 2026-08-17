@@ -12,6 +12,96 @@
   z-index: 100;
 }
 
+/* 가로 모바일에서 키보드가 열린 동안에는 회상 입력에만 화면을 집중한다. */
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  ) {
+    height: var(--visual-viewport-height, 100dvh);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__header,
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__intro,
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__tabs {
+    display: none;
+  }
+
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__content {
+    width: min(100% - 24px, 900px);
+    height: calc(var(--visual-viewport-height, 100dvh) - 16px);
+    margin: 8px auto;
+    padding: 0;
+  }
+
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__reflection-stage,
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__reflection-viewer,
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__reflection-guide {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__reflection-viewer {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-overview-page__reflection-photo {
+    display: none;
+  }
+
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-reflection-assistant__response {
+    padding: 10px 12px;
+  }
+
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-reflection-assistant__agent-actions.is-text-mode
+    .memory-reflection-assistant__text-form {
+    padding: 6px;
+  }
+
+  .memory-overview-page.is-reflection-active:has(
+    .memory-reflection-assistant__text-form textarea:focus
+  )
+    .memory-reflection-assistant__text-form textarea {
+    min-height: 52px;
+    padding: 8px 10px;
+  }
+}
+
 .memory-overview-page__background {
   position: fixed;
   inset: 0;

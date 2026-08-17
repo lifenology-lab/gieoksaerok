@@ -1,4 +1,5 @@
 :root {
+  --visual-viewport-height: 100dvh;
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;

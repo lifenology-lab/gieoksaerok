@@ -1017,4 +1017,40 @@
     min-height: 38px;
     font-size: 13px;
   }
+
+  .patient-question-assistant:has(
+    .patient-question-assistant__card.is-text-input textarea:focus
+  ) {
+    position: fixed;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: var(--visual-viewport-height, 100dvh);
+    padding: 8px max(12px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+
+  .patient-question-assistant__card.is-text-input:focus-within {
+    width: min(520px, 84vw);
+    max-height: calc(var(--visual-viewport-height, 100dvh) - 16px);
+    gap: 6px;
+    padding: 12px 14px;
+  }
+
+  .patient-question-assistant__card.is-text-input:focus-within
+    .patient-question-assistant__heading {
+    display: none;
+  }
+
+  .patient-question-assistant__card.is-text-input:focus-within
+    .patient-question-assistant__form {
+    gap: 6px;
+  }
+
+  .patient-question-assistant__card.is-text-input:focus-within
+    .patient-question-assistant__form textarea {
+    min-height: 52px;
+    max-height: calc(var(--visual-viewport-height, 100dvh) - 112px);
+    padding: 10px 12px;
+    font-size: 14px;
+  }
 }
