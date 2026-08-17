@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>기억새록 iframe 테스트</title>
+    <style>
+      :root {
+        color: #f7fffc;
+        background: #1d312b;
+        font-family: Pretendard, "Noto Sans KR", system-ui, sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        background: linear-gradient(135deg, #304a40, #1b2c27);
+      }
+
+      main {
+        width: min(100%, 1200px);
+        margin: 0 auto;
+      }
+
+      h1 { margin: 0; font-size: 24px; }
+      p { color: rgba(247, 255, 252, 0.8); line-height: 1.5; }
+
+      form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      input, button {
+        min-height: 48px;
+        border-radius: 12px;
+        font: inherit;
+      }
+
+      input {
+        width: 100%;
+        border: 1px solid rgba(196, 255, 238, 0.58);
+        padding: 0 14px;
+        color: #f7fffc;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      button {
+        border: 0;
+        padding: 0 20px;
+        color: #153e34;
+        background: #a4f0df;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      #status { min-height: 24px; margin: 0 0 12px; font-size: 14px; }
+
+      iframe {
+        display: block;
+        width: 100%;
+        height: min(72vh, 760px);
+        min-height: 480px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 18px;
+        background: #111;
+      }
+
+      @media (max-width: 640px) {
+        body { padding: 16px; }
+        form { grid-template-columns: 1fr; }
+        iframe { height: 68vh; min-height: 420px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>기억새록 iframe 테스트</h1>
+      <p>
+        배포된 서비스 주소를 입력한 뒤 불러오세요. 이 페이지는 iframe에 카메라, 마이크,
+        음성 재생 권한을 전달하며 sandbox는 적용하지 않습니다.
+      </p>
+
+      <form id="iframe-form">
+        <input
+          id="iframe-url"
+          type="url"
+          inputmode="url"
+          placeholder="https://서비스-주소"
+          required
+        />
+        <button type="submit">서비스 불러오기</button>
+      </form>
+
+      <p id="status" aria-live="polite">서비스 주소를 입력해 주세요.</p>
+      <iframe
+        id="service-frame"
+        title="기억새록 서비스"
+        allow="camera; microphone; autoplay"
+      ></iframe>
+    </main>
+
+    <script>
+      const form = document.querySelector("#iframe-form");
+      const input = document.querySelector("#iframe-url");
+      const frame = document.querySelector("#service-frame");
+      const status = document.querySelector("#status");
+      const initialUrl = new URLSearchParams(window.location.search).get("src");
+
+      function loadService(url) {
+        try {
+          const serviceUrl = new URL(url);
+
+          if (serviceUrl.protocol !== "https:" && serviceUrl.hostname !== "localhost") {
+            throw new Error("HTTPS 주소를 입력해 주세요.");
+          }
+
+          input.value = serviceUrl.href;
+          frame.src = serviceUrl.href;
+          status.textContent = "서비스를 불러오고 있어요.";
+          window.history.replaceState(null, "", `?src=${encodeURIComponent(serviceUrl.href)}`);
+        } catch (error) {
+          status.textContent = error.message || "올바른 서비스 주소를 입력해 주세요.";
+        }
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        loadService(input.value.trim());
+      });
+
+      frame.addEventListener("load", () => {
+        status.textContent = "iframe을 불러왔습니다. 카메라·마이크 기능도 직접 확인해 주세요.";
+      });
+
+      if (initialUrl) {
+        loadService(initialUrl);
+      }
+    </script>
+  </body>
+</html>
