@@ -28,7 +28,7 @@ function loadFaceApiModule() {
   return faceApiModulePromise;
 }
 
-async function loadFaceApiModels() {
+export async function loadFaceApiModels() {
   const faceapi = await loadFaceApiModule();
 
   if (!modelLoadPromise) {
