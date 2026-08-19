@@ -71,7 +71,11 @@ export function deleteMealRecord(mealRecordId) {
 
 // 식사 상황이 보이는 source (video)와 식사 기록들을 받아서
 // 식사 상황인지 추론하고 최근 식사 기록 유무에 따른 object를 리턴
-export async function detectMealScene(srcElement, mealRecords = []) {
+export async function detectMealScene(
+  srcElement,
+  mealRecords = [],
+  mealContextOptions = {},
+) {
   // 식사 상황인지 추론
   const mealSceneResult = await classifyMealScene(srcElement);
 
@@ -90,7 +94,11 @@ export async function detectMealScene(srcElement, mealRecords = []) {
   }
 
   // 식사 맥락 가져오기
-  const mealContextResult = getMealContextResult(mealRecords);
+  const mealContextResult = getMealContextResult(
+    mealRecords,
+    new Date(),
+    mealContextOptions,
+  );
 
   // 최근 1시간 이내 식사 기록이 있는 경우 같은 식사 맥락으로 판단
   if (

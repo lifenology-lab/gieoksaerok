@@ -93,6 +93,28 @@
   gap: 10px;
 }
 
+.daily-mode-page__meal-context-notice {
+  position: absolute;
+  left: 50%;
+  bottom: max(90px, calc(env(safe-area-inset-bottom) + 72px));
+  z-index: 13;
+  width: min(440px, calc(100vw - 32px));
+  margin: 0;
+  padding: 11px 16px;
+  border: 1px solid rgba(184, 255, 240, 0.36);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(18, 57, 46, 0.7);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 800;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
 .daily-mode-page__glass-button {
   min-width: 142px;
   min-height: 53px;

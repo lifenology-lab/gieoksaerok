@@ -41,6 +41,10 @@ import {
   createTtsSpeechRequest,
 } from "@/shared/speech/createSpeechRequest";
 import useSpeechPlayback from "@/shared/speech/useSpeechPlayback";
+import {
+  DEMO_EXPERIENCE_MODES,
+  getDemoExperienceMode,
+} from "@/shared/demo/demoExperienceMode";
 
 import "./DailyModePage.css";
 
@@ -148,6 +152,7 @@ export default function DailyModePage() {
   const [mealRecords, setMealRecords] = useState([]);
   const [isMealRecordSaving, setIsMealRecordSaving] = useState(false);
   const [mealRecordError, setMealRecordError] = useState("");
+  const [mealContextNotice, setMealContextNotice] = useState("");
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
   const [isQuestionAssistantOpen, setIsQuestionAssistantOpen] = useState(false);
   const [questionRecordingRequestId, setQuestionRecordingRequestId] = useState(0);
@@ -163,6 +168,11 @@ export default function DailyModePage() {
   const lastMealSpeechKeyRef = useRef("");
   const lastPersonSpeechKeyRef = useRef("");
   const hasPlayedUnknownPersonPromptRef = useRef(false);
+  const mealContextNoticeTimeoutRef = useRef(null);
+  const lastMealContextNoticeRecordIdRef = useRef(null);
+  const isDemoExperienceRef = useRef(
+    Object.values(DEMO_EXPERIENCE_MODES).includes(getDemoExperienceMode()),
+  );
 
   const {
     activeRecognitionType,
@@ -319,6 +329,29 @@ export default function DailyModePage() {
     mealRecognitionResultRef.current = mealRecognitionResult;
   }, [mealRecognitionResult]);
 
+  useEffect(() => () => {
+    window.clearTimeout(mealContextNoticeTimeoutRef.current);
+  }, []);
+
+  const showMealContextNotice = (mealRecord) => {
+    if (!isDemoExperienceRef.current || !mealRecord?.id) {
+      return;
+    }
+
+    if (lastMealContextNoticeRecordIdRef.current === mealRecord.id) {
+      return;
+    }
+
+    lastMealContextNoticeRecordIdRef.current = mealRecord.id;
+    setMealContextNotice(
+      `방금 ${mealRecord.mealLabel} 기록을 남겼어요. 1분 동안 같은 식사로 보고 있어요.`,
+    );
+    window.clearTimeout(mealContextNoticeTimeoutRef.current);
+    mealContextNoticeTimeoutRef.current = window.setTimeout(() => {
+      setMealContextNotice("");
+    }, 3800);
+  };
+
   // 식사 인식이 활성화된 경우 즉시 1회 분석, 이후 정해진 간격마다 분석
   // 식사 인식이 비활성화된 경우 interval을 종료하고 식사 인식 중단
   useEffect(() => {
@@ -376,13 +409,21 @@ export default function DailyModePage() {
       return;
     }
 
-    const mealContextResult = getMealContextResult(mealRecordsRef.current);
+    const mealContextOptions = isDemoExperienceRef.current
+      ? { suppressMealNoticeMinutes: 1 }
+      : {};
+    const mealContextResult = getMealContextResult(
+      mealRecordsRef.current,
+      new Date(),
+      mealContextOptions,
+    );
 
-    // 최근 1시간 이내 식사 기록이 있는 경우 모델 추론을 하지 않음
+    // 최근 식사 기록을 같은 식사 맥락으로 보는 동안은 모델 추론을 생략한다.
     if (
       mealContextResult.type ===
       MEAL_CONTEXT_RESULT_TYPES.MEAL_NOTICE_SUPPRESSED
     ) {
+      showMealContextNotice(mealContextResult.mealRecord);
       return;
     }
 
@@ -396,6 +437,7 @@ export default function DailyModePage() {
       const response = await detectMealScene(
         cameraVideoElementRef.current,
         mealRecordsRef.current,
+        mealContextOptions,
       );
 
       // 보여줄 카드가 없는 경우 종료
@@ -442,6 +484,7 @@ export default function DailyModePage() {
       });
 
       mealRecordsRef.current = [createdMealRecord, ...mealRecordsRef.current];
+      lastMealContextNoticeRecordIdRef.current = null;
       setMealRecords((prevMealRecords) => [
         createdMealRecord,
         ...prevMealRecords,
@@ -581,6 +624,12 @@ export default function DailyModePage() {
         message={recognitionStatusMessage}
         isLoading={isRecognitionLoading}
       />
+
+      {mealContextNotice && (
+        <p className="daily-mode-page__meal-context-notice" role="status">
+          {mealContextNotice}
+        </p>
+      )}
 
       <UnknownPersonDialog
         open={isRegisterDialogOpen && !isQuestionAssistantOpen}

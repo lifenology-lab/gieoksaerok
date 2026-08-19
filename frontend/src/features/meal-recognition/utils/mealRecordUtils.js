@@ -128,6 +128,8 @@ export function getMealContextResult(
 ) {
   const suppressMealNoticeHours =
     options.suppressMealNoticeHours ?? SUPPRESS_MEAL_NOTICE_HOURS;
+  const suppressMealNoticeMinutes =
+    options.suppressMealNoticeMinutes ?? suppressMealNoticeHours * 60;
 
   const recentMealNoticeHours =
     options.recentMealNoticeHours ?? RECENT_MEAL_NOTICE_HOURS;
@@ -152,11 +154,10 @@ export function getMealContextResult(
     };
   }
 
-  const suppressMealNoticeMinutes = suppressMealNoticeHours * 60;
   const recentMealNoticeMinutes = recentMealNoticeHours * 60;
 
-  // 최근 1시간 이내 식사 기록이 있으면 같은 식사 맥락으로 보고 안내를 띄우지 않음
-  if (elapsedMinutes <= suppressMealNoticeMinutes) {
+  // 최근 식사 기록이 억제 시간보다 짧으면 같은 식사 맥락으로 보고 안내를 띄우지 않음
+  if (elapsedMinutes < suppressMealNoticeMinutes) {
     return {
       type: MEAL_CONTEXT_RESULT_TYPES.MEAL_NOTICE_SUPPRESSED,
       mealRecord: latestMealRecord,
