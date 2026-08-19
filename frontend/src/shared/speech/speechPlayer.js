@@ -6,6 +6,7 @@ class SpeechPlayer {
     this.objectUrl = "";
     this.listeners = new Set();
     this.playbackWaiters = new Set();
+    this.preloadedPresetAudios = new Map();
 
     if (this.audio) {
       this.audio.preload = "auto";
@@ -49,9 +50,15 @@ class SpeechPlayer {
       return;
     }
 
+    if (this.preloadedPresetAudios.has(id)) {
+      return;
+    }
+
     const preloadAudio = new Audio();
     preloadAudio.preload = "auto";
     preloadAudio.src = source;
+    preloadAudio.load();
+    this.preloadedPresetAudios.set(id, preloadAudio);
   }
 
   stop() {

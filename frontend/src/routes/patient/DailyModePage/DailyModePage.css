@@ -797,6 +797,7 @@
 }
 
 .meal-recognition-card {
+  position: relative;
   display: grid;
   gap: 11px;
   max-height: min(56svh, 400px);
@@ -820,6 +821,7 @@
 }
 
 .meal-recognition-card h3 {
+  padding-right: 72px;
   font-size: 21px;
   font-weight: 900;
   line-height: 1.25;
@@ -881,6 +883,34 @@
 }
 
 .meal-recognition-card__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.meal-recognition-card__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  padding: 0 12px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.meal-recognition-card__close:hover,
+.meal-recognition-card__close:focus-visible {
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.meal-recognition-card__close:disabled {
   cursor: not-allowed;
   opacity: 0.56;
 }

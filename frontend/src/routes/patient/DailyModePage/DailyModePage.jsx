@@ -454,8 +454,17 @@ export default function DailyModePage() {
         return;
       }
 
+      // 데모에서는 최근 식사 기록을 확인한 뒤에도 새 식사 기록 흐름을 바로 체험할 수 있다.
+      const card =
+        isDemoExperienceRef.current && response.type === "recent_meal_found"
+          ? {
+              ...response.card,
+              secondaryActionLabel: "그래도 기록하기",
+            }
+          : response.card;
+
       // 식사 인식 결과에 따른 안내 (반복 식사 / 식사 기록)
-      setMealRecognitionResult(response.card);
+      setMealRecognitionResult(card);
     } catch {
       setMealRecognitionResult(null);
     } finally {
@@ -465,6 +474,7 @@ export default function DailyModePage() {
 
   const handleCloseMealRecognition = () => {
     stopSpeech();
+    lastMealSpeechKeyRef.current = "";
     setMealRecognitionResult(null);
     setMealRecordError("");
   };
@@ -472,7 +482,10 @@ export default function DailyModePage() {
   const saveQuickMealRecord = async () => {
     if (
       !mealRecognitionResult ||
-      mealRecognitionResult.type !== "meal_detected_without_record" ||
+      ![
+        "meal_detected_without_record",
+        "recent_meal_found",
+      ].includes(mealRecognitionResult.type) ||
       isMealRecordSaving
     ) {
       return;
@@ -536,6 +549,18 @@ export default function DailyModePage() {
     if (mealRecognitionResult.type === "meal_record_completed") {
       handleCloseMealRecognition();
     }
+  };
+
+  const handleMealRecordSecondaryAction = () => {
+    if (
+      isDemoExperienceRef.current &&
+      mealRecognitionResult?.type === "recent_meal_found"
+    ) {
+      saveQuickMealRecord();
+      return;
+    }
+
+    handleCloseMealRecognition();
   };
 
   const handleOpenQuestionAssistant = async () => {
@@ -661,10 +686,17 @@ export default function DailyModePage() {
                 : mealRecognitionResult.primaryActionLabel
             }
             secondaryActionLabel={mealRecognitionResult.secondaryActionLabel}
+            closeActionLabel={
+              isDemoExperienceRef.current &&
+              mealRecognitionResult.type === "recent_meal_found"
+                ? "닫기"
+                : ""
+            }
             errorMessage={mealRecordError}
             isActionDisabled={isMealRecordSaving}
             onPrimaryAction={handleMealRecordPrimaryAction}
-            onSecondaryAction={handleCloseMealRecognition}
+            onSecondaryAction={handleMealRecordSecondaryAction}
+            onCloseAction={handleCloseMealRecognition}
           />
         )}
       </MealRecognitionOverlay>
