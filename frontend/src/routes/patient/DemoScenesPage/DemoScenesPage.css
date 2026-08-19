@@ -233,6 +233,11 @@
   opacity: 0.65;
 }
 
+.demo-scenes-page__result-action:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .demo-scenes-page__camera-action {
   justify-self: center;
   width: min(360px, 100%);

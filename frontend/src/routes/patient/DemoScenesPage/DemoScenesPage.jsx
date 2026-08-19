@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchPeople } from "@/features/face-recognition/api/peopleApi";
 import { loadFaceApiModels } from "@/features/face-recognition/hooks/usePersonRecognition";
+import { createMealRecord } from "@/features/meal-recognition/api/mealRecognitionApi";
 import { classifyMealScene } from "@/features/meal-recognition/model/teachableMachineMealClassifier";
+import { getSuggestedMealType } from "@/features/meal-recognition/utils/mealRecordUtils";
 
 import "./DemoScenesPage.css";
 
@@ -215,6 +217,20 @@ async function analyzeMealScene(scene) {
   return classifyMealScene(image);
 }
 
+async function createDemoSceneImageFile(scene) {
+  const response = await fetch(scene.image);
+
+  if (!response.ok) {
+    throw new Error("식사 사진을 준비하지 못했어요.");
+  }
+
+  const imageBlob = await response.blob();
+
+  return new File([imageBlob], `${scene.id}.jpg`, {
+    type: imageBlob.type || "image/jpeg",
+  });
+}
+
 function createMealResult(scene, mealSceneResult) {
   const confidence = Math.round(mealSceneResult.mealSceneProbability * 100);
 
@@ -222,12 +238,14 @@ function createMealResult(scene, mealSceneResult) {
     return {
       title: "식사 장면으로 인식했어요",
       message: `식사 장면일 가능성이 ${confidence}%예요. 일상 모드에서는 식사 기록을 남기는 카드가 이어서 열려요.`,
+      isMealScene: true,
     };
   }
 
   return {
     title: "식사 장면이 아니에요",
     message: `식사 장면일 가능성이 ${confidence}%예요. 다른 예시 장면을 선택해 보세요.`,
+    isMealScene: false,
   };
 }
 
@@ -236,6 +254,7 @@ export default function DemoScenesPage() {
   const [people, setPeople] = useState([]);
   const [selectedScene, setSelectedScene] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isMealRecordSaving, setIsMealRecordSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [infoScene, setInfoScene] = useState(null);
 
@@ -305,6 +324,47 @@ export default function DemoScenesPage() {
   };
 
   const handleResultAction = () => {
+    if (result?.mealRecordCreated) {
+      navigate("/patient/meal-records");
+      return;
+    }
+
+    if (result?.scene?.type === "meal" && result.isMealScene) {
+      const saveDemoMealRecord = async () => {
+        try {
+          setIsMealRecordSaving(true);
+
+          const eatenAt = new Date().toISOString();
+          const sceneImage = await createDemoSceneImageFile(result.scene);
+          const createdMealRecord = await createMealRecord({
+            mealType: getSuggestedMealType(eatenAt),
+            eatenAt,
+            source: "patient_confirmed",
+            sceneImage,
+          });
+
+          setResult((currentResult) => ({
+            ...currentResult,
+            title: "식사 기록이 완료되었어요",
+            message: `${createdMealRecord.mealLabel} 식사 기록과 사진을 함께 남겼어요.`,
+            isMealScene: false,
+            mealRecordCreated: true,
+          }));
+        } catch (error) {
+          setResult((currentResult) => ({
+            ...currentResult,
+            message:
+              error?.message || "식사 기록을 저장하지 못했어요. 다시 시도해 주세요.",
+          }));
+        } finally {
+          setIsMealRecordSaving(false);
+        }
+      };
+
+      saveDemoMealRecord();
+      return;
+    }
+
     if (result?.scene?.type === "registered" && result.matchedPerson?.id) {
       navigate(`/patient/memory-album/${result.matchedPerson.id}`, {
         state: { person: result.matchedPerson },
@@ -486,8 +546,17 @@ export default function DemoScenesPage() {
                 className="demo-scenes-page__result-action"
                 type="button"
                 onClick={handleResultAction}
+                disabled={isMealRecordSaving}
               >
-                {result.scene.type === "registered" ? "추억 카드 보기" : "확인"}
+                {result.scene.type === "registered"
+                  ? "추억 카드 보기"
+                  : result.mealRecordCreated
+                    ? "식사 기록 보기"
+                    : result.isMealScene
+                      ? isMealRecordSaving
+                        ? "식사 기록을 남기고 있어요"
+                        : "식사 기록으로 남기기"
+                      : "확인"}
               </button>
             )}
           </article>

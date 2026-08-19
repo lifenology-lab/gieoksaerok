@@ -157,7 +157,8 @@ export async function detectMealScene(
       type: "meal_detected_without_record",
       title: "식사 중이신가요?",
       message: "식사 기록을 도와드릴게요.",
-      suggestion: "",
+      suggestion:
+        "식사 사진도 함께 남길 수 있어요. 카메라를 잠시 그대로 두어 주세요.",
       primaryActionLabel: "네, 식사 중이에요",
       secondaryActionLabel: "식사 중이 아니에요",
     },
