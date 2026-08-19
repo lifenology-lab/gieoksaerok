@@ -32,7 +32,7 @@ export default function DailyModeBottomActions({
           <span className="daily-mode-page__glass-icon">
             <HomeIcon />
           </span>
-          <span>홈으로 돌아가기</span>
+          <span>돌아가기</span>
         </button>
       </section>
 

@@ -5,7 +5,10 @@
   height: 100dvh;
   min-height: 100svh;
   overflow: hidden;
-  background: #111;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(145, 232, 214, 0.2), transparent 26%),
+    radial-gradient(circle at 12% 88%, rgba(118, 178, 150, 0.18), transparent 30%),
+    linear-gradient(135deg, #4c6159 0%, #63766b 52%, #44544f 100%);
   color: white;
   z-index: 100;
 }
@@ -15,7 +18,10 @@
   z-index: 0;
   width: 100%;
   height: 100%;
-  background: #111;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(145, 232, 214, 0.2), transparent 26%),
+    radial-gradient(circle at 12% 88%, rgba(118, 178, 150, 0.18), transparent 30%),
+    linear-gradient(135deg, #4c6159 0%, #63766b 52%, #44544f 100%);
 }
 
 .patient-home-page .daily-mode-page__camera-area--unavailable {
@@ -156,9 +162,9 @@
   left: 50%;
   bottom: clamp(128px, 22svh, 196px);
   z-index: 12;
-  width: min(644px, calc(100vw - 84px));
+  width: min(860px, calc(100vw - 84px));
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
   transform: translateX(-50%);
 }
@@ -278,7 +284,7 @@
 
   .patient-home-page__actions {
     bottom: clamp(112px, 20svh, 156px);
-    width: min(560px, calc(100vw - 44px));
+    width: min(720px, calc(100vw - 44px));
     gap: 14px;
   }
 
@@ -499,7 +505,7 @@
     bottom: auto;
     left: 50%;
     width: min(46vw, 420px);
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: none;
     gap: 12px;
     transform: translate(-50%, -50%);

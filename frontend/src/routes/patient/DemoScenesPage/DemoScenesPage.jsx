@@ -2,186 +2,90 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { fetchPeople } from "@/features/face-recognition/api/peopleApi";
-import { fetchMealRecords } from "@/features/meal-recognition/api/mealRecognitionApi";
-import {
-  fetchMemoryAlbumItems,
-  getMemoryAlbumPhotoUrl,
-} from "@/features/memory-album/api/memoryAlbumApi";
-import { getApiMediaUrl } from "@/shared/api/client";
 
 import "./DemoScenesPage.css";
 
-const WEEKDAY_LABELS = [
-  "일요일",
-  "월요일",
-  "화요일",
-  "수요일",
-  "목요일",
-  "금요일",
-  "토요일",
+const DEMO_SCENES = [
+  { id: "known-person", group: "인물", title: "등록된 인물", description: "가족으로 등록된 분이에요." },
+  { id: "unknown-person", group: "인물", title: "미등록 인물", description: "처음 만나는 분이에요." },
+  { id: "meal", group: "식사", title: "식사 장면", description: "식사 중인 모습을 확인해요." },
+  { id: "non-meal", group: "식사", title: "비식사 장면", description: "식사와 관계없는 장면이에요." },
 ];
 
-function formatDate(date) {
-  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${WEEKDAY_LABELS[date.getDay()]})`;
-}
-
-function formatTime(date) {
-  const hours = date.getHours();
-  const period = hours < 12 ? "오전" : "오후";
-  const displayHours = hours % 12 || 12;
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-
-  return `${period} ${String(displayHours).padStart(2, "0")}:${minutes}`;
-}
-
-function getPersonLabel(person) {
-  if (!person) {
-    return "가족 추억";
+function createResult(scene, person) {
+  if (scene.id === "known-person") {
+    const label = person?.relationship
+      ? `${person.relationship} ${person.name}님`
+      : person?.name || "등록된 가족분";
+    return { title: `${label}이에요`, message: "등록된 인물 정보와 추억을 함께 살펴볼 수 있어요.", action: "추억 살펴보기" };
   }
-
-  return person.relationship ? `${person.relationship} ${person.name}` : person.name;
+  if (scene.id === "unknown-person") return { title: "등록되지 않은 분이에요", message: "필요하면 이름과 관계를 등록할 수 있어요.", action: "인물 인식으로 확인하기" };
+  if (scene.id === "meal") return { title: "식사 중이신가요?", message: "식사 기록을 남기는 흐름을 체험할 수 있어요.", action: "식사 기록 보기" };
+  return { title: "식사 장면이 아니에요", message: "다른 예시 장면도 선택해 볼 수 있어요.", action: "다른 장면 선택" };
 }
 
 export default function DemoScenesPage() {
   const navigate = useNavigate();
-  const [mealImageUrl, setMealImageUrl] = useState("");
   const [person, setPerson] = useState(null);
-  const [memoryImageUrl, setMemoryImageUrl] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
+  const [selectedScene, setSelectedScene] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [result, setResult] = useState(null);
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 30000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
+    fetchPeople().then((people) => setPerson(people[0] || null)).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
+  const handleSelectScene = (scene) => {
+    setSelectedScene(scene);
+    setResult(null);
+  };
 
-    async function loadDemoScenes() {
-      try {
-        const [mealRecords, people] = await Promise.all([
-          fetchMealRecords(),
-          fetchPeople(),
-        ]);
-        const mealWithImage = mealRecords.find((record) => record.sceneImage);
-        const selectedPerson = people[0] || null;
+  const handleAnalyze = () => {
+    if (!selectedScene || isAnalyzing) return;
+    setIsAnalyzing(true);
+    window.setTimeout(() => {
+      setResult(createResult(selectedScene, person));
+      setIsAnalyzing(false);
+    }, 700);
+  };
 
-        if (!isMounted) {
-          return;
-        }
-
-        setMealImageUrl(getApiMediaUrl(mealWithImage?.sceneImage));
-        setPerson(selectedPerson);
-
-        if (selectedPerson?.id) {
-          const albumItems = await fetchMemoryAlbumItems(selectedPerson.id);
-
-          if (isMounted) {
-            setMemoryImageUrl(getMemoryAlbumPhotoUrl(albumItems[0]?.photo_url));
-          }
-        }
-      } catch {
-        // 사진을 불러오지 못해도 각 기록 화면으로 이동하는 체험은 제공한다.
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+  const handleResultAction = () => {
+    if (selectedScene?.id === "known-person" && person?.id) {
+      navigate(`/patient/memory-album/${person.id}`, { state: { person } });
+    } else if (selectedScene?.id === "meal") {
+      navigate("/patient/meal-records");
+    } else if (selectedScene?.id === "unknown-person") {
+      navigate("/patient/daily");
+    } else {
+      setSelectedScene(null);
+      setResult(null);
     }
-
-    loadDemoScenes();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  };
 
   return (
     <main className="demo-scenes-page">
       <div className="demo-scenes-page__background" aria-hidden="true" />
-
       <header className="demo-scenes-page__header">
-        <section className="demo-scenes-page__date-time" aria-live="polite">
-          <p>{formatDate(currentDateTime)}</p>
-          <strong>{formatTime(currentDateTime)}</strong>
-          <span aria-hidden="true" />
-        </section>
-        <button
-          className="demo-scenes-page__collapse-button"
-          type="button"
-          onClick={() => navigate("/roles")}
-        >
-          돌아가기
-        </button>
+        <div><p>기억새록 데모</p><h1>예시 장면으로 일상을 살펴보세요</h1></div>
+        <button type="button" onClick={() => navigate("/roles")}>돌아가기</button>
       </header>
 
-      <section className="demo-scenes-page__intro">
-        <span aria-hidden="true" />
-        <div>
-          <h1>예시 장면으로 체험해 볼까요?</h1>
-          <p>준비된 식사 기록과 가족의 추억을 살펴볼 수 있어요.</p>
+      <section className="demo-scenes-page__stage" aria-label="예시 장면 선택">
+        <p className="demo-scenes-page__guide">준비된 장면을 고른 뒤 인식해 보세요.</p>
+        <div className="demo-scenes-page__scene-list">
+          {DEMO_SCENES.map((scene) => (
+            <button key={scene.id} type="button" className={selectedScene?.id === scene.id ? "is-selected" : ""} onClick={() => handleSelectScene(scene)}>
+              <span>{scene.group}</span><strong>{scene.title}</strong><small>{scene.description}</small>
+            </button>
+          ))}
         </div>
-      </section>
-
-      <section className="demo-scenes-page__content" aria-label="예시 장면">
-        {isLoading && <p className="demo-scenes-page__loading">예시 장면을 준비하고 있어요.</p>}
-
-        {!isLoading && (
-          <div className="demo-scenes-page__cards">
-            <article className="demo-scenes-page__card">
-              {mealImageUrl ? (
-                <img src={mealImageUrl} alt="준비된 식사 장면" />
-              ) : (
-                <div className="demo-scenes-page__image-placeholder" aria-hidden="true">식사 기록</div>
-              )}
-              <div>
-                <h2>식사 기록</h2>
-                <p>준비된 식사 장면을 살펴보세요.</p>
-                <button type="button" onClick={() => navigate("/patient/meal-records")}>
-                  식사 기록 보기
-                </button>
-              </div>
-            </article>
-
-            <article className="demo-scenes-page__card">
-              {memoryImageUrl ? (
-                <img src={memoryImageUrl} alt={`${getPersonLabel(person)} 추억 사진`} />
-              ) : (
-                <div className="demo-scenes-page__image-placeholder" aria-hidden="true">가족 추억</div>
-              )}
-              <div>
-                <h2>{getPersonLabel(person)}</h2>
-                <p>가족과의 추억을 함께 살펴보세요.</p>
-                <button
-                  type="button"
-                  disabled={!person?.id}
-                  onClick={() =>
-                    navigate(`/patient/memory-album/${person.id}`, {
-                      state: { person },
-                    })
-                  }
-                >
-                  추억 살펴보기
-                </button>
-              </div>
-            </article>
-          </div>
-        )}
-
-        <button
-          className="demo-scenes-page__camera-action"
-          type="button"
-          onClick={() => navigate("/patient/daily")}
-        >
-          카메라로 직접 체험하기
+        <button className="demo-scenes-page__analyze-button" type="button" disabled={!selectedScene || isAnalyzing} onClick={handleAnalyze}>
+          {isAnalyzing ? "장면을 인식하고 있어요" : selectedScene ? `${selectedScene.title} 인식하기` : "장면을 선택해 주세요"}
         </button>
       </section>
+
+      {result && <section className="demo-scenes-page__result" role="status"><h2>{result.title}</h2><p>{result.message}</p><button type="button" onClick={handleResultAction}>{result.action}</button></section>}
+      <button className="demo-scenes-page__camera-action" type="button" onClick={() => navigate("/patient/daily")}>후면 카메라로 직접 체험하기</button>
     </main>
   );
 }

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { CameraPreview } from "@/features/camera/components";
-import useCamera from "@/features/camera/hooks/useCamera";
+import {
+  DEMO_EXPERIENCE_MODES,
+  setDemoExperienceMode,
+} from "@/shared/demo/demoExperienceMode";
 
 import "./PatientHomePage.css";
 
@@ -48,13 +50,31 @@ function MemoryIcon() {
   );
 }
 
+function CameraIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M4.5 8.2h3l1.2-2h6.6l1.2 2h3a1.8 1.8 0 0 1 1.8 1.8v7.8a1.8 1.8 0 0 1-1.8 1.8H4.5A1.8 1.8 0 0 1 2.7 17.8V10A1.8 1.8 0 0 1 4.5 8.2Z" />
+      <circle cx="12" cy="13.8" r="3.2" />
+    </svg>
+  );
+}
+
 const ACTION_CARDS = [
   {
     to: "/patient/daily",
-    title: "일상 모드",
-    description: "일상 화면으로 들어가요",
+    title: "카메라로 체험하기",
+    description: "후면 카메라를 권장해요",
+    icon: <CameraIcon />,
+    tone: "daily",
+    demoMode: DEMO_EXPERIENCE_MODES.REAR_CAMERA,
+  },
+  {
+    to: "/patient/demo-scenes",
+    title: "예시 장면으로 체험하기",
+    description: "준비된 장면을 인식해 봐요",
     icon: <HomeIcon />,
     tone: "daily",
+    demoMode: DEMO_EXPERIENCE_MODES.EXAMPLE_SCENES,
   },
   {
     to: "/patient/memories",
@@ -66,7 +86,6 @@ const ACTION_CARDS = [
 ];
 
 export default function PatientHomePage() {
-  const camera = useCamera();
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
 
   useEffect(() => {
@@ -81,8 +100,6 @@ export default function PatientHomePage() {
 
   return (
     <main className="patient-home-page">
-      <CameraPreview {...camera} showPermissionNotice={false} />
-
       <section className="patient-home-page__date-time" aria-live="polite">
         <p>{formatDate(currentDateTime)}</p>
         <strong>{formatTime(currentDateTime)}</strong>
@@ -108,6 +125,7 @@ export default function PatientHomePage() {
             data-tone={card.tone}
             key={card.to}
             to={card.to}
+            onClick={() => card.demoMode && setDemoExperienceMode(card.demoMode)}
           >
             <span className="patient-home-page__card-icon">{card.icon}</span>
             <strong>{card.title}</strong>

@@ -1,10 +1,6 @@
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../../features/auth/context/authContextValue";
-import {
-  DEMO_EXPERIENCE_MODES,
-  setDemoExperienceMode,
-} from "../../shared/demo/demoExperienceMode";
 
 import "./RoleSelectPage.css";
 
@@ -29,24 +25,7 @@ const RoleSelectPage = () => {
         </p>
 
         <div className="role-select-page__actions">
-          <Link
-            to="/patient/daily"
-            onClick={() =>
-              setDemoExperienceMode(DEMO_EXPERIENCE_MODES.REAR_CAMERA)
-            }
-          >
-            <strong>환자 모드</strong>
-            <span>후면 카메라</span>
-          </Link>
-          <Link
-            to="/patient/demo-scenes"
-            onClick={() =>
-              setDemoExperienceMode(DEMO_EXPERIENCE_MODES.EXAMPLE_SCENES)
-            }
-          >
-            <strong>환자 모드</strong>
-            <span>예시 장면</span>
-          </Link>
+          <Link to="/patient"><strong>환자 모드</strong></Link>
           <Link to="/caregiver">
             <strong>보호자 모드</strong>
           </Link>
