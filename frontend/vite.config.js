@@ -22,7 +22,7 @@ export default defineConfig({
         orientation: "landscape",
         icons: [
           {
-            src: "/icons/temp_512x512.png",
+            src: "/icon.png",
             sizes: "512x512",
             type: "image/png",
           },
