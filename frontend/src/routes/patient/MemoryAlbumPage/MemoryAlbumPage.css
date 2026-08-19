@@ -46,6 +46,10 @@
   gap: 10px;
 }
 
+.memory-album-page__header .memory-album-page__register-button {
+  margin-top: 14px;
+}
+
 .memory-album-page__header p,
 .memory-album-page__header h1,
 .memory-album-page__state,
@@ -96,6 +100,12 @@
 
 .memory-album-page__back-button {
   padding: 0 18px;
+}
+
+.memory-album-page__back-button.page-back-button {
+  background: rgba(255, 255, 255, 0.14) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .memory-album-page__form {
@@ -226,6 +236,7 @@
   font-weight: 700;
 }
 .memory-album-page__empty h2 {
+  color: white;
   font-size: 22px;
   font-weight: 900;
   line-height: 1.2;
@@ -343,11 +354,7 @@
     flex-direction: column;
   }
   .memory-album-page__header-actions {
-    width: 100%;
-  }
-  .memory-album-page__register-button,
-  .memory-album-page__back-button {
-    width: 100%;
+    display: contents;
   }
   .memory-album-page__form {
     grid-template-columns: 1fr;

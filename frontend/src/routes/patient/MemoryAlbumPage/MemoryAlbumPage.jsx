@@ -311,6 +311,13 @@ export default function MemoryAlbumPage() {
         <div>
           <p>{personLabel}</p>
           <h1>추억 카드</h1>
+          <button
+            className="memory-album-page__register-button"
+            type="button"
+            onClick={handleToggleForm}
+          >
+            {isFormOpen ? "등록 닫기" : "추억 등록"}
+          </button>
         </div>
 
         <div className="memory-album-page__header-actions">
@@ -320,13 +327,6 @@ export default function MemoryAlbumPage() {
             onClick={() => nav(-1)}
           >
             돌아가기
-          </button>
-          <button
-            className="memory-album-page__register-button"
-            type="button"
-            onClick={handleToggleForm}
-          >
-            {isFormOpen ? "등록 닫기" : "추억 등록"}
           </button>
         </div>
       </header>
@@ -406,7 +406,7 @@ export default function MemoryAlbumPage() {
         {!isLoading && !errorMessage && albumItems.length === 0 && (
           <div className="memory-album-page__empty">
             <h2>아직 등록된 추억이 없습니다.</h2>
-            <p>오른쪽 위의 추억 등록 버튼으로 첫 사진을 추가해보세요.</p>
+            <p>추억 등록을 눌러 첫 사진을 남겨 보세요.</p>
           </div>
         )}
 
