@@ -5,13 +5,16 @@
 ```text
 demo-scenes/
 ├─ people/
-│  ├─ registered/  # 등록된 보호자 이미지 2장
-│  └─ unknown/     # 미등록 인물 이미지 2장
-├─ meals/           # 식사 장면 이미지 2장
-└─ non-meals/       # 비식사 장면 이미지 2장
+│  ├─ registered/  # caregiver_demo_1.png, caregiver_demo_2.png
+│  └─ unknown/     # grandchild_demo_1.png, neighbor_demo_1.png
+├─ meals/           # meal_demo_1.jpg, meal_demo_2.jpg
+└─ non-meals/       # non_meal_demo_1.jpg, non_meal_demo_2.jpg
 ```
 
-- 인물 이미지는 AI 생성 이미지를 사용할 수 있습니다.
-- 식사·비식사 이미지는 실제 카메라 장면과 분류 모델의 입력 특성을 맞추기 위해 실사 또는 사용 허가된 스톡 사진을 권장합니다.
-- 개인정보가 포함된 사진은 넣지 않습니다.
-
+- 인물 이미지(`people/`)는 AI로 생성한 가상 인물 이미지입니다.
+- 식사 이미지(`meals/`)는 직접 촬영한 식사 사진입니다.
+  - `meal_demo_1.jpg`: 한식 식사 장면(불고기, 흰밥, 콩나물무침, 김치 등)
+  - `meal_demo_2.jpg`: 카페 식사 장면(빵, 아이스크림, 커피)
+- 비식사 이미지(`non-meals/`)는 Pixabay의 로열티 프리 이미지를 사용합니다.
+  - `non-meal_demo_1.jpg`: [식탁 · 씌우다 · 안경 · 가구](https://pixabay.com/ko/photos/%EC%8B%9D%ED%83%81-%EC%94%8C%EC%9A%B0%EB%8B%A4-%EC%95%88%EA%B2%BD-%EA%B0%80%EA%B5%AC-728738/)
+  - `non-meal_demo_2.jpg`: [부엌 · 카운터 · 방 · 의자 · 집](https://pixabay.com/ko/photos/%EB%B6%80%EC%97%8C-%EC%B9%B4%EC%9A%B4%ED%84%B0-%EB%B0%A9-%EC%9D%98%EC%9E%90-%EC%A7%91-2174593/)

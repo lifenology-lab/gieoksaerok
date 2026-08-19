@@ -3,10 +3,17 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchPeople } from "@/features/face-recognition/api/peopleApi";
 import { loadFaceApiModels } from "@/features/face-recognition/hooks/usePersonRecognition";
+import { classifyMealScene } from "@/features/meal-recognition/model/teachableMachineMealClassifier";
 
 import "./DemoScenesPage.css";
 
 const FACE_MATCH_THRESHOLD = 0.55;
+
+const DEMO_ASSET_INFO = {
+  title: "예시 이미지 안내",
+  info:
+    "인물 예시 이미지: AI로 생성한 가상 인물 이미지입니다.\n식사 예시 이미지: 직접 촬영한 식사 사진입니다.\n비식사 예시 이미지: Pixabay의 로열티 프리 이미지를 사용했습니다.",
+};
 
 const DEMO_PERSON_SCENES = [
   {
@@ -64,14 +71,14 @@ const DEMO_MEAL_SCENES = [
     id: "non-meal-1",
     type: "non-meal",
     title: "비식사 장면",
-    image: "/demo-scenes/non-meals/non_meal_demo_1.jpg",
+    image: "/demo-scenes/non-meals/non-meal_demo_1.jpg",
     info: "식사와 관계없는 장면을 구분하는 예시예요.",
   },
   {
     id: "non-meal-2",
     type: "non-meal",
     title: "비식사 장면",
-    image: "/demo-scenes/non-meals/non_meal_demo_2.jpg",
+    image: "/demo-scenes/non-meals/non-meal_demo_2.jpg",
     info: "다른 비식사 장면도 추가할 수 있어요.",
   },
 ];
@@ -192,17 +199,35 @@ function SceneTile({ scene, selected, onSelect, onShowInfo }) {
   );
 }
 
-function createMealResult(scene) {
-  if (scene.type === "meal") {
+function loadDemoImage(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("예시 이미지를 불러오지 못했어요."));
+    image.src = source;
+  });
+}
+
+async function analyzeMealScene(scene) {
+  const image = await loadDemoImage(scene.image);
+
+  return classifyMealScene(image);
+}
+
+function createMealResult(scene, mealSceneResult) {
+  const confidence = Math.round(mealSceneResult.mealSceneProbability * 100);
+
+  if (mealSceneResult.isMealScene) {
     return {
-      title: "식사 장면으로 보입니다",
-      message: "일상 모드에서는 식사 기록을 남기는 카드가 이어서 열려요.",
+      title: "식사 장면으로 인식했어요",
+      message: `식사 장면일 가능성이 ${confidence}%예요. 일상 모드에서는 식사 기록을 남기는 카드가 이어서 열려요.`,
     };
   }
 
   return {
     title: "식사 장면이 아니에요",
-    message: "다른 예시 장면을 선택해 보세요.",
+    message: `식사 장면일 가능성이 ${confidence}%예요. 다른 예시 장면을 선택해 보세요.`,
   };
 }
 
@@ -261,7 +286,12 @@ export default function DemoScenesPage() {
               : "데모용 인물 정보를 미리 채워 두었어요.",
         });
       } else {
-        setResult({ scene: selectedScene, ...createMealResult(selectedScene) });
+        const mealSceneResult = await analyzeMealScene(selectedScene);
+
+        setResult({
+          scene: selectedScene,
+          ...createMealResult(selectedScene, mealSceneResult),
+        });
       }
     } catch (error) {
       setResult({
@@ -304,9 +334,18 @@ export default function DemoScenesPage() {
       </header>
 
       <section className="demo-scenes-page__stage" aria-label="예시 장면 선택">
-        <p className="demo-scenes-page__guide">
-          사진을 고른 뒤 인식하기를 눌러 보세요.
-        </p>
+        <div className="demo-scenes-page__guide-row">
+          <p className="demo-scenes-page__guide">
+            사진을 고른 뒤 인식하기를 눌러 보세요.
+          </p>
+          <button
+            className="demo-scenes-page__asset-info-button"
+            type="button"
+            onClick={() => setInfoScene(DEMO_ASSET_INFO)}
+          >
+            이미지 안내
+          </button>
+        </div>
 
         <div className="demo-scenes-page__scene-groups">
           <section
