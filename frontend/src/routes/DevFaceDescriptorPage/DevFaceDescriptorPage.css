@@ -1,0 +1,119 @@
+.dev-face-descriptor-page {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 24px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(164, 240, 223, 0.22), transparent 30%),
+    linear-gradient(135deg, #344b43, #5f746a);
+}
+
+.dev-face-descriptor-page__card {
+  width: min(720px, 100%);
+  padding: clamp(22px, 5vw, 42px);
+  border: 1px solid rgba(164, 240, 223, 0.45);
+  border-radius: 24px;
+  background: rgba(28, 59, 49, 0.76);
+}
+
+.dev-face-descriptor-page__card > p,
+.dev-face-descriptor-page__card > h1,
+.dev-face-descriptor-page__card > span {
+  margin: 0;
+}
+
+.dev-face-descriptor-page__card > p {
+  color: #a4f0df;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.dev-face-descriptor-page__card h1 {
+  margin-top: 8px;
+  font-size: clamp(26px, 5vw, 38px);
+  letter-spacing: -0.04em;
+}
+
+.dev-face-descriptor-page__card > span {
+  display: block;
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.84);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.dev-face-descriptor-page__images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.dev-face-descriptor-page__images img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.dev-face-descriptor-page button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 20px;
+  color: #173b31;
+  background: #a4f0df;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dev-face-descriptor-page button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.dev-face-descriptor-page__error,
+.dev-face-descriptor-page__complete {
+  margin-top: 16px !important;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.dev-face-descriptor-page__error {
+  color: #ffb7b7;
+}
+
+.dev-face-descriptor-page__complete {
+  color: #a4f0df;
+}
+
+.dev-face-descriptor-page code {
+  overflow-wrap: anywhere;
+}
+
+.dev-face-descriptor-page textarea {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid rgba(164, 240, 223, 0.7);
+  border-radius: 14px;
+  padding: 12px;
+  color: #f1fffb;
+  background: rgba(0, 0, 0, 0.18);
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  resize: vertical;
+}
+
+.dev-face-descriptor-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+@media (max-width: 520px) {
+  .dev-face-descriptor-page {
+    padding: 16px;
+  }
+}

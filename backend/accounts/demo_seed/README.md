@@ -28,3 +28,21 @@
 
 사진 파일명은 촬영 시점을 알 수 있도록 `2026_oct.png`처럼 연도와 월을 포함하는 것을
 권장합니다.
+
+## 김지민 인물 등록
+
+`people/jimin/person.json`에는 인물의 이름·관계와 descriptor 파일 경로가 있습니다.
+`face-descriptor.example.json`을 `face-descriptor.json`으로 복사한 뒤, 브라우저의
+face-api가 추출한 128개 숫자 배열을 `descriptor`에 넣습니다. 두 보호자 사진에서
+추출한 descriptor는 평균을 내어 사용할 것을 권장합니다.
+
+개발 서버를 실행한 뒤 `http://localhost:5173/dev/demo-face-descriptor`를 열면 두
+보호자 사진의 평균 descriptor를 만들고 `face-descriptor.json` 파일로 내려받을 수
+있습니다. 내려받은 파일을 `people/jimin/face-descriptor.json`에 저장합니다.
+
+모든 자료를 채운 뒤에는 아래 명령을 한 번 실행합니다. 명령은 같은 김지민 인물과
+같은 추억 사진을 중복 생성하지 않고 갱신합니다.
+
+```powershell
+venv\Scripts\python.exe manage.py seed_demo_persona
+```

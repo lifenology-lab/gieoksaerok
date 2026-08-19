@@ -14,6 +14,7 @@ import MealRecordsPage from "./routes/patient/MealRecordsPage/MealRecordsPage";
 import MemoryAlbumPage from "./routes/patient/MemoryAlbumPage/MemoryAlbumPage";
 import MemoryOverviewPage from "./routes/patient/MemoryOverviewPage/MemoryOverviewPage";
 import DemoScenesPage from "./routes/patient/DemoScenesPage/DemoScenesPage";
+import DevFaceDescriptorPage from "./routes/DevFaceDescriptorPage/DevFaceDescriptorPage";
 import LandingPage from "./routes/LandingPage/LandingPage";
 import InstallGuidePage from "./routes/InstallGuidePage/InstallGuidePage";
 import LandscapeGuard from "./shared/layout/LandScapeGuard";
@@ -34,6 +35,12 @@ function App() {
           <Route path="/" element={<LandingPage />}></Route>
           <Route path="/auth" element={<AuthPage />}></Route>
           <Route path="/install" element={<InstallGuidePage />}></Route>
+          {import.meta.env.DEV && (
+            <Route
+              path="/dev/demo-face-descriptor"
+              element={<DevFaceDescriptorPage />}
+            ></Route>
+          )}
           <Route
             path="/roles"
             element={protectedPage(<RoleSelectPage />)}

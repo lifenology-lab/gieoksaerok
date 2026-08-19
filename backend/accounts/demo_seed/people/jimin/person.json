@@ -1,0 +1,9 @@
+{
+  "name": "김지민",
+  "relationship": "딸",
+  "face_descriptor_file": "people/jimin/face-descriptor.json",
+  "face_images": [
+    "../../../../../frontend/public/demo-scenes/people/registered/caregiver_demo_1.png",
+    "../../../../../frontend/public/demo-scenes/people/registered/caregiver_demo_2.png"
+  ]
+}
