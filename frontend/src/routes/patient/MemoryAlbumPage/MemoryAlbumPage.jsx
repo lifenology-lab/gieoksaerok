@@ -315,11 +315,11 @@ export default function MemoryAlbumPage() {
 
         <div className="memory-album-page__header-actions">
           <button
-            className="memory-album-page__back-button"
+            className="memory-album-page__back-button page-back-button"
             type="button"
             onClick={() => nav(-1)}
           >
-            이전으로 돌아가기
+            돌아가기
           </button>
           <button
             className="memory-album-page__register-button"

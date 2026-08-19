@@ -438,7 +438,7 @@ export default function MemoryOverviewPage() {
           <strong>{formatMemoryOverviewTime(currentDateTime)}</strong>
           <span aria-hidden="true" />
         </div>
-        <button type="button" onClick={() => navigate("/patient")}>홈으로</button>
+        <button className="page-back-button" type="button" onClick={() => navigate("/patient")}>돌아가기</button>
       </header>
 
       <section className="memory-overview-page__intro">

@@ -106,7 +106,7 @@ export default function PatientHomePage() {
         <span aria-hidden="true" />
       </section>
 
-      <Link className="patient-home-page__collapse-button" to="/roles">
+      <Link className="patient-home-page__collapse-button page-back-button" to="/roles">
         <span>돌아가기</span>
       </Link>
 

@@ -53,7 +53,7 @@ const CaregiverHomePage = () => {
         </div>
       </header>
 
-      <Link className="caregiver-home-page__back-button" to="/roles">
+      <Link className="caregiver-home-page__back-button page-back-button" to="/roles">
         돌아가기
       </Link>
 

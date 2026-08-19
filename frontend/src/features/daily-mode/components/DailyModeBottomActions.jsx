@@ -1,13 +1,3 @@
-function HomeIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="M4 11.2 12 4l8 7.2" />
-      <path d="M6.5 10.4V20h11v-9.6" />
-      <path d="M9.5 20v-5.8h5V20" />
-    </svg>
-  );
-}
-
 function HelpIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -25,14 +15,11 @@ export default function DailyModeBottomActions({
     <>
       <section className="daily-mode-page__home-actions">
         <button
-          className="daily-mode-page__glass-button"
-          type="button"
-          onClick={onGoHome}
-        >
-          <span className="daily-mode-page__glass-icon">
-            <HomeIcon />
-          </span>
-          <span>돌아가기</span>
+          className="daily-mode-page__glass-button page-back-button"
+        type="button"
+        onClick={onGoHome}
+      >
+          돌아가기
         </button>
       </section>
 

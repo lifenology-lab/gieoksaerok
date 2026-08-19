@@ -222,7 +222,7 @@ export default function CaregiverMemoryRegisterPage() {
           <h1>추억 등록</h1>
         </div>
 
-        <Link to="/caregiver">보호자 홈으로 돌아가기</Link>
+        <Link className="page-back-button" to="/caregiver">돌아가기</Link>
       </header>
 
       <form

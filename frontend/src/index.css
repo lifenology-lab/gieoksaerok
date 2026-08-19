@@ -83,6 +83,51 @@ body,
   min-height: 100%;
 }
 
+.page-back-button {
+  position: fixed !important;
+  top: max(var(--page-gutter), env(safe-area-inset-top)) !important;
+  right: max(var(--page-gutter), env(safe-area-inset-right)) !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 40 !important;
+  min-width: 132px !important;
+  min-height: 52px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgba(255, 255, 255, 0.42) !important;
+  border-radius: 999px !important;
+  padding: 0 22px !important;
+  color: rgba(255, 255, 255, 0.94) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 12px 30px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font: inherit !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+
+.page-back-button:hover,
+.page-back-button:focus-visible {
+  border-color: rgba(184, 255, 240, 0.9) !important;
+  filter: brightness(1.08);
+  outline: none;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .page-back-button {
+    top: max(10px, env(safe-area-inset-top)) !important;
+    right: max(14px, env(safe-area-inset-right)) !important;
+    min-width: 110px !important;
+    min-height: 40px !important;
+    padding: 0 14px !important;
+    font-size: 14px !important;
+  }
+}
+
 *,
 *::before,
 *::after {

@@ -300,6 +300,14 @@ export default function MealRecordsPage() {
         </section>
       )}
 
+      <button
+        className="page-back-button"
+        type="button"
+        onClick={() => navigate(-1)}
+      >
+        돌아가기
+      </button>
+
       <nav className="meal-records-page__navigation" aria-label="페이지 이동">
         <button type="button" onClick={() => navigate("/patient/daily")}>
           일상 모드로 돌아가기

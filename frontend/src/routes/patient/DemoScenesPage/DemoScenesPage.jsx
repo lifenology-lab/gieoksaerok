@@ -67,7 +67,7 @@ export default function DemoScenesPage() {
       <div className="demo-scenes-page__background" aria-hidden="true" />
       <header className="demo-scenes-page__header">
         <div><p>기억새록 데모</p><h1>예시 장면으로 일상을 살펴보세요</h1></div>
-        <button type="button" onClick={() => navigate("/roles")}>돌아가기</button>
+        <button className="page-back-button" type="button" onClick={() => navigate("/patient")}>돌아가기</button>
       </header>
 
       <section className="demo-scenes-page__stage" aria-label="예시 장면 선택">

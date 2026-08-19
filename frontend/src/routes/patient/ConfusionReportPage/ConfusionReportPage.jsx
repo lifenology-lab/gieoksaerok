@@ -222,6 +222,14 @@ export default function ConfusionReportPage() {
         )}
       </section>
 
+      <button
+        className="page-back-button"
+        type="button"
+        onClick={() => navigate(-1)}
+      >
+        돌아가기
+      </button>
+
       <section className="confusion-report-page__navigation-actions">
         {!isCaregiverRoute && (
           <button

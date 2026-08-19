@@ -258,7 +258,7 @@ export default function ConfusionSelectPage() {
 
       <button
         type="button"
-        className="confusion-select-page__back-button"
+        className="confusion-select-page__back-button page-back-button"
         onClick={handleBack}
       >
         돌아가기
