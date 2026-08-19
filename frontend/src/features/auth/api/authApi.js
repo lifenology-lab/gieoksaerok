@@ -20,6 +20,17 @@ export async function loginUser({ username, password }) {
   return data;
 }
 
+export async function startDemoExperience() {
+  const data = await request("/api/auth/demo/", {
+    method: "POST",
+    skipAuth: true,
+  });
+
+  setAuthTokens(data);
+
+  return data;
+}
+
 export function signUpUser({ username, password, name, email }) {
   return request("/api/auth/signup/", {
     method: "POST",

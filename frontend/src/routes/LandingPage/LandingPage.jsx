@@ -101,7 +101,7 @@ export default function LandingPage() {
                   className="landing-primary-button"
                   onClick={() => navigate("/auth", { replace: true })}
                 >
-                  다시 로그인하기
+                  데모 체험 시작하기
                 </button>
 
                 <button
@@ -153,7 +153,7 @@ export default function LandingPage() {
             className="landing-secondary-button"
             onClick={() => navigate("/auth")}
           >
-            로그인하고 체험하기
+            데모 체험 시작하기
           </button>
         </div>
       </section>

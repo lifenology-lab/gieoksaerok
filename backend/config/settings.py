@@ -46,6 +46,11 @@ is_local_environment = env(
     default=DEBUG or local_env_file.exists(),
 )
 
+# 온라인 전시용 데모 계정입니다. 실제 계정 정보를 프론트엔드에 노출하지 않고,
+# 명시적으로 활성화된 경우에만 전용 로그인 API에서 토큰을 발급합니다.
+DEMO_EXPERIENCE_ENABLED = env.bool('DEMO_EXPERIENCE_ENABLED', default=False)
+DEMO_EXPERIENCE_USERNAME = env('DEMO_EXPERIENCE_USERNAME', default='')
+
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 

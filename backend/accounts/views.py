@@ -1,9 +1,10 @@
 from drf_spectacular.utils import extend_schema
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
@@ -55,6 +56,42 @@ class SignUpView(APIView):
 # Simple JWT 기본 view와 바로 연결됨
 class SignInView(TokenObtainPairView):
     serializer_class = SignInSerializer
+
+
+class DemoExperienceView(APIView):
+    """온라인 전시에서 사용할 사전 구성 데모 계정의 토큰을 발급합니다."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(
+        operation_id="데모 체험 시작",
+        description="활성화된 전시용 데모 계정으로 체험 세션을 시작합니다.",
+        responses={200: SignInSerializer, 404: "Not Found", 503: "Demo account unavailable"},
+    )
+    def post(self, request):
+        if not settings.DEMO_EXPERIENCE_ENABLED:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        username = settings.DEMO_EXPERIENCE_USERNAME.strip()
+        user = User.objects.filter(username=username, is_active=True).first()
+
+        if not username or user is None:
+            return Response(
+                {"detail": "데모 계정이 아직 준비되지 않았어요."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
