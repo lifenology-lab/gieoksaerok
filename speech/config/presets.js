@@ -24,6 +24,11 @@ export const PRESET_SPEECH_SOURCE = {
     text: "식사 기록을 남길까요?",
   },
 
+  MEAL_RECORD_COMPLETED: {
+    file: "meal-record-completed.mp3",
+    text: "식사 기록이 완료되었어요.",
+  },
+
   UNKNOWN_PERSON: {
     file: "unknown-person.mp3",
     text: "등록되지 않은 분이에요. 등록할까요?",

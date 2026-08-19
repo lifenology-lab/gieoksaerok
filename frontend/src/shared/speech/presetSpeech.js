@@ -9,6 +9,8 @@ export const PRESET_SPEECH = {
 
   MEAL_SAVE_PROMPT: "/audio/preset/v1/meal-save-prompt.mp3",
 
+  MEAL_RECORD_COMPLETED: "/audio/preset/v1/meal-record-completed.mp3",
+
   UNKNOWN_PERSON: "/audio/preset/v1/unknown-person.mp3",
 
   FAMILY_HELP_PROMPT: "/audio/preset/v1/family-help-prompt.mp3",

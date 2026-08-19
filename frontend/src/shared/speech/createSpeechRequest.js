@@ -10,12 +10,16 @@ export function createNoSpeechRequest() {
   return { mode: SPEECH_MODE.NONE };
 }
 
-export function createPresetSpeechRequest(id) {
+export function createPresetSpeechRequest(id, fallbackText = "") {
   if (!PRESET_SPEECH[id]) {
     return createNoSpeechRequest();
   }
 
-  return { mode: SPEECH_MODE.PRESET, id };
+  return {
+    mode: SPEECH_MODE.PRESET,
+    id,
+    fallbackText: fallbackText.trim(),
+  };
 }
 
 export function createTtsSpeechRequest(text) {

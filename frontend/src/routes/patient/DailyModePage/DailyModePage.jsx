@@ -118,6 +118,13 @@ function createMealRecognitionSpeechRequest(result) {
     return createPresetSpeechRequest("RECENT_MEAL_FOUND");
   }
 
+  if (result.type === "meal_record_completed") {
+    return createPresetSpeechRequest(
+      "MEAL_RECORD_COMPLETED",
+      "식사 기록이 완료되었어요.",
+    );
+  }
+
   return createTtsSpeechRequest(`${result.title || ""} ${result.message || ""}`);
 }
 
@@ -207,6 +214,7 @@ export default function DailyModePage() {
   useEffect(() => {
     preloadPreset("MEAL_CHECK");
     preloadPreset("RECENT_MEAL_FOUND");
+    preloadPreset("MEAL_RECORD_COMPLETED");
     preloadPreset("UNKNOWN_PERSON");
   }, [preloadPreset]);
 

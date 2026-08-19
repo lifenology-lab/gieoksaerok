@@ -29,7 +29,16 @@ export default function useSpeechPlayback({ requestTts } = {}) {
 
       try {
         if (speechRequest.mode === SPEECH_MODE.PRESET) {
-          await speechPlayer.playPreset(speechRequest.id, options);
+          try {
+            await speechPlayer.playPreset(speechRequest.id, options);
+          } catch (presetError) {
+            if (!speechRequest.fallbackText || !requestTts) {
+              throw presetError;
+            }
+
+            const audioBlob = await requestTts(speechRequest.fallbackText);
+            await speechPlayer.playTts(audioBlob, options);
+          }
           return;
         }
 
