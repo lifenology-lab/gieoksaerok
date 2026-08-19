@@ -5,6 +5,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from accounts.demo_services import is_demo_session_user
 from .models import ConfusionEvent, MealContextEvent, MealRecord
 from .serializers import (
     ConfusionEventSerializer,
@@ -82,7 +83,7 @@ class MealRecordSceneImageView(APIView):
             user=request.user,
         )
 
-        if meal_record.scene_image:
+        if meal_record.scene_image and not is_demo_session_user(request.user):
             meal_record.scene_image.delete(save=False)
             meal_record.scene_image = None
             meal_record.save(update_fields=['scene_image', 'updated_at'])
@@ -108,7 +109,7 @@ class MealRecordDetailView(APIView):
             user=request.user,
         )
 
-        if meal_record.scene_image:
+        if meal_record.scene_image and not is_demo_session_user(request.user):
             meal_record.scene_image.delete(save=False)
 
         meal_record.delete()

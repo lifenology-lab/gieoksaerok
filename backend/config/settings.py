@@ -50,6 +50,7 @@ is_local_environment = env(
 # 명시적으로 활성화된 경우에만 전용 로그인 API에서 토큰을 발급합니다.
 DEMO_EXPERIENCE_ENABLED = env.bool('DEMO_EXPERIENCE_ENABLED', default=False)
 DEMO_EXPERIENCE_USERNAME = env('DEMO_EXPERIENCE_USERNAME', default='')
+DEMO_EXPERIENCE_SESSION_HOURS = env.int('DEMO_EXPERIENCE_SESSION_HOURS', default=72)
 
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')

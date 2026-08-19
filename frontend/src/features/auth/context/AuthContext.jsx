@@ -66,8 +66,8 @@ export function AuthProvider({ children }) {
     [signIn],
   );
 
-  const beginDemoExperience = useCallback(async () => {
-    const data = await startDemoExperience();
+  const beginDemoExperience = useCallback(async ({ mode }) => {
+    const data = await startDemoExperience({ mode });
     const currentUser = data.user || (await fetchCurrentUser());
 
     setUser(currentUser);

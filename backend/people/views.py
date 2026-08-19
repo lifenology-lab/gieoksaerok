@@ -12,6 +12,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from accounts.demo_services import is_demo_session_user
 
 from .models import (
     Conversation,
@@ -758,7 +759,7 @@ class MemoryAlbumItemDetailView(PatientOwnedAPIView):
             person=person,
         )
 
-        if album_item.photo:
+        if album_item.photo and not is_demo_session_user(user):
             album_item.photo.delete(save=False)
 
         album_item.delete()

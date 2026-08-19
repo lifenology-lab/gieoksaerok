@@ -1,6 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
+
+from patient_assistant.models import PatientQuestionEvent
+from people.models import Person
+from records.models import ConfusionEvent, MealRecord
+
+from .models import DemoExperienceSession
 
 
 User = get_user_model()
@@ -14,6 +21,32 @@ class DemoExperienceViewTests(TestCase):
             password="not-used-by-demo-endpoint",
             name="데모 환자",
         )
+        Person.objects.create(
+            user=self.user,
+            name="김민수",
+            relationship="아들",
+            face_descriptor=[0.1, 0.2, 0.3],
+        )
+        MealRecord.objects.create(
+            user=self.user,
+            meal_type="breakfast",
+            eaten_at=timezone.now(),
+            menu="죽",
+            source="caregiver_recorded",
+        )
+        ConfusionEvent.objects.create(
+            user=self.user,
+            confusion_type="place",
+            occurred_at=timezone.now(),
+        )
+        PatientQuestionEvent.objects.create(
+            user=self.user,
+            transcript="여기가 어디지?",
+            input_method="text",
+            intent_type="place",
+            response_summary="현재 위치를 함께 확인해 볼까요?",
+            occurred_at=timezone.now(),
+        )
 
     @override_settings(DEMO_EXPERIENCE_ENABLED=False)
     def test_returns_not_found_when_demo_is_disabled(self):
@@ -23,15 +56,44 @@ class DemoExperienceViewTests(TestCase):
 
     @override_settings(
         DEMO_EXPERIENCE_ENABLED=True,
-        DEMO_EXPERIENCE_USERNAME="gieoksaerok",
+        DEMO_EXPERIENCE_USERNAME="demo-patient",
     )
     def test_returns_tokens_for_configured_demo_user(self):
-        response = self.client.post("/api/auth/demo/")
+        response = self.client.post(
+            "/api/auth/demo/",
+            {"mode": "example-scenes"},
+            format="json",
+        )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["user"]["id"], self.user.id)
+        demo_user = User.objects.get(id=response.data["user"]["id"])
+        demo_session = DemoExperienceSession.objects.get(session_user=demo_user)
+
+        self.assertNotEqual(demo_user.id, self.user.id)
+        self.assertNotEqual(demo_user.username, self.user.username)
+        self.assertEqual(demo_user.name, self.user.name)
+        self.assertEqual(demo_session.template_user, self.user)
+        self.assertEqual(demo_session.mode, "example-scenes")
+        self.assertEqual(Person.objects.filter(user=demo_user).count(), 1)
+        self.assertEqual(MealRecord.objects.filter(user=demo_user).count(), 1)
+        self.assertEqual(ConfusionEvent.objects.filter(user=demo_user).count(), 1)
+        self.assertEqual(PatientQuestionEvent.objects.filter(user=demo_user).count(), 1)
         self.assertIn("access", response.data)
         self.assertIn("refresh", response.data)
+
+    @override_settings(
+        DEMO_EXPERIENCE_ENABLED=True,
+        DEMO_EXPERIENCE_USERNAME="demo-patient",
+    )
+    def test_demo_record_changes_do_not_modify_template_records(self):
+        response = self.client.post("/api/auth/demo/", format="json")
+        demo_user = User.objects.get(id=response.data["user"]["id"])
+        demo_meal_record = MealRecord.objects.get(user=demo_user)
+
+        demo_meal_record.delete()
+
+        self.assertEqual(MealRecord.objects.filter(user=demo_user).count(), 0)
+        self.assertEqual(MealRecord.objects.filter(user=self.user).count(), 1)
 
     @override_settings(
         DEMO_EXPERIENCE_ENABLED=True,

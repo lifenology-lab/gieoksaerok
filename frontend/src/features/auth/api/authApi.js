@@ -20,10 +20,11 @@ export async function loginUser({ username, password }) {
   return data;
 }
 
-export async function startDemoExperience() {
+export async function startDemoExperience({ mode }) {
   const data = await request("/api/auth/demo/", {
     method: "POST",
     skipAuth: true,
+    body: JSON.stringify({ mode }),
   });
 
   setAuthTokens(data);

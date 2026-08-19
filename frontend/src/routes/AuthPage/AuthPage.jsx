@@ -46,7 +46,7 @@ export default function AuthPage() {
     try {
       setIsStarting(true);
       setErrorMessage("");
-      await beginDemoExperience();
+      await beginDemoExperience({ mode: experienceMode });
       setDemoExperienceMode(experienceMode);
       navigate(getRedirectPath(location), { replace: true });
     } catch (error) {

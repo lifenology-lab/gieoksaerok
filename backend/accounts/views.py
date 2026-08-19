@@ -10,6 +10,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .request_serializers import SignUpRequestSerializer, TokenRefreshRequestSerializer
 from .serializers import UserSerializer, SignInSerializer
+from .demo_services import create_demo_experience_session, expire_demo_session_if_needed
+from .models import DemoExperienceSession
 
 User = get_user_model()
 
@@ -74,21 +76,38 @@ class DemoExperienceView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         username = settings.DEMO_EXPERIENCE_USERNAME.strip()
-        user = User.objects.filter(username=username, is_active=True).first()
+        template_user = User.objects.filter(username=username, is_active=True).first()
 
-        if not username or user is None:
+        if not username or template_user is None:
             return Response(
                 {"detail": "데모 계정이 아직 준비되지 않았어요."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
-        refresh = RefreshToken.for_user(user)
+        mode = request.data.get('mode', DemoExperienceSession.MODE_REAR_CAMERA)
+        allowed_modes = {
+            DemoExperienceSession.MODE_REAR_CAMERA,
+            DemoExperienceSession.MODE_EXAMPLE_SCENES,
+        }
+
+        if mode not in allowed_modes:
+            return Response(
+                {"detail": "지원하지 않는 데모 체험 방식이에요."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        demo_session = create_demo_experience_session(template_user, mode)
+        refresh = RefreshToken.for_user(demo_session.session_user)
 
         return Response(
             {
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
-                "user": UserSerializer(user).data,
+                "user": UserSerializer(demo_session.session_user).data,
+                "demo_session": {
+                    "expires_at": demo_session.expires_at,
+                    "mode": demo_session.mode,
+                },
             },
             status=status.HTTP_200_OK,
         )
@@ -102,6 +121,12 @@ class MeView(APIView):
         responses={200: UserSerializer, 401: "Unauthorized"},
     )
     def get(self, request):
+        if expire_demo_session_if_needed(request.user):
+            return Response(
+                {"detail": "데모 체험 기록이 만료되었어요. 새 체험을 시작해 주세요."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
         serializer = UserSerializer(request.user)
 
         return Response(serializer.data)
