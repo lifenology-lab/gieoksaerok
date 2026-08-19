@@ -313,13 +313,22 @@ export default function MemoryAlbumPage() {
           <h1>추억 카드</h1>
         </div>
 
-        <button
-          className="memory-album-page__register-button"
-          type="button"
-          onClick={handleToggleForm}
-        >
-          {isFormOpen ? "등록 닫기" : "추억 등록"}
-        </button>
+        <div className="memory-album-page__header-actions">
+          <button
+            className="memory-album-page__back-button"
+            type="button"
+            onClick={() => nav(-1)}
+          >
+            이전으로 돌아가기
+          </button>
+          <button
+            className="memory-album-page__register-button"
+            type="button"
+            onClick={handleToggleForm}
+          >
+            {isFormOpen ? "등록 닫기" : "추억 등록"}
+          </button>
+        </div>
       </header>
 
       {isFormOpen && (

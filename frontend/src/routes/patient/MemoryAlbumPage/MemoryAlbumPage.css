@@ -1,21 +1,36 @@
 .memory-album-page {
-  min-height: 100svh;
+  min-height: 100dvh;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 28px 20px;
-  color: #18191c;
-  background: #eef3ef;
+  padding: max(var(--page-gutter), env(safe-area-inset-top))
+    max(var(--page-gutter), env(safe-area-inset-right))
+    max(var(--page-bottom-gutter), env(safe-area-inset-bottom))
+    max(var(--page-gutter), env(safe-area-inset-left));
+  color: white;
+  background:
+    radial-gradient(
+      circle at 78% 18%,
+      rgba(145, 232, 214, 0.2),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 12% 88%,
+      rgba(118, 178, 150, 0.18),
+      transparent 30%
+    ),
+    linear-gradient(135deg, #4c6159 0%, #63766b 52%, #44544f 100%);
   text-align: left;
 }
 
 .memory-album-page__header,
 .memory-album-page__form,
-.memory-album-page__album {
+.memory-album-page__album,
+.memory-album-page__return-button {
   width: min(940px, 100%);
   box-sizing: border-box;
-  margin: 0 auto;
+  margin-inline: auto;
 }
 
 .memory-album-page__header {
@@ -25,37 +40,62 @@
   gap: 16px;
 }
 
+.memory-album-page__header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.memory-album-page__header p,
+.memory-album-page__header h1,
+.memory-album-page__state,
+.memory-album-page__empty h2,
+.memory-album-page__empty p,
+.memory-album-page__polaroid p {
+  margin: 0;
+}
+
 .memory-album-page__header p {
-  margin: 0 0 4px;
-  color: #536358;
+  color: #a4f0df;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 900;
 }
 
 .memory-album-page__header h1 {
-  margin: 0;
-  color: #18191c;
-  font-size: 34px;
+  margin-top: 5px;
+  font-size: clamp(28px, 4vw, 38px);
   line-height: 1.15;
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: white;
 }
 
 .memory-album-page__register-button,
+.memory-album-page__back-button,
 .memory-album-page__return-button,
-.memory-album-page__form-footer button {
-  min-height: 44px;
-  border: 0;
-  border-radius: 8px;
+.memory-album-page__form-footer button,
+.memory-album-page__photo-picker,
+.memory-album-page__arrow-button {
+  min-height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.14);
   font: inherit;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
 }
 
-.memory-album-page__register-button {
-  flex: 0 0 auto;
+.memory-album-page__register-button,
+.memory-album-page__form-footer button {
   padding: 0 18px;
-  color: white;
-  background: #176f42;
+  border-color: #91e8d6;
+  color: #18342c;
+  background: #91e8d6;
+}
+
+.memory-album-page__back-button {
+  padding: 0 18px;
 }
 
 .memory-album-page__form {
@@ -63,10 +103,14 @@
   grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
   gap: 16px;
   padding: 18px;
-  border: 1px solid #d3ddd5;
-  border-radius: 8px;
-  background: #fbfcfa;
-  box-shadow: 0 10px 24px rgba(28, 41, 33, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 22px;
+  background: rgba(30, 52, 44, 0.66);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 18px 44px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .memory-album-page__photo-column,
@@ -78,33 +122,31 @@
   gap: 8px;
 }
 
+.memory-album-page__photo-picker {
+  justify-content: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
 .memory-album-page__photo-picker span,
 .memory-album-page__crop-control span,
 .memory-album-page__description-field span {
-  color: #303833;
   font-size: 14px;
   font-weight: 800;
 }
 
 .memory-album-page__photo-picker input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px;
-  border: 1px solid #c9d6cc;
-  border-radius: 8px;
-  background: white;
-  color: #18191c;
-  font: inherit;
-  font-size: 14px;
+  display: none;
 }
 
 .memory-album-page__crop-frame {
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  border: 1px solid #c9d6cc;
-  border-radius: 6px;
-  background: #dce7e0;
+  border: 1px solid rgba(164, 240, 223, 0.58);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -113,7 +155,6 @@
 .memory-album-page__crop-frame--dragging {
   cursor: grabbing;
 }
-
 .memory-album-page__crop-frame img {
   display: block;
   width: 100%;
@@ -128,13 +169,17 @@
   box-sizing: border-box;
   resize: vertical;
   padding: 12px;
-  border: 1px solid #c9d6cc;
-  border-radius: 8px;
-  color: #18191c;
-  background: white;
+  border: 1px solid rgba(164, 240, 223, 0.58);
+  border-radius: 14px;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
   font: inherit;
   font-size: 16px;
   line-height: 1.45;
+}
+
+.memory-album-page__description-field textarea::placeholder {
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .memory-album-page__form-footer {
@@ -146,27 +191,19 @@
 }
 
 .memory-album-page__form-footer span {
-  color: #657168;
+  color: rgba(255, 255, 255, 0.72);
   font-size: 14px;
   font-weight: 700;
 }
-
-.memory-album-page__form-footer button {
-  min-width: 104px;
-  padding: 0 18px;
-  color: white;
-  background: #2f5f9f;
-}
-
-.memory-album-page__form-footer button:disabled {
+.memory-album-page__form-footer button:disabled,
+.memory-album-page__delete-button:disabled {
   cursor: wait;
-  opacity: 0.62;
+  opacity: 0.58;
 }
-
 .memory-album-page__form-message {
   grid-column: 1 / -1;
   margin: 0;
-  color: #a2382f;
+  color: #ffd4d9;
   font-size: 14px;
   font-weight: 700;
 }
@@ -179,29 +216,25 @@
 .memory-album-page__empty {
   box-sizing: border-box;
   padding: 22px;
-  border: 1px solid #d3ddd5;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 20px;
+  background: rgba(30, 52, 44, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .memory-album-page__state {
-  margin: 0;
-  color: #4f5b53;
   font-weight: 700;
 }
-
 .memory-album-page__empty h2 {
-  margin: 0 0 8px;
-  color: #18191c;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.2;
 }
-
 .memory-album-page__empty p {
-  margin: 0;
-  color: #4f5b53;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.8);
   line-height: 1.5;
+  font-weight: 700;
 }
 
 .memory-album-page__album-window {
@@ -210,18 +243,15 @@
   gap: 16px;
   align-items: center;
 }
-
 .memory-album-page__album-window--with-arrows {
   grid-template-columns: 52px minmax(0, 1fr) 52px;
 }
-
 .memory-album-page__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
   align-items: start;
 }
-
 .memory-album-page__grid--single {
   grid-template-columns: minmax(0, 420px);
   justify-content: center;
@@ -230,10 +260,15 @@
 .memory-album-page__polaroid {
   position: relative;
   box-sizing: border-box;
-  padding: 12px 12px 20px;
-  border-radius: 4px;
-  background: #fffdf7;
-  box-shadow: 0 12px 28px rgba(40, 44, 40, 0.16);
+  padding: 10px 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 16px 32px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .memory-album-page__delete-button {
@@ -242,13 +277,13 @@
   right: 6px;
   z-index: 1;
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   place-items: center;
   border: 0;
   border-radius: 50%;
   color: white;
-  background: rgba(24, 25, 28, 0.72);
+  background: rgba(28, 43, 37, 0.8);
   font: inherit;
   font-size: 22px;
   font-weight: 800;
@@ -256,36 +291,21 @@
   cursor: pointer;
 }
 
-.memory-album-page__delete-button:disabled {
-  cursor: wait;
-  opacity: 0.58;
-}
-
-.memory-album-page__polaroid:nth-child(3n + 1) {
-  transform: rotate(-1deg);
-}
-
-.memory-album-page__polaroid:nth-child(3n + 2) {
-  transform: rotate(0.8deg);
-}
-
 .memory-album-page__polaroid p {
   margin: 12px 4px 0;
-  color: #25201b;
   font-size: 16px;
   font-weight: 800;
   line-height: 1.35;
   overflow-wrap: anywhere;
   text-align: center;
 }
-
 .memory-album-page__photo-frame {
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: #dce7e0;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.12);
 }
-
 .memory-album-page__photo-frame img {
   display: block;
   width: 100%;
@@ -296,59 +316,84 @@
 .memory-album-page__arrow-button {
   width: 52px;
   height: 52px;
-  border: 0;
-  border-radius: 50%;
-  color: white;
-  background: #176f42;
-  font: inherit;
-  font-size: 42px;
-  font-weight: 700;
+  padding: 0;
+  font-size: 40px;
   line-height: 1;
-  cursor: pointer;
-  box-shadow: 0 10px 24px rgba(28, 41, 33, 0.16);
+}
+.memory-album-page__return-button {
+  margin-top: auto;
 }
 
-.memory-album-page__return-button {
-  width: min(940px, 100%);
-  margin: auto auto 0;
-  color: white;
-  background: #3d4d44;
+.memory-album-page button:hover,
+.memory-album-page button:focus-visible,
+.memory-album-page__photo-picker:hover,
+.memory-album-page__photo-picker:focus-within {
+  border-color: rgba(184, 255, 240, 0.9);
+  filter: brightness(1.08);
+  outline: none;
 }
 
 @media (max-width: 680px) {
   .memory-album-page {
-    padding: 22px 14px;
+    gap: 14px;
+    padding-inline: 16px;
   }
-
   .memory-album-page__header {
     align-items: stretch;
     flex-direction: column;
   }
-
-  .memory-album-page__register-button {
+  .memory-album-page__header-actions {
     width: 100%;
   }
-
+  .memory-album-page__register-button,
+  .memory-album-page__back-button {
+    width: 100%;
+  }
   .memory-album-page__form {
     grid-template-columns: 1fr;
+    border-radius: 18px;
   }
-
   .memory-album-page__form-footer {
     grid-column: 1;
   }
-
   .memory-album-page__album-window,
   .memory-album-page__album-window--with-arrows {
     grid-template-columns: 1fr;
   }
-
   .memory-album-page__grid,
   .memory-album-page__grid--single {
     grid-template-columns: minmax(0, 1fr);
   }
-
   .memory-album-page__arrow-button {
     width: 100%;
-    border-radius: 8px;
+    border-radius: 999px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .memory-album-page {
+    gap: 10px;
+    padding-block: 12px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .memory-album-page__header h1 {
+    font-size: 24px;
+  }
+  .memory-album-page__header p {
+    font-size: 13px;
+  }
+  .memory-album-page__register-button,
+  .memory-album-page__back-button,
+  .memory-album-page__return-button {
+    min-height: 40px;
+    font-size: 14px;
+  }
+  .memory-album-page__polaroid {
+    padding: 8px 8px 12px;
+  }
+  .memory-album-page__polaroid p {
+    margin-top: 8px;
+    font-size: 13px;
   }
 }
