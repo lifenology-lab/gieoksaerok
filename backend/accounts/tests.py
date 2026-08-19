@@ -9,6 +9,7 @@ from patient_assistant.models import PatientQuestionEvent
 from people.models import Person
 from records.models import ConfusionEvent, MealRecord
 
+from .demo_services import delete_expired_demo_sessions
 from .models import DemoExperienceSession
 
 
@@ -86,6 +87,22 @@ class DemoExperienceViewTests(TestCase):
     @override_settings(
         DEMO_EXPERIENCE_ENABLED=True,
         DEMO_EXPERIENCE_USERNAME="demo-patient",
+        DEMO_EXPERIENCE_SESSION_HOURS=48,
+    )
+    def test_demo_session_expires_after_48_hours(self):
+        response = self.client.post("/api/auth/demo/", format="json")
+        demo_session = DemoExperienceSession.objects.get(
+            session_user_id=response.data["user"]["id"],
+        )
+
+        self.assertLessEqual(
+            abs((demo_session.expires_at - demo_session.created_at).total_seconds() - 48 * 60 * 60),
+            1,
+        )
+
+    @override_settings(
+        DEMO_EXPERIENCE_ENABLED=True,
+        DEMO_EXPERIENCE_USERNAME="demo-patient",
     )
     def test_demo_record_changes_do_not_modify_template_records(self):
         response = self.client.post("/api/auth/demo/", format="json")
@@ -134,8 +151,25 @@ class DemoExperienceViewTests(TestCase):
         response = self.client.get("/api/auth/demo/session/")
 
         self.assertEqual(response.status_code, 401)
-        demo_user.refresh_from_db()
-        self.assertFalse(demo_user.is_active)
+        self.assertFalse(User.objects.filter(id=demo_user.id).exists())
+
+    @override_settings(
+        DEMO_EXPERIENCE_ENABLED=True,
+        DEMO_EXPERIENCE_USERNAME="demo-patient",
+    )
+    def test_expired_demo_session_cleanup_deletes_cloned_data(self):
+        response = self.client.post("/api/auth/demo/", format="json")
+        demo_user_id = response.data["user"]["id"]
+        DemoExperienceSession.objects.filter(session_user_id=demo_user_id).update(
+            expires_at=timezone.now() - timedelta(seconds=1),
+        )
+
+        deleted_count = delete_expired_demo_sessions()
+
+        self.assertEqual(deleted_count, 1)
+        self.assertFalse(User.objects.filter(id=demo_user_id).exists())
+        self.assertEqual(MealRecord.objects.filter(user_id=demo_user_id).count(), 0)
+        self.assertEqual(MealRecord.objects.filter(user=self.user).count(), 1)
 
     @override_settings(
         DEMO_EXPERIENCE_ENABLED=True,

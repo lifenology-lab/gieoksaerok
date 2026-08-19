@@ -280,7 +280,7 @@ def is_demo_session_user(user):
 
 
 def expire_demo_session_if_needed(user):
-    """만료된 데모 세션은 다음 접속부터 사용할 수 없게 처리한다."""
+    """만료된 데모 세션의 복제 사용자와 기록을 즉시 삭제한다."""
     if not getattr(user, 'is_authenticated', False):
         return False
 
@@ -289,9 +289,9 @@ def expire_demo_session_if_needed(user):
         return False
 
     if demo_session.is_expired:
-        if user.is_active:
-            user.is_active = False
-            user.save(update_fields=['is_active'])
+        # session_user 삭제 시 사용자 소유의 복제 기록도 CASCADE로 함께 삭제된다.
+        # 복제 과정에서 원본과 공유한 사진 파일은 Django가 자동으로 지우지 않으므로 안전하다.
+        user.delete()
         return True
 
     DemoExperienceSession.objects.filter(pk=demo_session.pk).update(
@@ -300,6 +300,7 @@ def expire_demo_session_if_needed(user):
     return False
 
 
+@transaction.atomic
 def delete_expired_demo_sessions():
     """만료된 세션 사용자와 그 복제 데이터를 정리한다."""
     expired_sessions = list(

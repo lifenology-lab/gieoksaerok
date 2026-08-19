@@ -10,7 +10,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .request_serializers import SignUpRequestSerializer, TokenRefreshRequestSerializer
 from .serializers import UserSerializer, SignInSerializer
-from .demo_services import create_demo_experience_session, expire_demo_session_if_needed
+from .demo_services import (
+    create_demo_experience_session,
+    delete_expired_demo_sessions,
+    expire_demo_session_if_needed,
+)
 from .models import DemoExperienceSession
 
 User = get_user_model()
@@ -74,6 +78,9 @@ class DemoExperienceView(APIView):
     def post(self, request):
         if not settings.DEMO_EXPERIENCE_ENABLED:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # 별도 정리 명령이 실행되기 전에도 새 체험을 시작할 때 만료 데이터를 정리한다.
+        delete_expired_demo_sessions()
 
         username = settings.DEMO_EXPERIENCE_USERNAME.strip()
         template_user = User.objects.filter(username=username, is_active=True).first()
