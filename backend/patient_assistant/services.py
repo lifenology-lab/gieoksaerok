@@ -81,11 +81,24 @@ def generate_speech_audio(text):
     try:
         from openai import OpenAI
 
+        request_options = {
+            'model': settings.OPENAI_TTS_MODEL,
+            'voice': settings.OPENAI_TTS_VOICE,
+            'input': text,
+            'response_format': 'mp3',
+            'speed': settings.OPENAI_TTS_SPEED,
+        }
+
+        # tts-1 계열은 instructions를 지원하지 않는다. 기존 환경 설정을 유지해도
+        # 오류가 나지 않도록, 지시문을 지원하는 모델에만 전달한다.
+        if (
+            settings.OPENAI_TTS_INSTRUCTIONS
+            and not settings.OPENAI_TTS_MODEL.startswith('tts-1')
+        ):
+            request_options['instructions'] = settings.OPENAI_TTS_INSTRUCTIONS
+
         response = OpenAI(api_key=settings.OPENAI_API_KEY).audio.speech.create(
-            model=settings.OPENAI_TTS_MODEL,
-            voice=settings.OPENAI_TTS_VOICE,
-            input=text,
-            response_format='mp3',
+            **request_options,
         )
         audio = response.read()
     except Exception as exc:

@@ -209,8 +209,17 @@ OPENAI_MEMORY_REFLECTION_MODEL = env(
     'OPENAI_MEMORY_REFLECTION_MODEL',
     default='gpt-4.1',
 )
-OPENAI_TTS_MODEL = env('OPENAI_TTS_MODEL', default='tts-1')
-OPENAI_TTS_VOICE = env('OPENAI_TTS_VOICE', default='alloy')
+OPENAI_TTS_MODEL = env('OPENAI_TTS_MODEL', default='gpt-4o-mini-tts')
+OPENAI_TTS_VOICE = env('OPENAI_TTS_VOICE', default='marin')
+OPENAI_TTS_INSTRUCTIONS = env(
+    'OPENAI_TTS_INSTRUCTIONS',
+    default=(
+        '밝고 다정한 한국어 안내자처럼 말하세요. '
+        '차분하게 미소를 띤 느낌으로, 또렷하고 천천히 말하세요. '
+        '과하게 들뜨거나 유아에게 말하듯 말하지 마세요.'
+    ),
+)
+OPENAI_TTS_SPEED = env.float('OPENAI_TTS_SPEED', default=0.9)
 OPENAI_MEMORY_SUMMARY_MODEL = env('OPENAI_MEMORY_SUMMARY_MODEL', default='gpt-4o')
 OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS = env.int(
         'OPENAI_MEMORY_SUMMARY_MAX_OUTPUT_TOKENS',
