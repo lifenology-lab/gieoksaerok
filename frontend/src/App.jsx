@@ -13,6 +13,7 @@ import ConfusionReportPage from "./routes/patient/ConfusionReportPage/ConfusionR
 import MealRecordsPage from "./routes/patient/MealRecordsPage/MealRecordsPage";
 import MemoryAlbumPage from "./routes/patient/MemoryAlbumPage/MemoryAlbumPage";
 import MemoryOverviewPage from "./routes/patient/MemoryOverviewPage/MemoryOverviewPage";
+import DemoScenesPage from "./routes/patient/DemoScenesPage/DemoScenesPage";
 import LandingPage from "./routes/LandingPage/LandingPage";
 import InstallGuidePage from "./routes/InstallGuidePage/InstallGuidePage";
 import LandscapeGuard from "./shared/layout/LandScapeGuard";
@@ -56,6 +57,10 @@ function App() {
           <Route
             path="/patient/memories"
             element={protectedPage(<MemoryOverviewPage />)}
+          ></Route>
+          <Route
+            path="/patient/demo-scenes"
+            element={protectedPage(<DemoScenesPage />)}
           ></Route>
           <Route
             path="/patient/memory-album/:personId"
