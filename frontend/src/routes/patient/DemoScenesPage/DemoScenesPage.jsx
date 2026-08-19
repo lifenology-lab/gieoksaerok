@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { fetchPeople } from "@/features/face-recognition/api/peopleApi";
+import { createPerson, fetchPeople } from "@/features/face-recognition/api/peopleApi";
 import { loadFaceApiModels } from "@/features/face-recognition/hooks/usePersonRecognition";
 import { createMealRecord } from "@/features/meal-recognition/api/mealRecognitionApi";
 import { classifyMealScene } from "@/features/meal-recognition/model/teachableMachineMealClassifier";
@@ -141,6 +141,7 @@ async function analyzePersonScene(scene, people) {
 
   return {
     faceBox: toFaceBoxPercent(detection.detection.box, image),
+    faceDescriptor: Array.from(detection.descriptor),
     matchedPerson,
   };
 }
@@ -163,8 +164,9 @@ function DemoSceneImage({ scene }) {
   );
 }
 
-function SceneTile({ scene, selected, onSelect, onShowInfo }) {
+function SceneTile({ scene, selected, isDemoRegistered, onSelect, onShowInfo }) {
   const isPerson = scene.type === "registered" || scene.type === "unknown";
+  const isRegisteredPerson = scene.type === "registered" || isDemoRegistered;
 
   return (
     <article
@@ -178,7 +180,7 @@ function SceneTile({ scene, selected, onSelect, onShowInfo }) {
         <DemoSceneImage scene={scene} />
         <span className="demo-scenes-page__scene-kind">
           {isPerson
-            ? scene.type === "registered"
+            ? isRegisteredPerson
               ? "등록 인물"
               : "미등록 인물"
             : scene.type === "meal"
@@ -255,8 +257,10 @@ export default function DemoScenesPage() {
   const [selectedScene, setSelectedScene] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isMealRecordSaving, setIsMealRecordSaving] = useState(false);
+  const [isPersonSaving, setIsPersonSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [infoScene, setInfoScene] = useState(null);
+  const [registeredDemoPeople, setRegisteredDemoPeople] = useState({});
 
   useEffect(() => {
     fetchPeople()
@@ -283,24 +287,34 @@ export default function DemoScenesPage() {
         selectedScene.type === "registered" ||
         selectedScene.type === "unknown"
       ) {
-        const { faceBox, matchedPerson } = await analyzePersonScene(
+        const { faceBox, faceDescriptor, matchedPerson } = await analyzePersonScene(
           selectedScene,
           people,
         );
-        const displayPerson = matchedPerson || people[0] || null;
+        const registeredDemoPerson = registeredDemoPeople[selectedScene.id] || null;
+        const isRegisteredPerson =
+          selectedScene.type === "registered" || Boolean(registeredDemoPerson);
+        const displayPerson =
+          matchedPerson ||
+          registeredDemoPerson ||
+          (selectedScene.type === "registered" ? people[0] || null : null);
 
         setResult({
           scene: selectedScene,
           faceBox,
+          faceDescriptor,
           matchedPerson: displayPerson,
+          isDemoRegistered: isRegisteredPerson && selectedScene.type === "unknown",
+          canRegisterDemoPerson:
+            !isRegisteredPerson && selectedScene.type === "unknown",
           title:
-            selectedScene.type === "registered"
+            isRegisteredPerson
               ? displayPerson?.relationship
                 ? `${displayPerson.relationship} ${displayPerson.name}님이에요`
                 : "등록된 보호자예요"
               : "등록되지 않은 분이에요",
           message:
-            selectedScene.type === "registered"
+            isRegisteredPerson
               ? "얼굴을 찾고 등록된 인물 정보를 연결했어요."
               : "데모용 인물 정보를 미리 채워 두었어요.",
         });
@@ -324,6 +338,45 @@ export default function DemoScenesPage() {
   };
 
   const handleResultAction = () => {
+    if (result?.canRegisterDemoPerson) {
+      const registerDemoPerson = async () => {
+        try {
+          setIsPersonSaving(true);
+
+          const createdPerson = await createPerson({
+            name: result.scene.demoProfile.name,
+            relationship: result.scene.demoProfile.relationship,
+            faceDescriptor: result.faceDescriptor,
+          });
+
+          setPeople((currentPeople) => [...currentPeople, createdPerson]);
+          setRegisteredDemoPeople((currentPeople) => ({
+            ...currentPeople,
+            [result.scene.id]: createdPerson,
+          }));
+          setResult((currentResult) => ({
+            ...currentResult,
+            matchedPerson: createdPerson,
+            isDemoRegistered: true,
+            canRegisterDemoPerson: false,
+            title: `${createdPerson.relationship} ${createdPerson.name}님을 등록했어요`,
+            message: "다음 인식부터는 등록된 인물 정보로 안내할게요.",
+          }));
+        } catch (error) {
+          setResult((currentResult) => ({
+            ...currentResult,
+            message:
+              error?.message || "인물 정보를 등록하지 못했어요. 다시 시도해 주세요.",
+          }));
+        } finally {
+          setIsPersonSaving(false);
+        }
+      };
+
+      registerDemoPerson();
+      return;
+    }
+
     if (result?.mealRecordCreated) {
       navigate("/patient/meal-records");
       return;
@@ -419,6 +472,7 @@ export default function DemoScenesPage() {
                   key={scene.id}
                   scene={scene}
                   selected={selectedScene?.id === scene.id}
+                  isDemoRegistered={Boolean(registeredDemoPeople[scene.id])}
                   onSelect={handleSelectScene}
                   onShowInfo={setInfoScene}
                 />
@@ -437,6 +491,7 @@ export default function DemoScenesPage() {
                   key={scene.id}
                   scene={scene}
                   selected={selectedScene?.id === scene.id}
+                  isDemoRegistered={false}
                   onSelect={handleSelectScene}
                   onShowInfo={setInfoScene}
                 />
@@ -537,18 +592,28 @@ export default function DemoScenesPage() {
                     disabled
                   />
                 </label>
-                <small>데모에서는 인물 정보를 수정할 수 없어요.</small>
+                <small>
+                  {result.isDemoRegistered
+                    ? "등록된 인물 정보예요."
+                    : "데모에서는 인물 정보를 수정할 수 없어요."}
+                </small>
               </div>
             )}
 
-            {result.scene.type !== "unknown" && (
+            {(result.scene.type !== "unknown" ||
+              result.isDemoRegistered ||
+              result.canRegisterDemoPerson) && (
               <button
                 className="demo-scenes-page__result-action"
                 type="button"
                 onClick={handleResultAction}
-                disabled={isMealRecordSaving}
+                disabled={isMealRecordSaving || isPersonSaving}
               >
-                {result.scene.type === "registered"
+                {result.canRegisterDemoPerson
+                  ? isPersonSaving
+                    ? "인물 정보를 등록하고 있어요"
+                    : "등록하고 다시 인식하기"
+                  : result.scene.type === "registered"
                   ? "추억 카드 보기"
                   : result.mealRecordCreated
                     ? "식사 기록 보기"
