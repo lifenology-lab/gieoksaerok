@@ -109,7 +109,7 @@ export default function AuthPage() {
           </div>
 
           <p className="auth-page__description">
-            이 브라우저에서 만든 기록은 48시간 동안 이어서 살펴볼 수 있고, 이후 자동으로 삭제돼요.
+            이 브라우저에서 만든 기록은 7일 동안 이어서 살펴볼 수 있고, 이후 자동으로 삭제돼요.
           </p>
 
           <button
@@ -145,7 +145,7 @@ export default function AuthPage() {
 
         <p className="auth-page__description">
           {isStartingNewExperience
-            ? "새 기록은 이전 체험 기록과 별도로 48시간 동안 저장되며, 이후 자동으로 삭제돼요."
+            ? "새 기록은 이전 체험 기록과 별도로 7일 동안 저장되며, 이후 자동으로 삭제돼요."
             : "이전 체험 기록이 없어요. 새로 체험을 시작해 주세요."}
         </p>
         <p className="auth-page__notice">

@@ -87,16 +87,16 @@ class DemoExperienceViewTests(TestCase):
     @override_settings(
         DEMO_EXPERIENCE_ENABLED=True,
         DEMO_EXPERIENCE_USERNAME="demo-patient",
-        DEMO_EXPERIENCE_SESSION_HOURS=48,
+        DEMO_EXPERIENCE_SESSION_HOURS=168,
     )
-    def test_demo_session_expires_after_48_hours(self):
+    def test_demo_session_expires_after_7_days(self):
         response = self.client.post("/api/auth/demo/", format="json")
         demo_session = DemoExperienceSession.objects.get(
             session_user_id=response.data["user"]["id"],
         )
 
         self.assertLessEqual(
-            abs((demo_session.expires_at - demo_session.created_at).total_seconds() - 48 * 60 * 60),
+            abs((demo_session.expires_at - demo_session.created_at).total_seconds() - 7 * 24 * 60 * 60),
             1,
         )
 
