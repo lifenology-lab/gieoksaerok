@@ -112,6 +112,39 @@ class DemoExperienceView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
+class DemoExperienceSessionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        operation_id="데모 체험 세션 조회",
+        description="현재 브라우저에 연결된 데모 체험 세션을 조회합니다.",
+        responses={200: "Demo session or null", 401: "Unauthorized"},
+    )
+    def get(self, request):
+        if expire_demo_session_if_needed(request.user):
+            return Response(
+                {"detail": "데모 체험 기록이 만료되었어요. 새 체험을 시작해 주세요."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        demo_session = DemoExperienceSession.objects.filter(
+            session_user=request.user,
+        ).first()
+
+        if demo_session is None:
+            return Response({"session": None})
+
+        return Response(
+            {
+                "session": {
+                    "expires_at": demo_session.expires_at,
+                    "mode": demo_session.mode,
+                },
+            },
+        )
+
+
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 

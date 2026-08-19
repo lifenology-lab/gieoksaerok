@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -94,6 +96,46 @@ class DemoExperienceViewTests(TestCase):
 
         self.assertEqual(MealRecord.objects.filter(user=demo_user).count(), 0)
         self.assertEqual(MealRecord.objects.filter(user=self.user).count(), 1)
+
+    @override_settings(
+        DEMO_EXPERIENCE_ENABLED=True,
+        DEMO_EXPERIENCE_USERNAME="demo-patient",
+    )
+    def test_returns_the_current_demo_session(self):
+        start_response = self.client.post(
+            "/api/auth/demo/",
+            {"mode": "example-scenes"},
+            format="json",
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {start_response.data['access']}",
+        )
+
+        response = self.client.get("/api/auth/demo/session/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["session"]["mode"], "example-scenes")
+        self.assertIn("expires_at", response.data["session"])
+
+    @override_settings(
+        DEMO_EXPERIENCE_ENABLED=True,
+        DEMO_EXPERIENCE_USERNAME="demo-patient",
+    )
+    def test_expired_demo_session_requires_a_new_experience(self):
+        start_response = self.client.post("/api/auth/demo/", format="json")
+        demo_user = User.objects.get(id=start_response.data["user"]["id"])
+        DemoExperienceSession.objects.filter(session_user=demo_user).update(
+            expires_at=timezone.now() - timedelta(seconds=1),
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {start_response.data['access']}",
+        )
+
+        response = self.client.get("/api/auth/demo/session/")
+
+        self.assertEqual(response.status_code, 401)
+        demo_user.refresh_from_db()
+        self.assertFalse(demo_user.is_active)
 
     @override_settings(
         DEMO_EXPERIENCE_ENABLED=True,

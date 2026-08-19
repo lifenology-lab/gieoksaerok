@@ -32,6 +32,10 @@ export async function startDemoExperience({ mode }) {
   return data;
 }
 
+export function fetchDemoExperienceSession() {
+  return request("/api/auth/demo/session/");
+}
+
 export function signUpUser({ username, password, name, email }) {
   return request("/api/auth/signup/", {
     method: "POST",

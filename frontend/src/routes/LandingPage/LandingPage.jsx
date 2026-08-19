@@ -56,7 +56,7 @@ export default function LandingPage() {
         await request("/api/auth/me/");
 
         if (isMounted) {
-          navigate("/roles", { replace: true });
+          navigate("/auth", { replace: true });
         }
       } catch {
         clearAuthTokens();
