@@ -286,6 +286,43 @@
   white-space: pre-line;
 }
 
+.demo-scenes-page__meal-details {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(23, 48, 40, 0.55);
+}
+
+.demo-scenes-page__meal-details > div {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.demo-scenes-page__meal-details dt {
+  margin: 0;
+  color: #91e8d6;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.demo-scenes-page__meal-details dd {
+  margin: 0;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.demo-scenes-page__result-note {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
 .demo-scenes-page__dialog-close {
   position: absolute;
   z-index: 2;

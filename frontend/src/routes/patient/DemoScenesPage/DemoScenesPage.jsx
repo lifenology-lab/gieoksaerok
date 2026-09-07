@@ -61,6 +61,9 @@ const DEMO_MEAL_SCENES = [
     title: "식사 장면",
     image: "/demo-scenes/meals/meal_demo_1.jpg",
     info: "식탁과 음식이 보이는 식사 예시 장면이에요.",
+    // 데모용 하드코딩 정보. 실제 서비스에서는 사진 메타데이터(촬영 시각·위치)와
+    // 음식 인식으로 채워질 값을 가정한다. 값이 있으면 설명하고 없으면 생략한다.
+    mealInfo: { menu: "뚝배기 불고기, 콩나물, 밥, 김치전, 미역줄기, 배추김치", where: "집" },
   },
   {
     id: "meal-2",
@@ -68,6 +71,7 @@ const DEMO_MEAL_SCENES = [
     title: "식사 장면",
     image: "/demo-scenes/meals/meal_demo_2.jpg",
     info: "다른 식사 장면도 같은 흐름으로 체험할 수 있어요.",
+    mealInfo: { menu: "빵, 커피, 아이스크림", where: "강릉" },
   },
   {
     id: "non-meal-1",
@@ -237,16 +241,32 @@ function createMealResult(scene, mealSceneResult) {
   const confidence = Math.round(mealSceneResult.mealSceneProbability * 100);
 
   if (mealSceneResult.isMealScene) {
+    // 데이터에 있는 정보만 구조화해 전달한다(어디서/무엇을). 없으면 생략한다.
+    // 표시는 렌더링에서 라벨을 붙여 항목별로 나눈다.
+    const mealInfo = scene.mealInfo || {};
+    const mealDetails = [];
+
+    if (mealInfo.where) {
+      mealDetails.push({ label: "장소", value: mealInfo.where });
+    }
+
+    if (mealInfo.menu) {
+      mealDetails.push({ label: "메뉴", value: mealInfo.menu });
+    }
+
     return {
       title: "식사 장면으로 인식했어요",
-      message: `식사 장면일 가능성이 ${confidence}%예요. 일상 모드에서는 식사 기록을 남기는 카드가 이어서 열려요.`,
+      message: `식사 장면일 가능성이 ${confidence}%예요.`,
+      mealDetails,
+      note: "일상 모드에서는 식사 기록을 남기는 카드가 이어서 열려요.",
       isMealScene: true,
     };
   }
 
   return {
     title: "식사 장면이 아니에요",
-    message: `식사 장면일 가능성이 ${confidence}%예요. 다른 예시 장면을 선택해 보세요.`,
+    message: `식사 장면일 가능성이 ${confidence}%예요.`,
+    note: "다른 예시 장면을 선택해 보세요.",
     isMealScene: false,
   };
 }
@@ -389,17 +409,25 @@ export default function DemoScenesPage() {
 
           const eatenAt = new Date().toISOString();
           const sceneImage = await createDemoSceneImageFile(result.scene);
+          const mealInfo = result.scene.mealInfo || {};
           const createdMealRecord = await createMealRecord({
             mealType: getSuggestedMealType(eatenAt),
             eatenAt,
             source: "patient_confirmed",
+            // 데이터에 있는 정보만 저장한다. 저장된 menu/memo는 이후 음성 질의 답변에 사용된다.
+            menu: mealInfo.menu || null,
+            memo: mealInfo.where ? `${mealInfo.where}에서 식사` : null,
             sceneImage,
           });
+
+          const menuPhrase = createdMealRecord.menu
+            ? ` (${createdMealRecord.menu})`
+            : "";
 
           setResult((currentResult) => ({
             ...currentResult,
             title: "식사 기록이 완료되었어요",
-            message: `${createdMealRecord.mealLabel} 식사 기록과 사진을 함께 남겼어요.`,
+            message: `${createdMealRecord.mealLabel} 식사 기록과 사진을 함께 남겼어요.${menuPhrase}`,
             isMealScene: false,
             mealRecordCreated: true,
           }));
@@ -574,6 +602,21 @@ export default function DemoScenesPage() {
             )}
             <h2>{result.title}</h2>
             <p>{result.message}</p>
+
+            {Array.isArray(result.mealDetails) && result.mealDetails.length > 0 && (
+              <dl className="demo-scenes-page__meal-details">
+                {result.mealDetails.map((detail) => (
+                  <div key={detail.label}>
+                    <dt>{detail.label}</dt>
+                    <dd>{detail.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+
+            {result.note && (
+              <p className="demo-scenes-page__result-note">{result.note}</p>
+            )}
 
             {result.scene.type === "unknown" && result.scene.demoProfile && (
               <div className="demo-scenes-page__demo-profile">
