@@ -40,7 +40,7 @@ const DEMO_PERSON_SCENES = [
     title: "미등록 인물",
     description: "보호자의 아들로 설정된 예시 인물이에요.",
     image: "/demo-scenes/people/unknown/grandchild_demo_1.png",
-    info: "김태윤, 17세예요. 보호자인 딸 지민 씨의 아들이에요.",
+    info: "김태윤, 17세예요. 보호자인 딸 선아 씨의 아들이에요.",
     demoProfile: { name: "김태윤", age: "17세", relationship: "외손자" },
   },
   {
