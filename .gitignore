@@ -44,6 +44,10 @@ lerna-debug.log*
 # Test Images
 frontend/public/meal-test-images/
 
+# 개인 추억 사진 (부스/영상 데모용 실제 사진 - git에 올리지 않음)
+# 이미지 확장자만 제외하고, 폴더 구조·안내(README/.gitkeep)는 유지한다.
+backend/accounts/demo_seed/memory-photos/personal/*.jpg
+
 # ML
 ml/dataset/
 ml/raw/
