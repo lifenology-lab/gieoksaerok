@@ -16,9 +16,12 @@ from records.models import MealRecord
 
 User = get_user_model()
 SEED_ROOT = Path(__file__).resolve().parents[2] / 'demo_seed'
-PERSON_CONFIG_PATH = SEED_ROOT / 'people' / 'jimin' / 'person.json'
-MEMORY_ITEMS_PATH = SEED_ROOT / 'memory-items.json'
+# 손녀 김민지 페르소나(실제 사진 기반). 사진은 gitignore되어 있어 배포 환경에는 수동 업로드가 필요하다.
+PERSON_CONFIG_PATH = SEED_ROOT / 'people' / 'minji' / 'person.json'
+MEMORY_ITEMS_PATH = SEED_ROOT / 'memory-items.personal.json'
 MEAL_PHOTO_DIR = SEED_ROOT / 'meal-photos'
+# 추억 앨범 사진의 저장 경로 접두사. 인물별로 구분한다.
+ALBUM_STORAGE_PREFIX = 'demo/minji'
 
 # 데모용 점심 식사 기록. 촬영 당일 seed를 실행하면 "오늘 점심"으로 기록된다.
 # 음성 질의("오늘 점심 먹었던가?") 시 이 기록이 조회된다.
@@ -50,14 +53,14 @@ def _load_face_descriptor(person_config):
 
     if not isinstance(descriptor, list) or len(descriptor) != 128:
         raise CommandError(
-            '김지민 얼굴 descriptor는 숫자 128개여야 합니다. '
+            '얼굴 descriptor는 숫자 128개여야 합니다. '
             f'{descriptor_path} 파일을 채운 뒤 다시 실행해주세요.',
         )
 
     try:
         return [float(value) for value in descriptor]
     except (TypeError, ValueError) as exc:
-        raise CommandError('김지민 얼굴 descriptor에는 숫자만 넣어주세요.') from exc
+        raise CommandError('얼굴 descriptor에는 숫자만 넣어주세요.') from exc
 
 
 def _get_or_create_album_item(*, user, person, item_data):
@@ -73,7 +76,7 @@ def _get_or_create_album_item(*, user, person, item_data):
     if not source_path.is_file():
         raise CommandError(f'추억 사진을 찾을 수 없습니다: {source_path}')
 
-    storage_name = f'demo/jimin/{item_data["id"]}{source_path.suffix.lower()}'
+    storage_name = f'{ALBUM_STORAGE_PREFIX}/{item_data["id"]}{source_path.suffix.lower()}'
     album_item = MemoryAlbumItem.objects.filter(
         user=user,
         person=person,
@@ -150,7 +153,7 @@ def _seed_demo_meal_record(user):
 
 
 class Command(BaseCommand):
-    help = '원본 데모 계정에 김지민 인물과 12개 추억 앨범 자료를 등록합니다.'
+    help = '원본 데모 계정에 손녀 김민지 인물과 추억 앨범·점심 식사 기록을 등록합니다.'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -181,12 +184,14 @@ class Command(BaseCommand):
         )
 
         memory_items = _load_json(MEMORY_ITEMS_PATH)
-        if not isinstance(memory_items, list) or len(memory_items) != 12:
-            raise CommandError('memory-items.json에는 정확히 12개의 추억이 필요합니다.')
+        if not isinstance(memory_items, list) or len(memory_items) == 0:
+            raise CommandError(
+                f'{MEMORY_ITEMS_PATH.name}에는 최소 1개 이상의 추억이 필요합니다.',
+            )
 
         created_count = 0
         for item_data in memory_items:
-            storage_name = f'demo/jimin/{item_data["id"]}{Path(item_data["photo"]).suffix.lower()}'
+            storage_name = f'{ALBUM_STORAGE_PREFIX}/{item_data["id"]}{Path(item_data["photo"]).suffix.lower()}'
             exists = MemoryAlbumItem.objects.filter(
                 user=template_user,
                 person=person,
@@ -202,7 +207,8 @@ class Command(BaseCommand):
         action = '등록했습니다' if created else '갱신했습니다'
         self.stdout.write(
             self.style.SUCCESS(
-                f'김지민 인물을 {action}. 추억 {len(memory_items)}개 중 '
+                f'{person.relationship} {person.name} 인물을 {action}. '
+                f'추억 {len(memory_items)}개 중 '
                 f'{created_count}개를 새로 등록했습니다.',
             ),
         )
